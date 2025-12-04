@@ -1,0 +1,295 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 1930s Prohibition Era Design System - The Syndicate */
+
+@layer base {
+  :root {
+    /* Noir Black Palette */
+    --background: 0 0% 4%;
+    --foreground: 45 20% 90%;
+
+    --card: 0 0% 7%;
+    --card-foreground: 45 20% 90%;
+
+    --popover: 0 0% 6%;
+    --popover-foreground: 45 20% 90%;
+
+    /* Whiskey Gold - Primary */
+    --primary: 35 55% 50%;
+    --primary-foreground: 0 0% 4%;
+
+    /* Aged Bronze - Secondary */
+    --secondary: 30 30% 18%;
+    --secondary-foreground: 45 20% 85%;
+
+    /* Smoke Gray - Muted */
+    --muted: 0 0% 12%;
+    --muted-foreground: 45 10% 55%;
+
+    /* Amber Glow - Accent */
+    --accent: 38 70% 45%;
+    --accent-foreground: 0 0% 4%;
+
+    /* Blood Red - Destructive */
+    --destructive: 0 65% 40%;
+    --destructive-foreground: 45 20% 95%;
+
+    --border: 35 20% 18%;
+    --input: 35 15% 15%;
+    --ring: 35 55% 50%;
+
+    --radius: 0.25rem;
+
+    /* Custom Gradients */
+    --gradient-gold: linear-gradient(135deg, hsl(35, 55%, 50%) 0%, hsl(42, 70%, 55%) 50%, hsl(35, 55%, 45%) 100%);
+    --gradient-noir: linear-gradient(180deg, hsl(0, 0%, 6%) 0%, hsl(0, 0%, 2%) 100%);
+    --gradient-smoke: linear-gradient(135deg, hsl(0, 0%, 8%) 0%, hsl(0, 0%, 4%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0, 0%, 9%) 0%, hsl(0, 0%, 5%) 100%);
+
+    /* Art Deco Shadows */
+    --shadow-gold: 0 0 30px hsl(35, 55%, 50% / 0.2);
+    --shadow-noir: 0 10px 40px hsl(0, 0%, 0% / 0.5);
+    --shadow-card: 0 4px 20px hsl(0, 0%, 0% / 0.4);
+    --shadow-inner: inset 0 2px 10px hsl(0, 0%, 0% / 0.3);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 45 20% 85%;
+    --sidebar-primary: 35 55% 50%;
+    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-accent: 30 30% 15%;
+    --sidebar-accent-foreground: 45 20% 85%;
+    --sidebar-border: 35 20% 15%;
+    --sidebar-ring: 35 55% 50%;
+  }
+
+  .dark {
+    --background: 0 0% 4%;
+    --foreground: 45 20% 90%;
+    --card: 0 0% 7%;
+    --card-foreground: 45 20% 90%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 45 20% 90%;
+    --primary: 35 55% 50%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 30 30% 18%;
+    --secondary-foreground: 45 20% 85%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 45 10% 55%;
+    --accent: 38 70% 45%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 0 65% 40%;
+    --destructive-foreground: 45 20% 95%;
+    --border: 35 20% 18%;
+    --input: 35 15% 15%;
+    --ring: 35 55% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter antialiased;
+    background-image: var(--gradient-noir);
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-cinzel font-semibold tracking-wide;
+  }
+
+  /* Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.5);
+    border-radius: 2px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
+  }
+}
+
+@layer components {
+  /* Art Deco Border */
+  .art-deco-border {
+    @apply relative;
+  }
+
+  .art-deco-border::before {
+    content: '';
+    @apply absolute inset-0 rounded pointer-events-none;
+    border: 1px solid hsl(var(--primary) / 0.3);
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.1) 0%, transparent 50%);
+  }
+
+  /* Gold Shimmer Effect */
+  .gold-shimmer {
+    background: var(--gradient-gold);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Noir Card */
+  .noir-card {
+    @apply relative overflow-hidden rounded-sm;
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .noir-card::before {
+    content: '';
+    @apply absolute inset-0 opacity-50 pointer-events-none;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.05) 0%, transparent 60%);
+  }
+
+  /* Button Gold */
+  .btn-gold {
+    @apply relative overflow-hidden font-cinzel font-semibold uppercase tracking-widest;
+    background: var(--gradient-gold);
+    color: hsl(var(--primary-foreground));
+    box-shadow: var(--shadow-gold);
+    transition: all 0.3s ease;
+  }
+
+  .btn-gold:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 40px hsl(35, 55%, 50% / 0.4);
+  }
+
+  .btn-gold:active {
+    transform: translateY(0);
+  }
+
+  /* Glass Effect */
+  .glass {
+    @apply backdrop-blur-md;
+    background: hsl(var(--card) / 0.8);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  /* Vintage Texture Overlay */
+  .vintage-texture {
+    @apply relative;
+  }
+
+  .vintage-texture::after {
+    content: '';
+    @apply absolute inset-0 pointer-events-none opacity-5;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  }
+
+  /* Stat Badge */
+  .stat-badge {
+    @apply px-3 py-1.5 rounded-sm font-inter text-sm font-medium;
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+  }
+}
+
+@layer utilities {
+  /* Text Shadows */
+  .text-shadow-gold {
+    text-shadow: 0 0 20px hsl(35, 55%, 50% / 0.5);
+  }
+
+  .text-shadow-noir {
+    text-shadow: 0 2px 4px hsl(0, 0%, 0% / 0.5);
+  }
+
+  /* Decorative Line */
+  .deco-line {
+    @apply relative;
+  }
+
+  .deco-line::after {
+    content: '';
+    @apply absolute left-1/2 -translate-x-1/2 h-px w-20;
+    background: var(--gradient-gold);
+  }
+
+  .deco-line-bottom::after {
+    @apply -bottom-4;
+  }
+
+  .deco-line-top::before {
+    content: '';
+    @apply absolute left-1/2 -translate-x-1/2 -top-4 h-px w-20;
+    background: var(--gradient-gold);
+  }
+}
+
+/* Animations */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse-gold {
+  0%, 100% {
+    box-shadow: 0 0 20px hsl(35, 55%, 50% / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px hsl(35, 55%, 50% / 0.5);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out forwards;
+}
+
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+.animate-pulse-gold {
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
