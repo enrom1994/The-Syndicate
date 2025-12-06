@@ -65,13 +65,18 @@ export const GameProvider = ({ children }: { children: ReactNode }) => {
         };
         const { data: createdPlayer, error: createError } = await supabase
           .from('players')
-          .insert([newPlayerInsert as PlayerInsert]) // Explicitly cast to PlayerInsert[]
+          .insert<PlayerInsert[]>([newPlayerInsert]) // Explicitly type the insert method
           .select()
           .single();
 
         if (createError) {
           console.error('Error creating new player:', createError);
           throw createError;
+        }
+        // Ensure createdPlayer is not null before assigning
+        if (createdPlayer === null) {
+            console.error('Supabase insert returned null data unexpectedly.');
+            throw new Error('Failed to create player: no data returned.');
         }
         playerData = createdPlayer;
       } else if (playerFetchError) {

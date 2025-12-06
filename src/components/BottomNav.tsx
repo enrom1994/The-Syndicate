@@ -1,38 +1,74 @@
 import { motion } from 'framer-motion';
 import { Home, ShoppingBag, Swords, Users, Trophy } from 'lucide-react';
-import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useTelegramBackButton } from '@/hooks/useTelegram';
 
 interface NavItemProps {
   icon: React.ReactNode;
   label: string;
+  path: string;
   isActive?: boolean;
-  onClick?: () => void;
+  badge?: boolean | number;
 }
 
-const NavItem = ({ icon, label, isActive, onClick }: NavItemProps) => (
-  <button
-    onClick={onClick}
-    className={`flex flex-col items-center gap-1 py-2 px-3 rounded-sm transition-all duration-300 ${
-      isActive 
-        ? 'text-primary' 
+const NavItem = ({ icon, label, path, isActive, badge }: NavItemProps) => {
+  const navigate = useNavigate();
+
+  return (
+    <button
+      onClick={() => navigate(path)}
+      className={`flex flex-col items-center gap-1 py-2 px-3 rounded-sm transition-all duration-300 ${isActive
+        ? 'text-primary'
         : 'text-muted-foreground hover:text-foreground'
-    }`}
-  >
-    <div className="relative">
-      {icon}
-      {isActive && (
-        <motion.div
-          layoutId="activeTab"
-          className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary"
-        />
-      )}
-    </div>
-    <span className="text-[10px] font-inter uppercase tracking-wider">{label}</span>
-  </button>
-);
+        }`}
+    >
+      <div className="relative">
+        {icon}
+        {isActive && (
+          <motion.div
+            layoutId="activeTab"
+            className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary"
+          />
+        )}
+        {/* Notification Badge */}
+        {badge && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-0.5 bg-destructive text-[8px] text-white rounded-full flex items-center justify-center font-bold"
+          >
+            {typeof badge === 'number' ? (badge > 9 ? '9+' : badge) : ''}
+          </motion.div>
+        )}
+      </div>
+      <span className="text-[10px] font-inter uppercase tracking-wider">{label}</span>
+    </button>
+  );
+};
 
 export const BottomNav = () => {
-  const [activeTab, setActiveTab] = useState('home');
+  const location = useLocation();
+  const currentPath = location.pathname;
+
+  // Enable Telegram back button handling
+  useTelegramBackButton();
+
+  // Mock badge state - will come from context/notifications
+  const badges = {
+    home: true, // Has unclaimed daily reward
+    market: false,
+    ops: 3, // 3 new bounties
+    family: false,
+    ranks: false,
+  };
+
+  const navItems = [
+    { icon: <Home className="w-5 h-5" />, label: 'Home', path: '/', badge: badges.home },
+    { icon: <ShoppingBag className="w-5 h-5" />, label: 'Market', path: '/market', badge: badges.market },
+    { icon: <Swords className="w-5 h-5" />, label: 'Ops', path: '/ops', badge: badges.ops },
+    { icon: <Users className="w-5 h-5" />, label: 'Family', path: '/family', badge: badges.family },
+    { icon: <Trophy className="w-5 h-5" />, label: 'Ranks', path: '/ranks', badge: badges.ranks },
+  ];
 
   return (
     <motion.nav
@@ -42,37 +78,18 @@ export const BottomNav = () => {
       className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/30"
     >
       <div className="container flex items-center justify-around py-2 px-2 safe-area-pb">
-        <NavItem
-          icon={<Home className="w-5 h-5" />}
-          label="Home"
-          isActive={activeTab === 'home'}
-          onClick={() => setActiveTab('home')}
-        />
-        <NavItem
-          icon={<ShoppingBag className="w-5 h-5" />}
-          label="Market"
-          isActive={activeTab === 'market'}
-          onClick={() => setActiveTab('market')}
-        />
-        <NavItem
-          icon={<Swords className="w-5 h-5" />}
-          label="Attack"
-          isActive={activeTab === 'attack'}
-          onClick={() => setActiveTab('attack')}
-        />
-        <NavItem
-          icon={<Users className="w-5 h-5" />}
-          label="Family"
-          isActive={activeTab === 'family'}
-          onClick={() => setActiveTab('family')}
-        />
-        <NavItem
-          icon={<Trophy className="w-5 h-5" />}
-          label="Ranks"
-          isActive={activeTab === 'ranks'}
-          onClick={() => setActiveTab('ranks')}
-        />
+        {navItems.map((item) => (
+          <NavItem
+            key={item.path}
+            icon={item.icon}
+            label={item.label}
+            path={item.path}
+            isActive={currentPath === item.path}
+            badge={item.badge}
+          />
+        ))}
       </div>
     </motion.nav>
   );
 };
+

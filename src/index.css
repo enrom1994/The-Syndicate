@@ -99,7 +99,6 @@
 
   body {
     @apply bg-background text-foreground font-inter antialiased;
-    background-image: var(--gradient-noir);
     min-height: 100vh;
     -webkit-tap-highlight-color: transparent;
   }

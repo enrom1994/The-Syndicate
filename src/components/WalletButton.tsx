@@ -1,25 +1,25 @@
-import { TonConnectButton, useTonWallet } from '@tonconnect/ui-react';
-import { Wallet } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useTonConnectUI } from '@tonconnect/ui-react';
+import { Button } from '@/components/ui/button';
+import { GameIcon } from './GameIcon';
 
 export const WalletButton = () => {
-  const wallet = useTonWallet();
+  const [tonConnectUI] = useTonConnectUI();
+  const wallet = tonConnectUI.wallet;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      className="relative"
+    <Button
+      variant="outline"
+      size="sm"
+      className="h-9 gap-2 bg-background/50 backdrop-blur-sm border-primary/20"
+      onClick={() => tonConnectUI.openModal()}
     >
-      {!wallet ? (
-        <div className="flex items-center gap-2">
-          <Wallet className="w-4 h-4 text-primary" />
-          <TonConnectButton className="ton-connect-btn" />
-        </div>
-      ) : (
-        <TonConnectButton className="ton-connect-btn" />
-      )}
-    </motion.div>
+      <GameIcon type="ton" className="w-5 h-5" />
+      <span className="font-cinzel text-xs">
+        {wallet ?
+          `${wallet.account.address.slice(0, 4)}...${wallet.account.address.slice(-4)}` :
+          'Connect Wallet'
+        }
+      </span>
+    </Button>
   );
 };

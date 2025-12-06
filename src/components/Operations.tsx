@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Users, ShoppingBag, Swords, Home, Briefcase, Target } from 'lucide-react';
+import { Users, ShoppingBag, Swords, Home, Briefcase, Target, User, Landmark, Bell, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface OperationCardProps {
   icon: React.ReactNode;
@@ -39,6 +40,72 @@ const OperationCard = ({ icon, title, description, onClick, delay = 0, badge }: 
 );
 
 export const Operations = () => {
+  const navigate = useNavigate();
+
+  const operations = [
+    {
+      icon: <Users className="w-6 h-6 text-primary-foreground" />,
+      title: 'Hire',
+      description: 'Recruit defensive units and operatives for your crew',
+      path: '/hire',
+      badge: 'NEW',
+    },
+    {
+      icon: <ShoppingBag className="w-6 h-6 text-primary-foreground" />,
+      title: 'Black Market',
+      description: 'Purchase weapons, drugs, and alcohol for your operation',
+      path: '/market',
+    },
+    {
+      icon: <Swords className="w-6 h-6 text-primary-foreground" />,
+      title: 'Attack',
+      description: 'Launch raids on rival families and expand your territory',
+      path: '/ops',
+    },
+    {
+      icon: <Home className="w-6 h-6 text-primary-foreground" />,
+      title: 'Family',
+      description: 'Manage your family hierarchy and promote members',
+      path: '/family',
+    },
+    {
+      icon: <Briefcase className="w-6 h-6 text-primary-foreground" />,
+      title: 'Business',
+      description: 'Invest in speakeasies, casinos, and other ventures',
+      path: '/business',
+    },
+    {
+      icon: <Target className="w-6 h-6 text-primary-foreground" />,
+      title: 'Missions',
+      description: 'Complete jobs to earn rewards and reputation',
+      path: '/ops',
+    },
+    {
+      icon: <User className="w-6 h-6 text-primary-foreground" />,
+      title: 'Profile',
+      description: 'Train your stats and view your character',
+      path: '/profile',
+    },
+    {
+      icon: <Landmark className="w-6 h-6 text-primary-foreground" />,
+      title: 'The Vault',
+      description: 'Deposit cash to protect it from rival attacks',
+      path: '/bank',
+    },
+    {
+      icon: <Package className="w-6 h-6 text-primary-foreground" />,
+      title: 'Inventory',
+      description: 'View your weapons, equipment, and contraband',
+      path: '/inventory',
+    },
+    {
+      icon: <Bell className="w-6 h-6 text-primary-foreground" />,
+      title: 'Activity',
+      description: 'View attack logs, income, and notifications',
+      path: '/notifications',
+    },
+  ];
+
   return (
     <section className="py-6 px-4">
       <motion.h2
@@ -51,44 +118,19 @@ export const Operations = () => {
       </motion.h2>
 
       <div className="grid gap-3 mt-8">
-        <OperationCard
-          icon={<Users className="w-6 h-6 text-primary-foreground" />}
-          title="Hire"
-          description="Recruit defensive units and operatives for your crew"
-          delay={0.1}
-          badge="NEW"
-        />
-        <OperationCard
-          icon={<ShoppingBag className="w-6 h-6 text-primary-foreground" />}
-          title="Black Market"
-          description="Purchase weapons, drugs, and alcohol for your operation"
-          delay={0.2}
-        />
-        <OperationCard
-          icon={<Swords className="w-6 h-6 text-primary-foreground" />}
-          title="Attack"
-          description="Launch raids on rival families and expand your territory"
-          delay={0.3}
-        />
-        <OperationCard
-          icon={<Home className="w-6 h-6 text-primary-foreground" />}
-          title="Family"
-          description="Manage your family hierarchy and promote members"
-          delay={0.4}
-        />
-        <OperationCard
-          icon={<Briefcase className="w-6 h-6 text-primary-foreground" />}
-          title="Business"
-          description="Invest in speakeasies, casinos, and other ventures"
-          delay={0.5}
-        />
-        <OperationCard
-          icon={<Target className="w-6 h-6 text-primary-foreground" />}
-          title="Missions"
-          description="Complete jobs to earn rewards and reputation"
-          delay={0.6}
-        />
+        {operations.map((op, index) => (
+          <OperationCard
+            key={op.title}
+            icon={op.icon}
+            title={op.title}
+            description={op.description}
+            badge={op.badge}
+            delay={0.1 * (index + 1)}
+            onClick={() => navigate(op.path)}
+          />
+        ))}
       </div>
     </section>
   );
 };
+

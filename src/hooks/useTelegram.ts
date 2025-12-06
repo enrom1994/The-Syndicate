@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface TelegramUser {
   id: number;
@@ -6,6 +7,7 @@ interface TelegramUser {
   last_name?: string;
   username?: string;
   language_code?: string;
+  photo_url?: string;
 }
 
 interface TelegramWebApp {
@@ -30,6 +32,8 @@ interface TelegramWebApp {
     isVisible: boolean;
     show: () => void;
     hide: () => void;
+    onClick: (callback: () => void) => void;
+    offClick: (callback: () => void) => void;
   };
   MainButton: {
     text: string;
@@ -52,6 +56,8 @@ interface TelegramWebApp {
   ready: () => void;
   expand: () => void;
   close: () => void;
+  enableClosingConfirmation: () => void;
+  disableClosingConfirmation: () => void;
 }
 
 declare global {
@@ -80,3 +86,64 @@ export const useTelegram = () => {
     isReady: !!webApp,
   };
 };
+
+/**
+ * Hook to handle Telegram WebApp back button
+ * Shows back button when not on home page, navigates back on click
+ */
+export const useTelegramBackButton = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleBack = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
+
+  useEffect(() => {
+    const app = window.Telegram?.WebApp;
+    if (!app?.BackButton) return;
+
+    const isHome = location.pathname === '/';
+
+    if (isHome) {
+      app.BackButton.hide();
+    } else {
+      app.BackButton.show();
+      app.BackButton.onClick(handleBack);
+
+      return () => {
+        app.BackButton.offClick(handleBack);
+      };
+    }
+  }, [location.pathname, handleBack]);
+};
+
+/**
+ * Hook to enable/disable exit confirmation
+ * Prevents accidental app closure during important actions
+ */
+export const useExitConfirm = (shouldConfirm: boolean = true) => {
+  useEffect(() => {
+    const app = window.Telegram?.WebApp;
+    if (!app) return;
+
+    if (shouldConfirm) {
+      app.enableClosingConfirmation?.();
+    } else {
+      app.disableClosingConfirmation?.();
+    }
+
+    return () => {
+      app.disableClosingConfirmation?.();
+    };
+  }, [shouldConfirm]);
+};
+
+/**
+ * Get Telegram user's profile photo URL
+ */
+export const useTelegramPhoto = () => {
+  const { user } = useTelegram();
+  return user?.photo_url || null;
+};
+

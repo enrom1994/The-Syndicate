@@ -1,5 +1,9 @@
 import { motion } from 'framer-motion';
-import { Crown, Users, DollarSign, Shield, Target, TrendingUp } from 'lucide-react';
+import { Crown, Users, Shield, TrendingUp, Calendar, Store, Target, Gem } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { EnergyBar } from './SeasonBanner';
+import { Button } from '@/components/ui/button';
+import { GameIcon } from './GameIcon';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -32,7 +36,46 @@ const StatCard = ({ icon, label, value, change, delay = 0 }: StatCardProps) => (
   </motion.div>
 );
 
+interface QuickActionProps {
+  icon: React.ReactNode;
+  label: string;
+  badge?: string | number;
+  onClick?: () => void;
+  delay?: number;
+}
+
+const QuickAction = ({ icon, label, badge, onClick, delay = 0 }: QuickActionProps) => (
+  <motion.button
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.3, delay }}
+    whileTap={{ scale: 0.95 }}
+    onClick={onClick}
+    className="noir-card p-3 flex flex-col items-center gap-1 min-w-[70px] hover:border-primary/30 transition-all"
+  >
+    <div className="relative">
+      <div className="w-9 h-9 rounded-full bg-gradient-gold flex items-center justify-center">
+        {icon}
+      </div>
+      {badge && (
+        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-destructive text-[10px] text-white rounded-full flex items-center justify-center">
+          {badge}
+        </span>
+      )}
+    </div>
+    <span className="text-[10px] text-muted-foreground font-medium">{label}</span>
+  </motion.button>
+);
+
 export const PlayerStats = () => {
+  const navigate = useNavigate();
+
+  // Mock data - will come from GameContext
+  const energy = 85;
+  const maxEnergy = 100;
+  const diamonds = 150;
+  const dailyRewardAvailable = true;
+
   return (
     <section className="py-6 px-4">
       <motion.div
@@ -53,7 +96,7 @@ export const PlayerStats = () => {
           delay={0.1}
         />
         <StatCard
-          icon={<DollarSign className="w-5 h-5 text-primary" />}
+          icon={<GameIcon type="cash" className="w-6 h-6" />}
           label="Cash"
           value="$12.5M"
           change="+5%"
@@ -74,6 +117,7 @@ export const PlayerStats = () => {
         />
       </div>
 
+      {/* Happiness Bar */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -90,6 +134,66 @@ export const PlayerStats = () => {
             animate={{ width: '72%' }}
             transition={{ duration: 1, delay: 0.7 }}
             className="h-full bg-gradient-gold rounded-full"
+          />
+        </div>
+      </motion.div>
+
+      {/* Energy Bar */}
+      <EnergyBar energy={energy} maxEnergy={maxEnergy} regenTime="2m 30s" />
+
+      {/* XP Progress Bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
+        className="mt-3 noir-card p-4"
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground uppercase tracking-wide">Level Progress</span>
+            <span className="text-xs font-bold text-primary bg-primary/20 px-1.5 py-0.5 rounded">Lv.25</span>
+          </div>
+          <span className="font-inter font-medium text-xs text-muted-foreground">12,450 / 15,000 XP</span>
+        </div>
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: '83%' }}
+            transition={{ duration: 1, delay: 0.8 }}
+            className="h-full bg-gradient-to-r from-primary via-yellow-500 to-primary rounded-full"
+          />
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-1.5">2,550 XP to Level 26</p>
+      </motion.div>
+
+      {/* Quick Actions */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.8 }}
+        className="mt-4"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <QuickAction
+            icon={<Calendar className="w-4 h-4 text-primary-foreground" />}
+            label="Rewards"
+            badge={dailyRewardAvailable ? '!' : undefined}
+            onClick={() => navigate('/daily-rewards')}
+            delay={0.1}
+          />
+          <QuickAction
+            icon={<GameIcon type="diamond" className="w-5 h-5" />}
+            label="Shop"
+            badge={diamonds}
+            onClick={() => navigate('/shop')}
+            delay={0.2}
+          />
+          <QuickAction
+            icon={<Target className="w-4 h-4 text-primary-foreground" />}
+            label="Bounties"
+            badge={4}
+            onClick={() => navigate('/bounty-board')}
+            delay={0.3}
           />
         </div>
       </motion.div>
