@@ -1,14 +1,17 @@
 import { motion } from 'framer-motion';
-import { ShoppingBag, Store } from 'lucide-react'; // Import Store icon
-import { useState } from 'react';
+import { ShoppingBag, Store, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
+import { useGameStore, ItemDefinition } from '@/hooks/useGameStore';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface MarketItemProps {
+    id: string;
     name: string;
     description: string;
     price: number;
@@ -48,44 +51,84 @@ const MarketItem = ({ name, description, price, stat, image, delay = 0, onBuy }:
 
 const MarketPage = () => {
     const { toast } = useToast();
-    const navigate = useNavigate(); // Initialize useNavigate
+    const navigate = useNavigate();
+    const {
+        buyItem,
+        itemDefinitions,
+        loadDefinitions,
+        isLoading: isStoreLoading
+    } = useGameStore();
+
     const [activeTab, setActiveTab] = useState('weapons');
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const [pendingItem, setPendingItem] = useState<{ name: string; price: number } | null>(null);
+    const [pendingItem, setPendingItem] = useState<ItemDefinition | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    const weapons = [
-        { name: 'Tommy Gun', description: 'Classic submachine gun', price: 5000, stat: '+15 Attack', image: '/images/blackmarket/tommygun.png' },
-        { name: 'Brass Knuckles', description: 'Close combat weapon', price: 500, stat: '+5 Attack', image: '/images/blackmarket/brassknuckles.png' },
-        { name: 'Switchblade', description: 'Concealed blade', price: 250, stat: '+3 Attack', image: '/images/blackmarket/switchblade.png' },
-        { name: 'Sawed-off Shotgun', description: 'Short range devastation', price: 3000, stat: '+10 Attack', image: '/images/blackmarket/sawedoffshotgun.png' },
-    ];
+    useEffect(() => {
+        loadDefinitions();
+    }, []);
 
-    const contraband = [
-        { name: 'Whiskey Crate', description: 'Premium bootleg spirits', price: 2000, stat: 'Sells for $3,500', image: '/images/blackmarket/wiskeycrate.png' },
-        { name: 'Cuban Cigars', description: 'Finest imported cigars', price: 1500, stat: 'Sells for $2,500', image: '/images/blackmarket/cubancigars.png' },
-        { name: 'Morphine Vials', description: 'Medical grade supply', price: 5000, stat: 'Sells for $8,000', image: '/images/blackmarket/morphinevials.png' },
-    ];
-
-    const equipment = [
-        { name: 'Armored Vest', description: 'Bullet-resistant protection', price: 8000, stat: '+20 Defense', image: '/images/blackmarket/armoredvest.png' },
-        { name: 'Getaway Car', description: '1929 Ford Model A', price: 15000, stat: '+25% Escape chance', image: '/images/blackmarket/getawaycar.png' },
-        { name: 'Safe House', description: 'Hidden location', price: 25000, stat: '+10% Income', image: '/images/blackmarket/safehouse.png' },
-    ];
-
-    const handleBuyClick = (name: string, price: number) => {
-        setPendingItem({ name, price });
+    const handleBuyClick = (item: ItemDefinition) => {
+        setPendingItem(item);
         setConfirmOpen(true);
     };
 
-    const confirmPurchase = () => {
-        if (pendingItem) {
+    const confirmPurchase = async () => {
+        if (!pendingItem) return;
+
+        setIsProcessing(true);
+        try {
+            const success = await buyItem(pendingItem.id, 1);
+            if (success) {
+                toast({
+                    title: 'Purchase Successful!',
+                    description: `${pendingItem.name} has been added to your inventory.`,
+                });
+                setConfirmOpen(false);
+            } else {
+                toast({
+                    title: 'Purchase Failed',
+                    description: 'Insufficient funds or transaction error.',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Purchase error:', error);
             toast({
-                title: 'Item Purchased!',
-                description: `${pendingItem.name} has been added to your inventory.`,
+                title: 'Error',
+                description: 'An unexpected error occurred.',
+                variant: 'destructive',
             });
+        } finally {
+            setIsProcessing(false);
+            setPendingItem(null);
         }
-        setConfirmOpen(false);
-        setPendingItem(null);
+    };
+
+    // Filter items by category
+    const weapons = itemDefinitions.filter(i => i.category === 'weapon');
+    const contraband = itemDefinitions.filter(i => i.category === 'contraband');
+    const equipment = itemDefinitions.filter(i => i.category === 'equipment');
+
+    const formatStat = (item: ItemDefinition) => {
+        if (item.attack_bonus > 0) return `+${item.attack_bonus} Attack`;
+        if (item.defense_bonus > 0) return `+${item.defense_bonus} Defense`;
+        if (item.income_bonus > 0) return `+${item.income_bonus}% Income`;
+        if (item.category === 'contraband' && item.sell_price) return `Sells for $${item.sell_price}`;
+        return '';
+    };
+
+    // Map logic to get images based on name (temporary fallback or DB column)
+    // Assuming DB has image_url or we map locally. The DB schema usually has image_url.
+    // Checking previous code: mock data had image paths.
+    // If DB doesn't have image paths, we might need a helper.
+    // Let's assume DB has 'image_url' or we map by name slug.
+
+    // Helper to get image
+    const getImage = (item: ItemDefinition) => {
+        // Fallback mapping if DB image_url is missing or placeholder
+        const slug = item.name.toLowerCase().replace(/\s+/g, '');
+        return item.image_url || `/images/blackmarket/${slug}.png`;
     };
 
     return (
@@ -103,7 +146,7 @@ const MarketPage = () => {
                     transition={{ duration: 0.5 }}
                     className="mb-6"
                 >
-                    <div className="flex items-center justify-between mb-6"> {/* Added justify-between */}
+                    <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-sm bg-gradient-gold flex items-center justify-center">
                                 <ShoppingBag className="w-5 h-5 text-primary-foreground" />
@@ -113,7 +156,6 @@ const MarketPage = () => {
                                 <p className="text-xs text-muted-foreground">Illegal goods & rare items</p>
                             </div>
                         </div>
-                        {/* New Shop button */}
                         <Button
                             variant="ghost"
                             size="sm"
@@ -133,34 +175,58 @@ const MarketPage = () => {
                         </TabsList>
 
                         <TabsContent value="weapons" className="space-y-3 mt-0">
+                            {weapons.length === 0 && !isStoreLoading && (
+                                <p className="text-center text-muted-foreground text-xs py-8">No weapons available.</p>
+                            )}
                             {weapons.map((item, index) => (
                                 <MarketItem
-                                    key={item.name}
-                                    {...item}
+                                    key={item.id}
+                                    id={item.id}
+                                    name={item.name}
+                                    description={item.description || ''}
+                                    price={item.buy_price}
+                                    stat={formatStat(item)}
+                                    image={getImage(item)}
                                     delay={0.1 * index}
-                                    onBuy={() => handleBuyClick(item.name, item.price)}
+                                    onBuy={() => handleBuyClick(item)}
                                 />
                             ))}
                         </TabsContent>
 
                         <TabsContent value="contraband" className="space-y-3 mt-0">
+                            {contraband.length === 0 && !isStoreLoading && (
+                                <p className="text-center text-muted-foreground text-xs py-8">No contraband available.</p>
+                            )}
                             {contraband.map((item, index) => (
                                 <MarketItem
-                                    key={item.name}
-                                    {...item}
+                                    key={item.id}
+                                    id={item.id}
+                                    name={item.name}
+                                    description={item.description || ''}
+                                    price={item.buy_price}
+                                    stat={formatStat(item)}
+                                    image={getImage(item)}
                                     delay={0.1 * index}
-                                    onBuy={() => handleBuyClick(item.name, item.price)}
+                                    onBuy={() => handleBuyClick(item)}
                                 />
                             ))}
                         </TabsContent>
 
                         <TabsContent value="equipment" className="space-y-3 mt-0">
+                            {equipment.length === 0 && !isStoreLoading && (
+                                <p className="text-center text-muted-foreground text-xs py-8">No equipment available.</p>
+                            )}
                             {equipment.map((item, index) => (
                                 <MarketItem
-                                    key={item.name}
-                                    {...item}
+                                    key={item.id}
+                                    id={item.id}
+                                    name={item.name}
+                                    description={item.description || ''}
+                                    price={item.buy_price}
+                                    stat={formatStat(item)}
+                                    image={getImage(item)}
                                     delay={0.1 * index}
-                                    onBuy={() => handleBuyClick(item.name, item.price)}
+                                    onBuy={() => handleBuyClick(item)}
                                 />
                             ))}
                         </TabsContent>
@@ -172,9 +238,9 @@ const MarketPage = () => {
                 open={confirmOpen}
                 onOpenChange={setConfirmOpen}
                 title="Confirm Purchase"
-                description={`Buy ${pendingItem?.name} for $${pendingItem?.price.toLocaleString()}?`}
+                description={`Buy ${pendingItem?.name} for $${pendingItem?.buy_price.toLocaleString()}?`}
                 onConfirm={confirmPurchase}
-                confirmText="Buy"
+                confirmText={isProcessing ? "Buying..." : "Buy"}
             />
         </MainLayout >
     );

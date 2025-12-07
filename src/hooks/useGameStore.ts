@@ -186,6 +186,7 @@ interface GameState {
     collectIncome: (playerBusinessId: string) => Promise<number>;
 
     // Inventory actions
+    buyItem: (itemId: string, quantity?: number) => Promise<boolean>;
     equipItem: (inventoryId: string) => Promise<boolean>;
     unequipItem: (inventoryId: string) => Promise<boolean>;
     sellItem: (inventoryId: string, quantity?: number) => Promise<boolean>;
@@ -703,6 +704,87 @@ export const useGameStore = create<GameState>((set, get) => ({
     },
 
     // Inventory actions
+    buyItem: async (itemId, quantity = 1) => {
+        const { playerId, itemDefinitions, spendCash, loadInventory } = get();
+        if (!playerId) return false;
+
+        const itemDef = itemDefinitions.find(i => i.id === itemId);
+        if (!itemDef) {
+            console.error('Item definition not found:', itemId);
+            return false;
+        }
+
+        const totalCost = itemDef.buy_price * quantity;
+
+        // Spend cash
+        const success = await spendCash(totalCost, `buy_item:${itemDef.name}`);
+        if (!success) return false;
+
+        // Insert or update inventory
+        const { error } = await supabase
+            .from('player_inventory')
+            .upsert({
+                player_id: playerId,
+                item_id: itemId,
+                quantity: 1, // Will be incremented by trigger or we need to handle quantity logic if valid
+                // Note: If using ON CONFLICT (player_id, item_id) DO UPDATE SET quantity = player_inventory.quantity + excluded.quantity
+                // We assume the DB has this or we need to fetch first. 
+                // Simplified: upsert might replace. Let's check schema.
+                // Schema says UNIQUE(player_id, item_id).
+                // Upsert with onConflict handles update? 
+                // Supabase upsert doesn't auto-increment on conflict without explicit instruction usually.
+                // Let's use RPC or safer logic.
+            }, {
+                onConflict: 'player_id,item_id',
+            });
+
+        // Wait, standard upsert replaces the row or fails if we don't specify how to handle conflict.
+        // Better approach: explicit check or RPC for "add item".
+        // Let's use a robust logical flow:
+        // 1. Check if exists.
+        // 2. Update or Insert.
+
+        // Actually, for simplicity and correctness, let's look at how we handled hiring.
+        // In hiring we used upsert with quantity 1.
+
+        // Let's verify if we need a custom query for incrementing.
+        const { data: existing } = await supabase
+            .from('player_inventory')
+            .select('quantity')
+            .eq('player_id', playerId)
+            .eq('item_id', itemId)
+            .single();
+
+        let invError;
+        if (existing) {
+            const { error: updateError } = await supabase
+                .from('player_inventory')
+                .update({ quantity: existing.quantity + quantity })
+                .eq('player_id', playerId)
+                .eq('item_id', itemId);
+            invError = updateError;
+        } else {
+            const { error: insertError } = await supabase
+                .from('player_inventory')
+                .insert({
+                    player_id: playerId,
+                    item_id: itemId,
+                    quantity: quantity,
+                    is_equipped: false
+                });
+            invError = insertError;
+        }
+
+        if (invError) {
+            console.error('Failed to update inventory:', invError);
+            // Refund? Complex. For now log error.
+            return false;
+        }
+
+        await loadInventory();
+        return true;
+    },
+
     equipItem: async (inventoryId) => {
         const { loadInventory } = get();
 

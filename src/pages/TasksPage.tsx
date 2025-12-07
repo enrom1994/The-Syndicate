@@ -41,13 +41,13 @@ const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
             <div className="flex items-start gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${task.is_completed
                     ? 'bg-green-500/20'
-                    : task.type === 'telegram'
+                    : task.task_type === 'telegram'
                         ? 'bg-blue-500/20'
                         : 'bg-primary/20'
                     }`}>
                     {task.is_completed ? (
                         <Check className="w-5 h-5 text-green-500" />
-                    ) : task.type === 'telegram' ? (
+                    ) : task.task_type === 'telegram' ? (
                         <MessageCircle className="w-5 h-5 text-blue-400" />
                     ) : (
                         <ListTodo className="w-5 h-5 text-primary" />
@@ -96,7 +96,7 @@ const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
                                     }}
                                 >
                                     <ExternalLink className="w-3 h-3 mr-1" />
-                                    {task.type === 'telegram' ? 'Join Channel' : 'Start'}
+                                    {task.task_type === 'telegram' ? 'Join Channel' : 'Start'}
                                 </Button>
                             )}
                             <Button
@@ -145,7 +145,7 @@ const TasksPage = () => {
         if (!task) return;
 
         // Check if user has actually clicked the link (for Telegram tasks)
-        if (task.type === 'telegram' && task.link && !startedTasks.has(id)) {
+        if (task.task_type === 'telegram' && task.link && !startedTasks.has(id)) {
             haptic.error();
             toast({
                 title: 'Verification Failed',
@@ -202,9 +202,9 @@ const TasksPage = () => {
         }
     };
 
-    const telegramTasks = tasks.filter(t => t.type === 'telegram');
-    const dailyTasks = tasks.filter(t => t.type === 'daily');
-    const weeklyTasks = tasks.filter(t => t.type === 'weekly');
+    const telegramTasks = tasks.filter(t => t.task_type === 'telegram');
+    const dailyTasks = tasks.filter(t => t.task_type === 'daily');
+    const weeklyTasks = tasks.filter(t => t.task_type === 'weekly');
 
     const completedCount = tasks.filter(t => t.is_completed).length;
 
