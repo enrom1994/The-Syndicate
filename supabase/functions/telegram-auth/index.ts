@@ -95,10 +95,17 @@ serve(async (req) => {
         const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
         const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET');
 
-        if (!botToken || !supabaseUrl || !supabaseServiceKey || !jwtSecret) {
-            console.error('Missing environment variables');
+        // Debug: log which variables are missing
+        const missingVars = [];
+        if (!botToken) missingVars.push('TELEGRAM_BOT_TOKEN');
+        if (!supabaseUrl) missingVars.push('SUPABASE_URL');
+        if (!supabaseServiceKey) missingVars.push('SUPABASE_SERVICE_ROLE_KEY');
+        if (!jwtSecret) missingVars.push('SUPABASE_JWT_SECRET');
+
+        if (missingVars.length > 0) {
+            console.error('Missing environment variables:', missingVars.join(', '));
             return new Response(
-                JSON.stringify({ error: 'Server configuration error' }),
+                JSON.stringify({ error: 'Server configuration error', missing: missingVars }),
                 { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
         }
