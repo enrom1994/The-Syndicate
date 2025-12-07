@@ -1,0 +1,8 @@
+{
+  "telegram-auth": {
+    "verify_jwt": false
+  },
+  "ad-webhook": {
+    "verify_jwt": false
+  }
+}
