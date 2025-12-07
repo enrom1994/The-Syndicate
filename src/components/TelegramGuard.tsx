@@ -115,7 +115,7 @@ export const TelegramGuard = ({ children }: TelegramGuardProps) => {
 
                     {/* Telegram Link Button */}
                     <a
-                        href="https://t.me/your_bot_username"
+                        href="https://t.me/The_Syndicate_Game_Bot"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center justify-center gap-2 btn-gold px-6 py-3 rounded-lg font-cinzel text-sm"
