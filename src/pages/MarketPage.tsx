@@ -56,7 +56,7 @@ const MarketPage = () => {
         buyItem,
         itemDefinitions,
         loadDefinitions,
-        isLoading: isStoreLoading
+        isLoadingDefinitions: isStoreLoading
     } = useGameStore();
 
     const [activeTab, setActiveTab] = useState('weapons');
@@ -125,10 +125,15 @@ const MarketPage = () => {
     // Let's assume DB has 'image_url' or we map by name slug.
 
     // Helper to get image
+    // Helper to get image
     const getImage = (item: ItemDefinition) => {
-        // Fallback mapping if DB image_url is missing or placeholder
-        const slug = item.name.toLowerCase().replace(/\s+/g, '');
-        return item.image_url || `/images/blackmarket/${slug}.png`;
+        // Clean slug: remove non-alphanumeric (fixes "Sawed-Off" -> "sawedoff")
+        const slug = item.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        // Manual overrides for known missing assets
+        if (slug === 'goldenrevolver') return '/images/blackmarket/tommygun.png'; // Placeholder
+
+        return `/images/blackmarket/${slug}.png`;
     };
 
     return (
