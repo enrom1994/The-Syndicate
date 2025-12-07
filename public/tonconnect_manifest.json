@@ -1,8 +1,7 @@
 {
-    "url": "https://your-app-url.com",
-    "name": "Mafia Boss 1930",
-    "iconUrl": "https://your-app-url.com/icon.png",
-    "termsOfUseUrl": "https://your-app-url.com/terms",
-    "privacyPolicyUrl": "https://your-app-url.com/privacy"
-  }
-  
+  "url": "https://the-syndicate-rho.vercel.app",
+  "name": "The Syndicate",
+  "iconUrl": "https://the-syndicate-rho.vercel.app/favicon.ico",
+  "termsOfUseUrl": "https://the-syndicate-rho.vercel.app/terms",
+  "privacyPolicyUrl": "https://the-syndicate-rho.vercel.app/privacy"
+}

@@ -7,6 +7,7 @@ import { TonConnectProvider } from "@/providers/TonConnectProvider";
 import { RewardAnimationProvider } from "@/components/RewardAnimation";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useGameStore } from "@/hooks/useGameStore";
+import { TelegramGuard } from "@/components/TelegramGuard";
 import { useEffect } from "react";
 import Index from "./pages/Index";
 import MarketPage from "./pages/MarketPage";
@@ -57,44 +58,46 @@ const DeepLinkHandler = () => {
 
 const App = () => {
   return (
-    <TonConnectProvider>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <AuthProvider>
-            <RewardAnimationProvider>
-              <GameInitializer />
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <DeepLinkHandler />
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/market" element={<MarketPage />} />
-                  <Route path="/ops" element={<OpsPage />} />
-                  <Route path="/family" element={<FamilyPage />} />
-                  <Route path="/family/settings" element={<FamilySettingsPage />} />
-                  <Route path="/family/browse" element={<BrowseFamiliesPage />} />
-                  <Route path="/family/create" element={<CreateFamilyPage />} />
-                  <Route path="/ranks" element={<RanksPage />} />
-                  <Route path="/business" element={<BusinessPage />} />
-                  <Route path="/inventory" element={<InventoryPage />} />
-                  <Route path="/hire" element={<HirePage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/bank" element={<BankPage />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/daily-rewards" element={<DailyRewardsPage />} />
-                  <Route path="/shop" element={<ShopPage />} />
-                  <Route path="/bounty-board" element={<BountyBoardPage />} />
-                  <Route path="/achievements" element={<AchievementsPage />} />
-                  <Route path="/tasks" element={<TasksPage />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </RewardAnimationProvider>
-          </AuthProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
-    </TonConnectProvider>
+    <TelegramGuard>
+      <TonConnectProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <AuthProvider>
+              <RewardAnimationProvider>
+                <GameInitializer />
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <DeepLinkHandler />
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/market" element={<MarketPage />} />
+                    <Route path="/ops" element={<OpsPage />} />
+                    <Route path="/family" element={<FamilyPage />} />
+                    <Route path="/family/settings" element={<FamilySettingsPage />} />
+                    <Route path="/family/browse" element={<BrowseFamiliesPage />} />
+                    <Route path="/family/create" element={<CreateFamilyPage />} />
+                    <Route path="/ranks" element={<RanksPage />} />
+                    <Route path="/business" element={<BusinessPage />} />
+                    <Route path="/inventory" element={<InventoryPage />} />
+                    <Route path="/hire" element={<HirePage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/bank" element={<BankPage />} />
+                    <Route path="/notifications" element={<NotificationsPage />} />
+                    <Route path="/daily-rewards" element={<DailyRewardsPage />} />
+                    <Route path="/shop" element={<ShopPage />} />
+                    <Route path="/bounty-board" element={<BountyBoardPage />} />
+                    <Route path="/achievements" element={<AchievementsPage />} />
+                    <Route path="/tasks" element={<TasksPage />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </RewardAnimationProvider>
+            </AuthProvider>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </TonConnectProvider>
+    </TelegramGuard>
   );
 };
 
