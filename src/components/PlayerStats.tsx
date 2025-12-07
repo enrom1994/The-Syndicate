@@ -1,9 +1,11 @@
 import { motion } from 'framer-motion';
-import { Crown, Users, Shield, TrendingUp, Calendar, Store, Target, Gem } from 'lucide-react';
+import { Crown, Users, Shield, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { EnergyBar } from './SeasonBanner';
-import { Button } from '@/components/ui/button';
 import { GameIcon } from './GameIcon';
+import { useEnergyRegen } from '@/hooks/useEnergyRegen';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGameStore } from '@/hooks/useGameStore';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -36,45 +38,51 @@ const StatCard = ({ icon, label, value, change, delay = 0 }: StatCardProps) => (
   </motion.div>
 );
 
-interface QuickActionProps {
-  icon: React.ReactNode;
-  label: string;
-  badge?: string | number;
-  onClick?: () => void;
-  delay?: number;
-}
+// Format large numbers in a readable way
+const formatCash = (value: number): string => {
+  if (value >= 1000000000) return `$${(value / 1000000000).toFixed(1)}B`;
+  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
+  return `$${value.toLocaleString()}`;
+};
 
-const QuickAction = ({ icon, label, badge, onClick, delay = 0 }: QuickActionProps) => (
-  <motion.button
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.3, delay }}
-    whileTap={{ scale: 0.95 }}
-    onClick={onClick}
-    className="noir-card p-3 flex flex-col items-center gap-1 min-w-[70px] hover:border-primary/30 transition-all"
-  >
-    <div className="relative">
-      <div className="w-9 h-9 rounded-full bg-gradient-gold flex items-center justify-center">
-        {icon}
-      </div>
-      {badge && (
-        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-destructive text-[10px] text-white rounded-full flex items-center justify-center">
-          {badge}
-        </span>
-      )}
-    </div>
-    <span className="text-[10px] text-muted-foreground font-medium">{label}</span>
-  </motion.button>
-);
+// Get rank title based on level
+const getRankTitle = (level: number): string => {
+  if (level >= 50) return 'Don';
+  if (level >= 40) return 'Underboss';
+  if (level >= 30) return 'Consigliere';
+  if (level >= 25) return 'Caporegime';
+  if (level >= 15) return 'Soldier';
+  if (level >= 10) return 'Associate';
+  if (level >= 5) return 'Made Man';
+  return 'Street Runner';
+};
 
 export const PlayerStats = () => {
   const navigate = useNavigate();
+  const { player } = useAuth();
+  const { crew: hiredCrew } = useGameStore();
 
-  // Mock data - will come from GameContext
-  const energy = 85;
-  const maxEnergy = 100;
-  const diamonds = 150;
-  // const dailyRewardAvailable = true; // No longer needed here
+  // Energy system with auto-regen - use player's actual energy
+  const { energy, formattedTime } = useEnergyRegen(
+    player?.energy ?? 100,
+    player?.max_energy ?? 100,
+    60000 // 1 minute per energy point
+  );
+
+  // Calculate total crew from hired crew
+  const totalCrewCount = hiredCrew.reduce((sum, c) => sum + c.quantity, 0);
+
+  // Calculate defense from player stats + crew
+  const baseDefense = player?.defense ?? 10;
+  const crewDefense = hiredCrew.reduce((sum, c) => sum + (c.defense_bonus * c.quantity), 0);
+  const totalDefense = baseDefense + crewDefense;
+
+  // Calculate XP progress
+  const level = player?.level ?? 1;
+  const experience = player?.experience ?? 0;
+  const xpNeeded = level * 1000; // Simple formula: level * 1000 XP per level
+  const xpProgress = Math.min((experience / xpNeeded) * 100, 100);
 
   return (
     <section className="py-6 px-4">
@@ -85,39 +93,37 @@ export const PlayerStats = () => {
         className="flex items-center justify-between mb-4"
       >
         <h2 className="font-cinzel text-lg font-semibold text-foreground">Your Empire</h2>
-        <span className="stat-badge text-primary">Rank #1,247</span>
+        <span className="stat-badge text-primary">Rank #{player?.respect ? Math.max(1, 1000 - player.respect) : '---'}</span>
       </motion.div>
 
       <div className="grid grid-cols-2 gap-3">
         <StatCard
           icon={<Crown className="w-5 h-5 text-primary" />}
           label="Rank"
-          value="Soldier"
+          value={getRankTitle(level)}
           delay={0.1}
         />
         <StatCard
           icon={<GameIcon type="cash" className="w-6 h-6" />}
           label="Cash"
-          value="$12.5M"
-          change="+5%"
+          value={formatCash(player?.cash ?? 0)}
           delay={0.2}
         />
         <StatCard
           icon={<Users className="w-5 h-5 text-primary" />}
           label="Crew"
-          value="247"
-          change="+12"
+          value={totalCrewCount}
           delay={0.3}
         />
         <StatCard
           icon={<Shield className="w-5 h-5 text-primary" />}
           label="Defense"
-          value="85%"
+          value={totalDefense}
           delay={0.4}
         />
       </div>
 
-      {/* Happiness Bar */}
+      {/* Respect Bar */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -125,13 +131,13 @@ export const PlayerStats = () => {
         className="mt-3 noir-card p-4"
       >
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-muted-foreground uppercase tracking-wide">Happiness</span>
-          <span className="font-inter font-medium text-sm text-primary">72%</span>
+          <span className="text-xs text-muted-foreground uppercase tracking-wide">Respect</span>
+          <span className="font-inter font-medium text-sm text-primary">{(player?.respect ?? 0).toLocaleString()}</span>
         </div>
         <div className="h-2 rounded-full bg-muted overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
-            animate={{ width: '72%' }}
+            animate={{ width: `${Math.min((player?.respect ?? 0) / 100, 100)}%` }}
             transition={{ duration: 1, delay: 0.7 }}
             className="h-full bg-gradient-gold rounded-full"
           />
@@ -139,7 +145,7 @@ export const PlayerStats = () => {
       </motion.div>
 
       {/* Energy Bar */}
-      <EnergyBar energy={energy} maxEnergy={maxEnergy} regenTime="2m 30s" />
+      <EnergyBar energy={energy} maxEnergy={player?.max_energy ?? 100} regenTime={formattedTime} />
 
       {/* XP Progress Bar */}
       <motion.div
@@ -151,22 +157,26 @@ export const PlayerStats = () => {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground uppercase tracking-wide">Level Progress</span>
-            <span className="text-xs font-bold text-primary bg-primary/20 px-1.5 py-0.5 rounded">Lv.25</span>
+            <span className="text-xs font-bold text-primary bg-primary/20 px-1.5 py-0.5 rounded">Lv.{level}</span>
           </div>
-          <span className="font-inter font-medium text-xs text-muted-foreground">12,450 / 15,000 XP</span>
+          <span className="font-inter font-medium text-xs text-muted-foreground">
+            {experience.toLocaleString()} / {xpNeeded.toLocaleString()} XP
+          </span>
         </div>
         <div className="h-2 rounded-full bg-muted overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
-            animate={{ width: '83%' }}
+            animate={{ width: `${xpProgress}%` }}
             transition={{ duration: 1, delay: 0.8 }}
             className="h-full bg-gradient-to-r from-primary via-yellow-500 to-primary rounded-full"
           />
         </div>
-        <p className="text-[10px] text-muted-foreground mt-1.5">2,550 XP to Level 26</p>
+        <p className="text-[10px] text-muted-foreground mt-1.5">
+          {(xpNeeded - experience).toLocaleString()} XP to Level {level + 1}
+        </p>
       </motion.div>
 
-      {/* Quick Actions - No buttons here anymore */}
+      {/* Quick Actions placeholder */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

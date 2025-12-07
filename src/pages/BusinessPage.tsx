@@ -1,10 +1,12 @@
 import { motion } from 'framer-motion';
-import { Briefcase, TrendingUp, DollarSign, Clock, ArrowUp } from 'lucide-react';
-import { useState } from 'react';
+import { Briefcase, TrendingUp, DollarSign, Clock, ArrowUp, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGameStore, OwnedBusiness, BusinessDefinition } from '@/hooks/useGameStore';
 
 interface BusinessCardProps {
     name: string;
@@ -16,9 +18,12 @@ interface BusinessCardProps {
     upgradeCost: number;
     cooldown: string;
     owned: boolean;
+    canCollect: boolean;
     delay?: number;
+    isProcessing?: boolean;
     onBuy: () => void;
     onUpgrade: () => void;
+    onCollect: () => void;
 }
 
 const BusinessCard = ({
@@ -31,9 +36,12 @@ const BusinessCard = ({
     upgradeCost,
     cooldown,
     owned,
+    canCollect,
     delay = 0,
+    isProcessing = false,
     onBuy,
-    onUpgrade
+    onUpgrade,
+    onCollect
 }: BusinessCardProps) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -84,116 +92,204 @@ const BusinessCard = ({
 
         {owned ? (
             <div className="flex gap-2">
-                <Button className="flex-1 btn-gold text-xs" disabled={level >= maxLevel} onClick={onUpgrade}>
-                    <ArrowUp className="w-4 h-4 mr-1" />
-                    Upgrade ${upgradeCost.toLocaleString()}
+                <Button
+                    className="flex-1 btn-gold text-xs"
+                    disabled={level >= maxLevel || isProcessing}
+                    onClick={onUpgrade}
+                >
+                    {isProcessing ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        <>
+                            <ArrowUp className="w-4 h-4 mr-1" />
+                            Upgrade ${upgradeCost.toLocaleString()}
+                        </>
+                    )}
                 </Button>
-                <Button variant="outline" className="flex-1 text-xs">
-                    <DollarSign className="w-4 h-4 mr-1" />
-                    Collect
+                <Button
+                    variant="outline"
+                    className={`flex-1 text-xs ${canCollect ? 'border-primary text-primary' : ''}`}
+                    disabled={isProcessing || !canCollect}
+                    onClick={onCollect}
+                >
+                    {isProcessing ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        <>
+                            <DollarSign className="w-4 h-4 mr-1" />
+                            {canCollect ? 'Collect' : 'Collecting...'}
+                        </>
+                    )}
                 </Button>
             </div>
         ) : (
-            <Button className="w-full btn-gold text-xs" onClick={onBuy}>
-                Buy for ${upgradeCost.toLocaleString()}
+            <Button className="w-full btn-gold text-xs" onClick={onBuy} disabled={isProcessing}>
+                {isProcessing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                    `Buy for $${upgradeCost.toLocaleString()}`
+                )}
             </Button>
         )}
     </motion.div>
 );
 
+const formatCooldown = (minutes: number): string => {
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (mins === 0) return `${hours}h`;
+    return `${hours}h ${mins}m`;
+};
+
+const canCollectFromBusiness = (lastCollected: string, cooldownMinutes: number): boolean => {
+    const lastCollectedDate = new Date(lastCollected);
+    const now = new Date();
+    const minutesPassed = (now.getTime() - lastCollectedDate.getTime()) / (1000 * 60);
+    return minutesPassed >= cooldownMinutes;
+};
+
 const BusinessPage = () => {
     const { toast } = useToast();
+    const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
+    const {
+        businesses: ownedBusinesses,
+        businessDefinitions,
+        isLoadingBusinesses,
+        isLoadingDefinitions,
+        loadBusinesses,
+        buyBusiness,
+        upgradeBusiness,
+        collectIncome
+    } = useGameStore();
+
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const [pendingAction, setPendingAction] = useState<{ type: 'buy' | 'upgrade', business: string, cost: number } | null>(null);
+    const [pendingAction, setPendingAction] = useState<{
+        type: 'buy' | 'upgrade' | 'collect';
+        business: string;
+        businessId: string;
+        playerBusinessId?: string;
+        cost: number;
+    } | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    const businesses = [
-        {
-            name: 'Speakeasy',
-            description: 'Underground bar serving bootleg liquor',
-            image: '/images/businesses/speakeasy.png',
-            level: 3,
-            maxLevel: 10,
-            income: 5000,
-            upgradeCost: 25000,
-            cooldown: '1h',
-            owned: true
-        },
-        {
-            name: 'Casino',
-            description: 'Illegal gambling den for high rollers',
-            image: '/images/businesses/casino.png',
-            level: 1,
-            maxLevel: 10,
-            income: 15000,
-            upgradeCost: 75000,
-            cooldown: '2h',
-            owned: true
-        },
-        {
-            name: 'Nightclub',
-            description: 'Jazz club and front for money laundering',
-            image: '/images/businesses/nightclub.png',
-            level: 0,
-            maxLevel: 10,
-            income: 8000,
-            upgradeCost: 50000,
-            cooldown: '1h 30m',
-            owned: false
-        },
-        {
-            name: 'Smuggling Route',
-            description: 'Import contraband from overseas',
-            image: '/images/businesses/smugglingroute.png',
-            level: 0,
-            maxLevel: 10,
-            income: 25000,
-            upgradeCost: 150000,
-            cooldown: '4h',
-            owned: false
-        },
-        {
-            name: 'Protection Racket',
-            description: 'Collect protection money from local businesses',
-            image: '/images/businesses/protectionracket.png',
-            level: 0,
-            maxLevel: 10,
-            income: 3000,
-            upgradeCost: 15000,
-            cooldown: '30m',
-            owned: false
-        },
-        {
-            name: 'Loan Sharking',
-            description: 'High-interest loans to desperate borrowers',
-            image: '/images/businesses/loansharking.png',
-            level: 0,
-            maxLevel: 10,
-            income: 12000,
-            upgradeCost: 80000,
-            cooldown: '3h',
-            owned: false
-        },
-    ];
+    // Map owned businesses to their IDs for quick lookup
+    const ownedBusinessMap = new Map<string, OwnedBusiness>(
+        ownedBusinesses.map(b => [b.business_id, b])
+    );
 
-    const handleAction = (type: 'buy' | 'upgrade', business: string, cost: number) => {
-        setPendingAction({ type, business, cost });
-        setConfirmOpen(true);
-    };
+    // Combine definitions with owned status
+    const allBusinesses = businessDefinitions.map(def => {
+        const owned = ownedBusinessMap.get(def.id);
+        return {
+            ...def,
+            owned: !!owned,
+            level: owned?.level || 0,
+            income_per_hour: owned ? owned.income_per_hour : def.base_income_per_hour,
+            upgrade_cost: owned ? owned.upgrade_cost : def.base_purchase_cost,
+            playerBusinessId: owned?.id,
+            canCollect: owned ? canCollectFromBusiness(owned.last_collected, owned.collect_cooldown_minutes) : false,
+        };
+    });
 
-    const confirmAction = () => {
-        if (pendingAction) {
-            toast({
-                title: pendingAction.type === 'buy' ? 'Business Purchased!' : 'Business Upgraded!',
-                description: `${pendingAction.business} ${pendingAction.type === 'buy' ? 'is now yours' : 'has been upgraded'}!`,
-            });
+    const handleAction = (
+        type: 'buy' | 'upgrade' | 'collect',
+        businessName: string,
+        businessId: string,
+        cost: number,
+        playerBusinessId?: string
+    ) => {
+        setPendingAction({ type, business: businessName, businessId, cost, playerBusinessId });
+        if (type === 'collect') {
+            // Direct collect without confirmation
+            performCollect(playerBusinessId!);
+        } else {
+            setConfirmOpen(true);
         }
-        setConfirmOpen(false);
-        setPendingAction(null);
     };
 
-    const totalIncome = businesses
-        .filter(b => b.owned)
-        .reduce((sum, b) => sum + b.income, 0);
+    const performCollect = async (playerBusinessId: string) => {
+        setIsProcessing(true);
+        try {
+            const income = await collectIncome(playerBusinessId);
+            if (income > 0) {
+                toast({
+                    title: 'Income Collected!',
+                    description: `You collected $${income.toLocaleString()} from your business.`,
+                });
+                await refetchPlayer();
+            } else {
+                toast({
+                    title: 'Nothing to Collect',
+                    description: 'Come back later to collect more income.',
+                });
+            }
+        } catch (error) {
+            console.error('Collection error:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to collect income. Please try again.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsProcessing(false);
+            setPendingAction(null);
+        }
+    };
+
+    const confirmAction = async () => {
+        if (!pendingAction) return;
+
+        setIsProcessing(true);
+        setConfirmOpen(false);
+
+        try {
+            let success = false;
+
+            if (pendingAction.type === 'buy') {
+                success = await buyBusiness(pendingAction.businessId);
+            } else if (pendingAction.type === 'upgrade' && pendingAction.playerBusinessId) {
+                success = await upgradeBusiness(pendingAction.playerBusinessId);
+            }
+
+            if (success) {
+                toast({
+                    title: pendingAction.type === 'buy' ? 'Business Purchased!' : 'Business Upgraded!',
+                    description: `${pendingAction.business} ${pendingAction.type === 'buy' ? 'is now yours' : 'has been upgraded'}!`,
+                });
+                await refetchPlayer();
+            } else {
+                toast({
+                    title: 'Insufficient Funds',
+                    description: `You don't have enough cash for this ${pendingAction.type === 'buy' ? 'purchase' : 'upgrade'}.`,
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Business action error:', error);
+            toast({
+                title: 'Error',
+                description: 'An unexpected error occurred.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsProcessing(false);
+            setPendingAction(null);
+        }
+    };
+
+    const totalIncome = ownedBusinesses.reduce((sum, b) => sum + b.income_per_hour, 0);
+
+    // Loading state
+    if (isAuthLoading || isLoadingDefinitions) {
+        return (
+            <MainLayout>
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+            </MainLayout>
+        );
+    }
 
     return (
         <MainLayout>
@@ -236,23 +332,44 @@ const BusinessPage = () => {
                         <div className="text-right">
                             <p className="text-xs text-muted-foreground">Businesses Owned</p>
                             <p className="font-cinzel font-bold text-lg text-foreground">
-                                {businesses.filter(b => b.owned).length}/{businesses.length}
+                                {ownedBusinesses.length}/{businessDefinitions.length}
                             </p>
                         </div>
                     </div>
                 </motion.div>
 
-                <div className="space-y-3">
-                    {businesses.map((business, index) => (
-                        <BusinessCard
-                            key={business.name}
-                            {...business}
-                            delay={0.1 * index}
-                            onBuy={() => handleAction('buy', business.name, business.upgradeCost)}
-                            onUpgrade={() => handleAction('upgrade', business.name, business.upgradeCost)}
-                        />
-                    ))}
-                </div>
+                {isLoadingBusinesses ? (
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {allBusinesses.length === 0 ? (
+                            <p className="text-center text-muted-foreground py-8">No businesses available</p>
+                        ) : (
+                            allBusinesses.map((business, index) => (
+                                <BusinessCard
+                                    key={business.id}
+                                    name={business.name}
+                                    description={business.description || ''}
+                                    image={business.image_url || `/images/businesses/${business.name.toLowerCase().replace(/\s+/g, '')}.png`}
+                                    level={business.level}
+                                    maxLevel={business.max_level}
+                                    income={business.income_per_hour}
+                                    upgradeCost={business.upgrade_cost}
+                                    cooldown={formatCooldown(business.collect_cooldown_minutes)}
+                                    owned={business.owned}
+                                    canCollect={business.canCollect}
+                                    delay={0.1 * index}
+                                    isProcessing={isProcessing && pendingAction?.businessId === business.id}
+                                    onBuy={() => handleAction('buy', business.name, business.id, business.base_purchase_cost)}
+                                    onUpgrade={() => handleAction('upgrade', business.name, business.id, business.upgrade_cost, business.playerBusinessId)}
+                                    onCollect={() => handleAction('collect', business.name, business.id, 0, business.playerBusinessId)}
+                                />
+                            ))
+                        )}
+                    </div>
+                )}
             </div>
 
             <ConfirmDialog

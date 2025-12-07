@@ -17,6 +17,7 @@ interface TelegramWebApp {
     query_id?: string;
     auth_date?: number;
     hash?: string;
+    start_param?: string;
   };
   version: string;
   platform: string;
@@ -83,6 +84,7 @@ export const useTelegram = () => {
   return {
     webApp,
     user: webApp?.initDataUnsafe?.user,
+    startParam: webApp?.initDataUnsafe?.start_param,
     isReady: !!webApp,
   };
 };

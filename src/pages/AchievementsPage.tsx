@@ -1,9 +1,7 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
     Trophy,
-    Target,
     Briefcase,
     Swords,
     Users,
@@ -11,7 +9,7 @@ import {
     Crown,
     Lock,
     Check,
-    ChevronRight,
+    Loader2,
 } from 'lucide-react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -19,21 +17,10 @@ import { haptic } from '@/lib/haptics';
 import { rewardCash, rewardDiamonds } from '@/components/RewardAnimation';
 import { useToast } from '@/hooks/use-toast';
 import { GameIcon } from '@/components/GameIcon';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGameStore, PlayerAchievement } from '@/hooks/useGameStore';
 
 type AchievementCategory = 'combat' | 'business' | 'social' | 'wealth' | 'milestone';
-
-interface Achievement {
-    id: string;
-    title: string;
-    description: string;
-    icon: React.ReactNode;
-    category: AchievementCategory;
-    progress: number;
-    target: number;
-    reward: { type: 'cash' | 'diamonds'; amount: number };
-    isUnlocked: boolean;
-    isClaimed: boolean;
-}
 
 const categoryLabels: Record<AchievementCategory, string> = {
     combat: 'Combat',
@@ -48,31 +35,43 @@ const categoryIcons: Record<AchievementCategory, React.ReactNode> = {
     business: <Briefcase className="w-4 h-4" />,
     social: <Users className="w-4 h-4" />,
     wealth: <GameIcon type="cash" className="w-5 h-5" />,
-    milestone: <GameIcon type="diamond" className="w-6 h-6" />, // Increased size
+    milestone: <GameIcon type="diamond" className="w-6 h-6" />,
 };
 
-const AchievementCard = ({
-    achievement,
-    onClaim
-}: {
-    achievement: Achievement;
+const getAchievementIcon = (category: string): React.ReactNode => {
+    switch (category) {
+        case 'combat': return <Swords className="w-5 h-5 text-primary-foreground" />;
+        case 'business': return <Briefcase className="w-5 h-5 text-primary-foreground" />;
+        case 'social': return <Users className="w-5 h-5 text-primary-foreground" />;
+        case 'wealth': return <GameIcon type="cash" className="w-6 h-6" />;
+        case 'milestone': return <GameIcon type="diamond" className="w-6 h-6" />;
+        default: return <Trophy className="w-5 h-5 text-primary-foreground" />;
+    }
+};
+
+interface AchievementCardProps {
+    achievement: PlayerAchievement;
     onClaim: (id: string) => void;
-}) => {
+    isClaiming: boolean;
+}
+
+const AchievementCard = ({ achievement, onClaim, isClaiming }: AchievementCardProps) => {
     const progress = Math.min(100, (achievement.progress / achievement.target) * 100);
+    const isUnlocked = achievement.progress >= achievement.target;
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`noir-card p-4 ${achievement.isClaimed ? 'opacity-60' : ''}`}
+            className={`noir-card p-4 ${achievement.is_claimed ? 'opacity-60' : ''}`}
         >
             <div className="flex items-start gap-3">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${achievement.isUnlocked
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${isUnlocked
                     ? 'bg-gradient-gold'
                     : 'bg-muted/30'
                     }`}>
-                    {achievement.isUnlocked ? (
-                        achievement.icon
+                    {isUnlocked ? (
+                        getAchievementIcon(achievement.category)
                     ) : (
                         <Lock className="w-5 h-5 text-muted-foreground" />
                     )}
@@ -84,15 +83,15 @@ const AchievementCard = ({
                             {achievement.title}
                         </h3>
                         <div className="flex items-center gap-1 text-xs text-primary shrink-0 ml-2">
-                            {achievement.reward.type === 'cash' ? (
+                            {achievement.reward_type === 'cash' ? (
                                 <GameIcon type="cash" className="w-4 h-4" />
                             ) : (
-                                <GameIcon type="diamond" className="w-5 h-5" /> // Increased size
+                                <GameIcon type="diamond" className="w-5 h-5" />
                             )}
                             <span>
-                                {achievement.reward.type === 'cash'
-                                    ? `$${(achievement.reward.amount / 1000).toFixed(0)}K`
-                                    : `${achievement.reward.amount} 💎`}
+                                {achievement.reward_type === 'cash'
+                                    ? `$${(achievement.reward_amount / 1000).toFixed(0)}K`
+                                    : `${achievement.reward_amount} 💎`}
                             </span>
                         </div>
                     </div>
@@ -108,7 +107,7 @@ const AchievementCard = ({
                                 initial={{ width: 0 }}
                                 animate={{ width: `${progress}%` }}
                                 transition={{ duration: 0.5 }}
-                                className={`h-full rounded-full ${achievement.isUnlocked ? 'bg-gradient-gold' : 'bg-muted-foreground'
+                                className={`h-full rounded-full ${isUnlocked ? 'bg-gradient-gold' : 'bg-muted-foreground'
                                     }`}
                             />
                         </div>
@@ -119,17 +118,18 @@ const AchievementCard = ({
                 </div>
 
                 {/* Claim button */}
-                {achievement.isUnlocked && !achievement.isClaimed && (
+                {isUnlocked && !achievement.is_claimed && (
                     <Button
                         size="sm"
                         className="btn-gold text-xs shrink-0"
                         onClick={() => onClaim(achievement.id)}
+                        disabled={isClaiming}
                     >
-                        Claim
+                        {isClaiming ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Claim'}
                     </Button>
                 )}
 
-                {achievement.isClaimed && (
+                {achievement.is_claimed && (
                     <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
                         <Check className="w-4 h-4 text-green-500" />
                     </div>
@@ -141,58 +141,75 @@ const AchievementCard = ({
 
 const AchievementsPage = () => {
     const { toast } = useToast();
+    const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
+    const { achievements, isLoadingAchievements, claimAchievement } = useGameStore();
+
     const [selectedCategory, setSelectedCategory] = useState<AchievementCategory | 'all'>('all');
-
-    const [achievements, setAchievements] = useState<Achievement[]>([
-        // Combat
-        { id: '1', title: 'First Blood', description: 'Win your first attack', icon: <Swords className="w-5 h-5 text-primary-foreground" />, category: 'combat', progress: 1, target: 1, reward: { type: 'cash', amount: 10000 }, isUnlocked: true, isClaimed: true },
-        { id: '2', title: 'Street Fighter', description: 'Win 10 attacks', icon: <Swords className="w-5 h-5 text-primary-foreground" />, category: 'combat', progress: 7, target: 10, reward: { type: 'cash', amount: 50000 }, isUnlocked: false, isClaimed: false },
-        { id: '3', title: 'Untouchable', description: 'Successfully defend 5 attacks', icon: <Shield className="w-5 h-5 text-primary-foreground" />, category: 'combat', progress: 5, target: 5, reward: { type: 'diamonds', amount: 25 }, isUnlocked: true, isClaimed: false },
-
-        // Business
-        { id: '4', title: 'Entrepreneur', description: 'Own your first business', icon: <Briefcase className="w-5 h-5 text-primary-foreground" />, category: 'business', progress: 1, target: 1, reward: { type: 'cash', amount: 25000 }, isUnlocked: true, isClaimed: true },
-        { id: '5', title: 'Tycoon', description: 'Own 5 businesses', icon: <Briefcase className="w-5 h-5 text-primary-foreground" />, category: 'business', progress: 2, target: 5, reward: { type: 'diamonds', amount: 100 }, isUnlocked: false, isClaimed: false },
-
-        // Social
-        { id: '6', title: 'Made Man', description: 'Join a family', icon: <Users className="w-5 h-5 text-primary-foreground" />, category: 'social', progress: 1, target: 1, reward: { type: 'cash', amount: 15000 }, isUnlocked: true, isClaimed: false },
-        { id: '7', title: 'Godfather', description: 'Become the Boss of a family', icon: <Crown className="w-5 h-5 text-primary-foreground" />, category: 'social', progress: 1, target: 1, reward: { type: 'diamonds', amount: 200 }, isUnlocked: true, isClaimed: false },
-
-        // Wealth
-        { id: '8', title: 'First Million', description: 'Earn $1,000,000 total', icon: <GameIcon type="cash" className="w-6 h-6" />, category: 'wealth', progress: 850000, target: 1000000, reward: { type: 'diamonds', amount: 50 }, isUnlocked: false, isClaimed: false },
-
-        // Milestones
-        { id: '9', title: 'Rising Star', description: 'Reach level 10', icon: <GameIcon type="diamond" className="w-6 h-6" />, category: 'milestone', progress: 10, target: 10, reward: { type: 'diamonds', amount: 25 }, isUnlocked: true, isClaimed: true },
-    ]);
+    const [claimingId, setClaimingId] = useState<string | null>(null);
 
     const filteredAchievements = selectedCategory === 'all'
         ? achievements
         : achievements.filter(a => a.category === selectedCategory);
 
-    const handleClaim = (id: string) => {
-        haptic.success();
-        const achievement = achievements.find(a => a.id === id);
-        if (!achievement) return;
+    const handleClaim = async (id: string) => {
+        setClaimingId(id);
 
-        // Trigger reward animation
-        if (achievement.reward.type === 'cash') {
-            rewardCash(achievement.reward.amount);
-        } else {
-            rewardDiamonds(achievement.reward.amount);
+        try {
+            const achievement = achievements.find(a => a.id === id);
+            if (!achievement) return;
+
+            const success = await claimAchievement(id);
+
+            if (success) {
+                haptic.success();
+
+                // Trigger reward animation
+                if (achievement.reward_type === 'cash') {
+                    rewardCash(achievement.reward_amount);
+                } else {
+                    rewardDiamonds(achievement.reward_amount);
+                }
+
+                await refetchPlayer();
+
+                toast({
+                    title: 'Achievement Claimed!',
+                    description: `+${achievement.reward_type === 'cash'
+                        ? `$${achievement.reward_amount.toLocaleString()}`
+                        : `${achievement.reward_amount} 💎`}`,
+                });
+            } else {
+                haptic.error();
+                toast({
+                    title: 'Error',
+                    description: 'Could not claim achievement.',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Claim error:', error);
+            haptic.error();
+            toast({
+                title: 'Error',
+                description: 'An unexpected error occurred.',
+                variant: 'destructive',
+            });
+        } finally {
+            setClaimingId(null);
         }
-
-        setAchievements(prev => prev.map(a =>
-            a.id === id ? { ...a, isClaimed: true } : a
-        ));
-
-        toast({
-            title: 'Achievement Claimed!',
-            description: `+${achievement.reward.type === 'cash'
-                ? `$${achievement.reward.amount.toLocaleString()}`
-                : `${achievement.reward.amount} 💎`}`,
-        });
     };
 
-    const unclaimedCount = achievements.filter(a => a.isUnlocked && !a.isClaimed).length;
+    const unclaimedCount = achievements.filter(a => a.progress >= a.target && !a.is_claimed).length;
+
+    if (isAuthLoading) {
+        return (
+            <MainLayout>
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+            </MainLayout>
+        );
+    }
 
     return (
         <MainLayout>
@@ -239,15 +256,26 @@ const AchievementsPage = () => {
                 </div>
 
                 {/* Achievement List */}
-                <div className="space-y-3">
-                    {filteredAchievements.map(achievement => (
-                        <AchievementCard
-                            key={achievement.id}
-                            achievement={achievement}
-                            onClaim={handleClaim}
-                        />
-                    ))}
-                </div>
+                {isLoadingAchievements ? (
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {filteredAchievements.length === 0 ? (
+                            <p className="text-center text-muted-foreground py-8">No achievements in this category</p>
+                        ) : (
+                            filteredAchievements.map(achievement => (
+                                <AchievementCard
+                                    key={achievement.id}
+                                    achievement={achievement}
+                                    onClaim={handleClaim}
+                                    isClaiming={claimingId === achievement.id}
+                                />
+                            ))
+                        )}
+                    </div>
+                )}
             </div>
         </MainLayout>
     );

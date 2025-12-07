@@ -1,22 +1,28 @@
 import { motion } from 'framer-motion';
-import { Package, Sword, Shield, Users, FlaskConical, Check, X } from 'lucide-react';
-import { useState } from 'react';
+import { Package, Sword, Shield, Users, FlaskConical, Check, X, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGameStore, InventoryItem as InventoryItemType, HiredCrew } from '@/hooks/useGameStore';
 
 interface InventoryItemProps {
+    id: string;
     name: string;
     quantity: number;
     stat?: string;
     rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
+    category: 'weapon' | 'equipment' | 'contraband';
     icon: React.ReactNode;
     equipped?: boolean;
+    isProcessing?: boolean;
     delay?: number;
     onEquip?: () => void;
     onUnequip?: () => void;
+    onSell?: () => void;
 }
 
 const rarityColors = {
@@ -33,7 +39,10 @@ const rarityBadgeColors = {
     legendary: 'bg-primary/20 text-primary',
 };
 
-const InventoryItem = ({ name, quantity, stat, rarity, icon, equipped, delay = 0, onEquip, onUnequip }: InventoryItemProps) => (
+const InventoryItemComponent = ({
+    id, name, quantity, stat, rarity, category, icon, equipped, isProcessing, delay = 0,
+    onEquip, onUnequip, onSell
+}: InventoryItemProps) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -63,15 +72,41 @@ const InventoryItem = ({ name, quantity, stat, rarity, icon, equipped, delay = 0
             <div className="text-right mr-2">
                 <p className="font-cinzel font-bold text-sm text-foreground">x{quantity}</p>
             </div>
-            {equipped ? (
-                <Button variant="outline" size="sm" className="h-8 px-2 text-xs" onClick={onUnequip}>
-                    <X className="w-3 h-3 mr-1" />
-                    Remove
+            {category === 'contraband' ? (
+                <Button
+                    className="btn-gold h-8 px-2 text-xs"
+                    onClick={onSell}
+                    disabled={isProcessing}
+                >
+                    {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Sell'}
+                </Button>
+            ) : equipped ? (
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2 text-xs"
+                    onClick={onUnequip}
+                    disabled={isProcessing}
+                >
+                    {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : (
+                        <>
+                            <X className="w-3 h-3 mr-1" />
+                            Remove
+                        </>
+                    )}
                 </Button>
             ) : (
-                <Button className="btn-gold h-8 px-2 text-xs" onClick={onEquip}>
-                    <Check className="w-3 h-3 mr-1" />
-                    Equip
+                <Button
+                    className="btn-gold h-8 px-2 text-xs"
+                    onClick={onEquip}
+                    disabled={isProcessing}
+                >
+                    {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : (
+                        <>
+                            <Check className="w-3 h-3 mr-1" />
+                            Equip
+                        </>
+                    )}
                 </Button>
             )}
         </div>
@@ -81,12 +116,13 @@ const InventoryItem = ({ name, quantity, stat, rarity, icon, equipped, delay = 0
 interface CrewMemberProps {
     name: string;
     type: string;
-    level: number;
-    stat: string;
+    quantity: number;
+    attackBonus: number;
+    defenseBonus: number;
     delay?: number;
 }
 
-const CrewMember = ({ name, type, level, stat, delay = 0 }: CrewMemberProps) => (
+const CrewMember = ({ name, type, quantity, attackBonus, defenseBonus, delay = 0 }: CrewMemberProps) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -99,10 +135,11 @@ const CrewMember = ({ name, type, level, stat, delay = 0 }: CrewMemberProps) => 
             </div>
             <div className="flex-1">
                 <h3 className="font-cinzel font-semibold text-sm text-foreground">{name}</h3>
-                <p className="text-xs text-muted-foreground">{type} • Lv. {level}</p>
+                <p className="text-xs text-muted-foreground">{type} • x{quantity}</p>
             </div>
             <div className="text-right">
-                <p className="text-xs text-primary">{stat}</p>
+                {attackBonus > 0 && <p className="text-xs text-red-400">+{attackBonus} ATK</p>}
+                {defenseBonus > 0 && <p className="text-xs text-blue-400">+{defenseBonus} DEF</p>}
             </div>
         </div>
     </motion.div>
@@ -110,87 +147,129 @@ const CrewMember = ({ name, type, level, stat, delay = 0 }: CrewMemberProps) => 
 
 const InventoryPage = () => {
     const { toast } = useToast();
+    const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
+    const {
+        inventory,
+        crew: hiredCrew,
+        isLoadingInventory,
+        loadInventory,
+        equipItem,
+        unequipItem,
+        sellItem
+    } = useGameStore();
+
     const [activeTab, setActiveTab] = useState('weapons');
-    const [confirmOpen, setConfirmOpen] = useState(false);
-    const [pendingAction, setPendingAction] = useState<{ type: 'equip' | 'unequip' | 'sell'; item: string } | null>(null);
+    const [processingItemId, setProcessingItemId] = useState<string | null>(null);
 
-    const [weapons, setWeapons] = useState([
-        { name: 'Tommy Gun', quantity: 2, stat: '+15 Attack', rarity: 'rare' as const, icon: <Sword className="w-5 h-5 text-muted-foreground" />, equipped: true },
-        { name: 'Brass Knuckles', quantity: 5, stat: '+5 Attack', rarity: 'common' as const, icon: <Sword className="w-5 h-5 text-muted-foreground" />, equipped: false },
-        { name: 'Switchblade', quantity: 8, stat: '+3 Attack', rarity: 'common' as const, icon: <Sword className="w-5 h-5 text-muted-foreground" />, equipped: false },
-        { name: 'Sawed-off Shotgun', quantity: 1, stat: '+10 Attack', rarity: 'uncommon' as const, icon: <Sword className="w-5 h-5 text-muted-foreground" />, equipped: false },
-    ]);
+    // Filter inventory by category
+    const weapons = inventory.filter(i => i.category === 'weapon');
+    const equipment = inventory.filter(i => i.category === 'equipment');
+    const contraband = inventory.filter(i => i.category === 'contraband');
 
-    const [equipment, setEquipment] = useState([
-        { name: 'Armored Vest', quantity: 1, stat: '+20 Defense', rarity: 'rare' as const, icon: <Shield className="w-5 h-5 text-muted-foreground" />, equipped: true },
-        { name: 'Fedora Hat', quantity: 1, stat: '+5 Respect', rarity: 'uncommon' as const, icon: <Shield className="w-5 h-5 text-muted-foreground" />, equipped: false },
-        { name: 'Gold Watch', quantity: 1, stat: '+10% Income', rarity: 'legendary' as const, icon: <Shield className="w-5 h-5 text-muted-foreground" />, equipped: true },
-    ]);
+    const formatStat = (item: InventoryItemType): string => {
+        if (item.attack_bonus > 0) return `+${item.attack_bonus} Attack`;
+        if (item.defense_bonus > 0) return `+${item.defense_bonus} Defense`;
+        if (item.income_bonus > 0) return `+${item.income_bonus}% Income`;
+        if (item.sell_price > 0 && item.category === 'contraband') return `Sells for $${item.sell_price.toLocaleString()}`;
+        return '';
+    };
 
-    const contraband = [
-        { name: 'Whiskey Crate', quantity: 12, stat: 'Sells for $3,500', rarity: 'common' as const, icon: <FlaskConical className="w-5 h-5 text-muted-foreground" /> },
-        { name: 'Cuban Cigars', quantity: 8, stat: 'Sells for $2,500', rarity: 'uncommon' as const, icon: <FlaskConical className="w-5 h-5 text-muted-foreground" /> },
-        { name: 'Morphine Vials', quantity: 3, stat: 'Sells for $8,000', rarity: 'rare' as const, icon: <FlaskConical className="w-5 h-5 text-muted-foreground" /> },
-    ];
-
-    const crew = [
-        { name: 'Luca Brasi', type: 'Enforcer', level: 5, stat: '+25 Defense' },
-        { name: 'Rocco Lampone', type: 'Hitman', level: 4, stat: '+20 Attack' },
-        { name: 'Al Neri', type: 'Bodyguard', level: 3, stat: '+15 Defense' },
-        { name: 'Willie Cicci', type: 'Driver', level: 2, stat: '+10% Escape' },
-        { name: 'Carlo Rizzi', type: 'Accountant', level: 2, stat: '+5% Income' },
-    ];
-
-    const handleEquip = (item: string, category: 'weapons' | 'equipment') => {
-        if (category === 'weapons') {
-            setWeapons(prev => prev.map(w => ({ ...w, equipped: w.name === item ? true : w.equipped })));
-        } else {
-            setEquipment(prev => prev.map(e => ({ ...e, equipped: e.name === item ? true : e.equipped })));
+    const getIcon = (category: string) => {
+        switch (category) {
+            case 'weapon':
+                return <Sword className="w-5 h-5 text-muted-foreground" />;
+            case 'equipment':
+                return <Shield className="w-5 h-5 text-muted-foreground" />;
+            case 'contraband':
+                return <FlaskConical className="w-5 h-5 text-muted-foreground" />;
+            default:
+                return <Package className="w-5 h-5 text-muted-foreground" />;
         }
-        toast({
-            title: 'Item Equipped!',
-            description: `${item} is now equipped.`,
-        });
     };
 
-    const handleUnequip = (item: string, category: 'weapons' | 'equipment') => {
-        if (category === 'weapons') {
-            setWeapons(prev => prev.map(w => ({ ...w, equipped: w.name === item ? false : w.equipped })));
-        } else {
-            setEquipment(prev => prev.map(e => ({ ...e, equipped: e.name === item ? false : e.equipped })));
+    const handleEquip = async (item: InventoryItemType) => {
+        setProcessingItemId(item.id);
+        try {
+            const success = await equipItem(item.id);
+            if (success) {
+                toast({
+                    title: 'Item Equipped!',
+                    description: `${item.name} is now equipped.`,
+                });
+            } else {
+                toast({
+                    title: 'Error',
+                    description: 'Failed to equip item.',
+                    variant: 'destructive',
+                });
+            }
+        } finally {
+            setProcessingItemId(null);
         }
-        toast({
-            title: 'Item Removed',
-            description: `${item} has been unequipped.`,
-        });
     };
 
-    const handleSellAll = () => {
-        setPendingAction({ type: 'sell', item: 'all contraband' });
-        setConfirmOpen(true);
-    };
-
-    const confirmAction = () => {
-        if (pendingAction?.type === 'sell') {
-            const total = 12 * 3500 + 8 * 2500 + 3 * 8000;
-            toast({
-                title: 'Contraband Sold!',
-                description: `You earned $${total.toLocaleString()} from selling all contraband.`,
-            });
+    const handleUnequip = async (item: InventoryItemType) => {
+        setProcessingItemId(item.id);
+        try {
+            const success = await unequipItem(item.id);
+            if (success) {
+                toast({
+                    title: 'Item Removed',
+                    description: `${item.name} has been unequipped.`,
+                });
+            } else {
+                toast({
+                    title: 'Error',
+                    description: 'Failed to unequip item.',
+                    variant: 'destructive',
+                });
+            }
+        } finally {
+            setProcessingItemId(null);
         }
-        setConfirmOpen(false);
-        setPendingAction(null);
     };
 
-    const totalItems = weapons.reduce((sum, w) => sum + w.quantity, 0) +
-        equipment.reduce((sum, e) => sum + e.quantity, 0) +
-        contraband.reduce((sum, c) => sum + c.quantity, 0);
+    const handleSell = async (item: InventoryItemType) => {
+        setProcessingItemId(item.id);
+        try {
+            const success = await sellItem(item.id, 1);
+            if (success) {
+                toast({
+                    title: 'Item Sold!',
+                    description: `You earned $${item.sell_price.toLocaleString()} from selling ${item.name}.`,
+                });
+                await refetchPlayer();
+            } else {
+                toast({
+                    title: 'Error',
+                    description: 'Failed to sell item.',
+                    variant: 'destructive',
+                });
+            }
+        } finally {
+            setProcessingItemId(null);
+        }
+    };
 
     // Calculate stat bonuses from equipped items
-    const equippedWeapons = weapons.filter(w => w.equipped);
-    const equippedEquipment = equipment.filter(e => e.equipped);
-    const totalAttackBonus = equippedWeapons.reduce((sum, w) => sum + parseInt(w.stat?.replace(/[^0-9]/g, '') || '0'), 0);
-    const totalDefenseBonus = equippedEquipment.filter(e => e.stat?.includes('Defense')).reduce((sum, e) => sum + parseInt(e.stat?.replace(/[^0-9]/g, '') || '0'), 0);
+    const equippedItems = inventory.filter(i => i.is_equipped);
+    const totalAttackBonus = equippedItems.reduce((sum, i) => sum + i.attack_bonus, 0) +
+        hiredCrew.reduce((sum, c) => sum + (c.attack_bonus * c.quantity), 0);
+    const totalDefenseBonus = equippedItems.reduce((sum, i) => sum + i.defense_bonus, 0) +
+        hiredCrew.reduce((sum, c) => sum + (c.defense_bonus * c.quantity), 0);
+
+    const totalItems = inventory.reduce((sum, i) => sum + i.quantity, 0);
+
+    // Loading state
+    if (isAuthLoading) {
+        return (
+            <MainLayout>
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+            </MainLayout>
+        );
+    }
 
     return (
         <MainLayout>
@@ -212,7 +291,7 @@ const InventoryPage = () => {
                     </div>
                     <div>
                         <h1 className="font-cinzel text-xl font-bold text-foreground">Inventory</h1>
-                        <p className="text-xs text-muted-foreground">{totalItems} items • {crew.length} crew members</p>
+                        <p className="text-xs text-muted-foreground">{totalItems} items • {hiredCrew.length} crew types</p>
                     </div>
                 </motion.div>
 
@@ -254,59 +333,103 @@ const InventoryPage = () => {
                         </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="weapons" className="space-y-2 mt-0">
-                        {weapons.length === 0 ? (
-                            <p className="text-center text-muted-foreground text-sm py-8">No weapons owned</p>
-                        ) : (
-                            weapons.map((item, index) => (
-                                <InventoryItem
-                                    key={item.name}
-                                    {...item}
-                                    delay={0.05 * index}
-                                    onEquip={() => handleEquip(item.name, 'weapons')}
-                                    onUnequip={() => handleUnequip(item.name, 'weapons')}
-                                />
-                            ))
-                        )}
-                    </TabsContent>
+                    {isLoadingInventory ? (
+                        <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        </div>
+                    ) : (
+                        <>
+                            <TabsContent value="weapons" className="space-y-2 mt-0">
+                                {weapons.length === 0 ? (
+                                    <p className="text-center text-muted-foreground text-sm py-8">No weapons owned</p>
+                                ) : (
+                                    weapons.map((item, index) => (
+                                        <InventoryItemComponent
+                                            key={item.id}
+                                            id={item.id}
+                                            name={item.name}
+                                            quantity={item.quantity}
+                                            stat={formatStat(item)}
+                                            rarity={item.rarity}
+                                            category={item.category}
+                                            icon={getIcon(item.category)}
+                                            equipped={item.is_equipped}
+                                            isProcessing={processingItemId === item.id}
+                                            delay={0.05 * index}
+                                            onEquip={() => handleEquip(item)}
+                                            onUnequip={() => handleUnequip(item)}
+                                        />
+                                    ))
+                                )}
+                            </TabsContent>
 
-                    <TabsContent value="equipment" className="space-y-2 mt-0">
-                        {equipment.map((item, index) => (
-                            <InventoryItem
-                                key={item.name}
-                                {...item}
-                                delay={0.05 * index}
-                                onEquip={() => handleEquip(item.name, 'equipment')}
-                                onUnequip={() => handleUnequip(item.name, 'equipment')}
-                            />
-                        ))}
-                    </TabsContent>
+                            <TabsContent value="equipment" className="space-y-2 mt-0">
+                                {equipment.length === 0 ? (
+                                    <p className="text-center text-muted-foreground text-sm py-8">No equipment owned</p>
+                                ) : (
+                                    equipment.map((item, index) => (
+                                        <InventoryItemComponent
+                                            key={item.id}
+                                            id={item.id}
+                                            name={item.name}
+                                            quantity={item.quantity}
+                                            stat={formatStat(item)}
+                                            rarity={item.rarity}
+                                            category={item.category}
+                                            icon={getIcon(item.category)}
+                                            equipped={item.is_equipped}
+                                            isProcessing={processingItemId === item.id}
+                                            delay={0.05 * index}
+                                            onEquip={() => handleEquip(item)}
+                                            onUnequip={() => handleUnequip(item)}
+                                        />
+                                    ))
+                                )}
+                            </TabsContent>
 
-                    <TabsContent value="contraband" className="space-y-2 mt-0">
-                        {contraband.map((item, index) => (
-                            <InventoryItem key={item.name} {...item} delay={0.05 * index} />
-                        ))}
-                        <Button className="w-full mt-4 btn-gold text-xs" onClick={handleSellAll}>
-                            Sell All Contraband
-                        </Button>
-                    </TabsContent>
+                            <TabsContent value="contraband" className="space-y-2 mt-0">
+                                {contraband.length === 0 ? (
+                                    <p className="text-center text-muted-foreground text-sm py-8">No contraband to sell</p>
+                                ) : (
+                                    contraband.map((item, index) => (
+                                        <InventoryItemComponent
+                                            key={item.id}
+                                            id={item.id}
+                                            name={item.name}
+                                            quantity={item.quantity}
+                                            stat={formatStat(item)}
+                                            rarity={item.rarity}
+                                            category={item.category}
+                                            icon={getIcon(item.category)}
+                                            isProcessing={processingItemId === item.id}
+                                            delay={0.05 * index}
+                                            onSell={() => handleSell(item)}
+                                        />
+                                    ))
+                                )}
+                            </TabsContent>
 
-                    <TabsContent value="crew" className="space-y-2 mt-0">
-                        {crew.map((member, index) => (
-                            <CrewMember key={member.name} {...member} delay={0.05 * index} />
-                        ))}
-                    </TabsContent>
+                            <TabsContent value="crew" className="space-y-2 mt-0">
+                                {hiredCrew.length === 0 ? (
+                                    <p className="text-center text-muted-foreground text-sm py-8">No crew hired yet</p>
+                                ) : (
+                                    hiredCrew.map((member, index) => (
+                                        <CrewMember
+                                            key={member.id}
+                                            name={member.name}
+                                            type={member.type}
+                                            quantity={member.quantity}
+                                            attackBonus={member.attack_bonus}
+                                            defenseBonus={member.defense_bonus}
+                                            delay={0.05 * index}
+                                        />
+                                    ))
+                                )}
+                            </TabsContent>
+                        </>
+                    )}
                 </Tabs>
             </div>
-
-            <ConfirmDialog
-                open={confirmOpen}
-                onOpenChange={setConfirmOpen}
-                title="Sell All Contraband?"
-                description="This will sell all your contraband items for a total of $86,000. Are you sure?"
-                onConfirm={confirmAction}
-                confirmText="Sell"
-            />
         </MainLayout>
     );
 };

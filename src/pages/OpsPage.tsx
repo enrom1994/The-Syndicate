@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { Swords, Target, Clock, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { Swords, Target, Clock, Zap, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -9,18 +9,32 @@ import { CombatResultModal } from '@/components/CombatResultModal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
 import { GameIcon } from '@/components/GameIcon';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGameStore, JobDefinition } from '@/hooks/useGameStore';
+import { supabase } from '@/lib/supabase';
+import { haptic } from '@/lib/haptics';
+import { rewardCash } from '@/components/RewardAnimation';
+
+interface TargetPlayer {
+    id: string;
+    username: string;
+    cash: number;
+    defense: number;
+    attack: number;
+}
 
 interface TargetCardProps {
+    id: string;
     name: string;
-    family: string;
     netWorth: string;
     defense: number;
     risk: 'Low' | 'Medium' | 'High';
+    isProcessing?: boolean;
     delay?: number;
     onAttack: () => void;
 }
 
-const TargetCard = ({ name, family, netWorth, defense, risk, delay = 0, onAttack }: TargetCardProps) => {
+const TargetCard = ({ id, name, netWorth, defense, risk, isProcessing, delay = 0, onAttack }: TargetCardProps) => {
     const riskColor = risk === 'Low' ? 'text-green-500' : risk === 'Medium' ? 'text-yellow-500' : 'text-red-500';
 
     return (
@@ -33,7 +47,7 @@ const TargetCard = ({ name, family, netWorth, defense, risk, delay = 0, onAttack
             <div className="flex items-start justify-between mb-3">
                 <div>
                     <h3 className="font-cinzel font-semibold text-sm text-foreground">{name}</h3>
-                    <p className="text-xs text-muted-foreground">{family}</p>
+                    <p className="text-xs text-muted-foreground">Enemy Player</p>
                 </div>
                 <span className={`text-xs font-medium ${riskColor}`}>{risk} Risk</span>
             </div>
@@ -46,31 +60,42 @@ const TargetCard = ({ name, family, netWorth, defense, risk, delay = 0, onAttack
                 <div>
                     <p className="text-xs text-muted-foreground">Defense</p>
                     <div className="flex items-center gap-2">
-                        <Progress value={defense} className="h-1.5 flex-1" />
-                        <span className="text-xs text-foreground">{defense}%</span>
+                        <Progress value={Math.min(defense, 100)} className="h-1.5 flex-1" />
+                        <span className="text-xs text-foreground">{defense}</span>
                     </div>
                 </div>
             </div>
 
-            <Button className="w-full btn-gold text-xs" onClick={onAttack}>
-                <Swords className="w-4 h-4 mr-2" />
-                Attack
+            <Button
+                className="w-full btn-gold text-xs"
+                onClick={onAttack}
+                disabled={isProcessing}
+            >
+                {isProcessing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                    <>
+                        <Swords className="w-4 h-4 mr-2" />
+                        Attack
+                    </>
+                )}
             </Button>
         </motion.div>
     );
 };
 
 interface JobCardProps {
+    id: string;
     name: string;
     description: string;
-    reward: string;
+    reward: number;
     energy: number;
-    cooldown: string;
+    isProcessing?: boolean;
     delay?: number;
     onExecute: () => void;
 }
 
-const JobCard = ({ name, description, reward, energy, cooldown, delay = 0, onExecute }: JobCardProps) => (
+const JobCard = ({ id, name, description, reward, energy, isProcessing, delay = 0, onExecute }: JobCardProps) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -84,7 +109,7 @@ const JobCard = ({ name, description, reward, energy, cooldown, delay = 0, onExe
             </div>
             <div className="flex items-center gap-1 text-xs text-primary font-semibold">
                 <GameIcon type="cash" className="w-4 h-4" />
-                {reward}
+                ${reward.toLocaleString()}
             </div>
         </div>
 
@@ -93,21 +118,31 @@ const JobCard = ({ name, description, reward, energy, cooldown, delay = 0, onExe
                 <Zap className="w-3 h-3 text-yellow-500" />
                 -{energy} Energy
             </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="w-3 h-3" />
-                {cooldown}
-            </div>
         </div>
 
-        <Button className="w-full mt-3 btn-gold text-xs" onClick={onExecute}>
-            Execute Job
+        <Button
+            className="w-full mt-3 btn-gold text-xs"
+            onClick={onExecute}
+            disabled={isProcessing}
+        >
+            {isProcessing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+                'Execute Job'
+            )}
         </Button>
     </motion.div>
 );
 
 const OpsPage = () => {
     const { toast } = useToast();
+    const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
+    const { jobDefinitions, isLoadingDefinitions, useEnergy } = useGameStore();
+
     const [activeTab, setActiveTab] = useState('attack');
+    const [targets, setTargets] = useState<TargetPlayer[]>([]);
+    const [isLoadingTargets, setIsLoadingTargets] = useState(true);
+    const [processingId, setProcessingId] = useState<string | null>(null);
 
     // Combat modal state
     const [combatResult, setCombatResult] = useState<{
@@ -122,56 +157,245 @@ const OpsPage = () => {
 
     // Confirm dialog state
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const [pendingAttack, setPendingAttack] = useState<{ name: string; defense: number } | null>(null);
+    const [pendingAttack, setPendingAttack] = useState<TargetPlayer | null>(null);
 
-    const targets = [
-        { name: 'Jimmy "Two-Face"', family: 'The Gambino Family', netWorth: '$8.2M', defense: 45, risk: 'Low' as const },
-        { name: 'Sal Maroni', family: 'The Maroni Syndicate', netWorth: '$15.7M', defense: 72, risk: 'Medium' as const },
-        { name: 'Don Falcone', family: 'The Falcone Empire', netWorth: '$42.3M', defense: 95, risk: 'High' as const },
-    ];
+    useEffect(() => {
+        loadTargets();
+    }, [player?.id]);
 
-    const jobs = [
-        { name: 'Collect Protection', description: 'Shake down local businesses for payments', reward: '$5,000', energy: 10, cooldown: '30m' },
-        { name: 'Rob the Bank', description: 'High-risk heist on First National', reward: '$50,000', energy: 50, cooldown: '4h' },
-        { name: 'Smuggle Goods', description: 'Transport contraband across the docks', reward: '$15,000', energy: 25, cooldown: '1h' },
-        { name: 'Hit Contract', description: 'Eliminate a rival for a paying client', reward: '$25,000', energy: 35, cooldown: '2h' },
-    ];
+    const loadTargets = async () => {
+        if (!player?.id) return;
 
-    const handleAttackClick = (target: { name: string; defense: number }) => {
+        setIsLoadingTargets(true);
+        try {
+            // Get random players to attack (excluding self)
+            const { data, error } = await supabase
+                .from('players')
+                .select('id, username, cash, defense, attack')
+                .neq('id', player.id)
+                .gt('cash', 1000)
+                .limit(5);
+
+            if (error) throw error;
+
+            setTargets(data || []);
+        } catch (error) {
+            console.error('Error loading targets:', error);
+        } finally {
+            setIsLoadingTargets(false);
+        }
+    };
+
+    const getRisk = (defense: number): 'Low' | 'Medium' | 'High' => {
+        if (defense < 30) return 'Low';
+        if (defense < 70) return 'Medium';
+        return 'High';
+    };
+
+    const formatNetWorth = (cash: number): string => {
+        if (cash >= 1000000) return `$${(cash / 1000000).toFixed(1)}M`;
+        if (cash >= 1000) return `$${(cash / 1000).toFixed(1)}K`;
+        return `$${cash}`;
+    };
+
+    const handleAttackClick = (target: TargetPlayer) => {
+        if ((player?.stamina ?? 0) < 10) {
+            toast({
+                title: 'Not Enough Stamina',
+                description: 'You need at least 10 stamina to attack.',
+                variant: 'destructive',
+            });
+            return;
+        }
         setPendingAttack(target);
         setConfirmOpen(true);
     };
 
-    const executeAttack = () => {
-        if (!pendingAttack) return;
+    const executeAttack = async () => {
+        if (!pendingAttack || !player) return;
 
         setConfirmOpen(false);
+        setProcessingId(pendingAttack.id);
 
-        // Simulate combat - lower defense = higher win chance
-        const winChance = 100 - pendingAttack.defense;
-        const isVictory = Math.random() * 100 < winChance;
-
-        setTimeout(() => {
-            setCombatResult({
-                open: true,
-                result: isVictory ? 'victory' : 'defeat',
-                targetName: pendingAttack.name,
-                cashGained: isVictory ? Math.floor(Math.random() * 50000) + 10000 : 0,
-                cashLost: !isVictory ? Math.floor(Math.random() * 20000) + 5000 : 0,
-                respectGained: isVictory ? Math.floor(Math.random() * 100) + 25 : 0,
-                respectLost: !isVictory ? Math.floor(Math.random() * 50) + 10 : 0,
+        try {
+            // Deduct stamina
+            const { error: staminaError } = await supabase.rpc('use_stamina', {
+                player_id_input: player.id,
+                amount: 10,
             });
-        }, 500);
 
-        setPendingAttack(null);
+            if (staminaError) throw staminaError;
+
+            // Calculate combat result
+            const playerAttack = player.attack + Math.floor(Math.random() * 20);
+            const targetDefense = pendingAttack.defense + Math.floor(Math.random() * 20);
+            const isVictory = playerAttack > targetDefense;
+
+            if (isVictory) {
+                // Calculate loot (10-20% of target's cash)
+                const lootPercent = 0.10 + Math.random() * 0.10;
+                const cashGained = Math.floor(pendingAttack.cash * lootPercent);
+                const respectGained = Math.floor(Math.random() * 50) + 25;
+
+                // Transfer cash
+                await supabase.rpc('increment_cash', {
+                    player_id_input: player.id,
+                    amount: cashGained,
+                });
+
+                // Update stats
+                await supabase
+                    .from('players')
+                    .update({
+                        respect: (player.respect || 0) + respectGained,
+                        total_kills: (player.total_kills || 0) + 1,
+                    })
+                    .eq('id', player.id);
+
+                // Log the attack
+                await supabase.from('attack_log').insert({
+                    attacker_id: player.id,
+                    defender_id: pendingAttack.id,
+                    result: 'win',
+                    cash_stolen: cashGained,
+                    respect_gained: respectGained,
+                });
+
+                haptic.success();
+                rewardCash(cashGained);
+
+                setCombatResult({
+                    open: true,
+                    result: 'victory',
+                    targetName: pendingAttack.username || 'Unknown',
+                    cashGained,
+                    cashLost: 0,
+                    respectGained,
+                    respectLost: 0,
+                });
+            } else {
+                // Lost - lose some cash and respect
+                const cashLost = Math.floor(player.cash * 0.05);
+                const respectLost = Math.floor(Math.random() * 20) + 10;
+
+                await supabase.rpc('spend_cash', {
+                    player_id_input: player.id,
+                    amount: cashLost,
+                });
+
+                await supabase.from('attack_log').insert({
+                    attacker_id: player.id,
+                    defender_id: pendingAttack.id,
+                    result: 'loss',
+                    cash_stolen: 0,
+                    respect_gained: -respectLost,
+                });
+
+                haptic.error();
+
+                setCombatResult({
+                    open: true,
+                    result: 'defeat',
+                    targetName: pendingAttack.username || 'Unknown',
+                    cashGained: 0,
+                    cashLost,
+                    respectGained: 0,
+                    respectLost,
+                });
+            }
+
+            await refetchPlayer();
+            await loadTargets();
+        } catch (error) {
+            console.error('Attack error:', error);
+            toast({
+                title: 'Attack Failed',
+                description: 'An error occurred during the attack.',
+                variant: 'destructive',
+            });
+        } finally {
+            setProcessingId(null);
+            setPendingAttack(null);
+        }
     };
 
-    const handleJobExecute = (jobName: string, reward: string) => {
-        toast({
-            title: 'Job Completed!',
-            description: `${jobName} - Earned ${reward}`,
-        });
+    const handleJobExecute = async (job: JobDefinition) => {
+        if (!player) return;
+
+        if ((player.energy || 0) < job.energy_cost) {
+            toast({
+                title: 'Not Enough Energy',
+                description: `You need ${job.energy_cost} energy to do this job.`,
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        setProcessingId(job.id);
+
+        try {
+            // Use energy
+            const energyUsed = await useEnergy(job.energy_cost);
+            if (!energyUsed) {
+                throw new Error('Failed to use energy');
+            }
+
+            // Calculate reward with variance (+/- 20%)
+            const variance = 0.8 + Math.random() * 0.4;
+            const reward = Math.floor(job.base_reward * variance);
+
+            // Give reward
+            await supabase.rpc('increment_cash', {
+                player_id_input: player.id,
+                amount: reward,
+            });
+
+            // Log the job
+            await supabase.from('job_log').insert({
+                player_id: player.id,
+                job_id: job.id,
+                cash_earned: reward,
+            });
+
+            // Add experience
+            await supabase
+                .from('players')
+                .update({
+                    experience: (player.experience || 0) + job.experience_reward,
+                })
+                .eq('id', player.id);
+
+            haptic.success();
+            rewardCash(reward);
+
+            await refetchPlayer();
+
+            toast({
+                title: 'Job Completed!',
+                description: `${job.name} - Earned $${reward.toLocaleString()}`,
+            });
+        } catch (error) {
+            console.error('Job error:', error);
+            haptic.error();
+            toast({
+                title: 'Job Failed',
+                description: 'An error occurred while executing the job.',
+                variant: 'destructive',
+            });
+        } finally {
+            setProcessingId(null);
+        }
     };
+
+    if (isAuthLoading) {
+        return (
+            <MainLayout>
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+            </MainLayout>
+        );
+    }
 
     return (
         <MainLayout>
@@ -204,16 +428,20 @@ const OpsPage = () => {
                     className="noir-card p-3 mb-6 grid grid-cols-3 gap-3"
                 >
                     <div className="text-center">
-                        <p className="text-xs text-muted-foreground">Attacks</p>
-                        <p className="font-cinzel font-bold text-lg text-foreground">24</p>
+                        <p className="text-xs text-muted-foreground">Kills</p>
+                        <p className="font-cinzel font-bold text-lg text-foreground">{player?.total_kills ?? 0}</p>
                     </div>
                     <div className="text-center">
-                        <p className="text-xs text-muted-foreground">Win Rate</p>
-                        <p className="font-cinzel font-bold text-lg text-primary">78%</p>
+                        <p className="text-xs text-muted-foreground">Stamina</p>
+                        <p className="font-cinzel font-bold text-lg text-primary">
+                            {player?.stamina ?? 0}/{player?.max_stamina ?? 100}
+                        </p>
                     </div>
                     <div className="text-center">
                         <p className="text-xs text-muted-foreground">Energy</p>
-                        <p className="font-cinzel font-bold text-lg text-foreground">85/100</p>
+                        <p className="font-cinzel font-bold text-lg text-foreground">
+                            {player?.energy ?? 0}/{player?.max_energy ?? 100}
+                        </p>
                     </div>
                 </motion.div>
 
@@ -230,25 +458,60 @@ const OpsPage = () => {
                     </TabsList>
 
                     <TabsContent value="attack" className="space-y-3 mt-0">
-                        {targets.map((target, index) => (
-                            <TargetCard
-                                key={target.name}
-                                {...target}
-                                delay={0.1 * index}
-                                onAttack={() => handleAttackClick({ name: target.name, defense: target.defense })}
-                            />
-                        ))}
+                        {isLoadingTargets ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                            </div>
+                        ) : targets.length === 0 ? (
+                            <div className="text-center py-8">
+                                <p className="text-muted-foreground">No targets available</p>
+                                <Button
+                                    variant="outline"
+                                    className="mt-4"
+                                    onClick={loadTargets}
+                                >
+                                    Refresh Targets
+                                </Button>
+                            </div>
+                        ) : (
+                            targets.map((target, index) => (
+                                <TargetCard
+                                    key={target.id}
+                                    id={target.id}
+                                    name={target.username || `Player ${target.id.slice(0, 6)}`}
+                                    netWorth={formatNetWorth(target.cash)}
+                                    defense={target.defense}
+                                    risk={getRisk(target.defense)}
+                                    isProcessing={processingId === target.id}
+                                    delay={0.1 * index}
+                                    onAttack={() => handleAttackClick(target)}
+                                />
+                            ))
+                        )}
                     </TabsContent>
 
                     <TabsContent value="jobs" className="space-y-3 mt-0">
-                        {jobs.map((job, index) => (
-                            <JobCard
-                                key={job.name}
-                                {...job}
-                                delay={0.1 * index}
-                                onExecute={() => handleJobExecute(job.name, job.reward)}
-                            />
-                        ))}
+                        {isLoadingDefinitions ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                            </div>
+                        ) : jobDefinitions.length === 0 ? (
+                            <p className="text-center text-muted-foreground py-8">No jobs available</p>
+                        ) : (
+                            jobDefinitions.map((job, index) => (
+                                <JobCard
+                                    key={job.id}
+                                    id={job.id}
+                                    name={job.name}
+                                    description={job.description || ''}
+                                    reward={job.base_reward}
+                                    energy={job.energy_cost}
+                                    isProcessing={processingId === job.id}
+                                    delay={0.1 * index}
+                                    onExecute={() => handleJobExecute(job)}
+                                />
+                            ))
+                        )}
                     </TabsContent>
                 </Tabs>
             </div>
@@ -257,7 +520,7 @@ const OpsPage = () => {
                 open={confirmOpen}
                 onOpenChange={setConfirmOpen}
                 title="Confirm Attack"
-                description={`Are you sure you want to attack ${pendingAttack?.name}? This will cost 20 energy.`}
+                description={`Are you sure you want to attack ${pendingAttack?.username || 'this player'}? This will cost 10 stamina.`}
                 onConfirm={executeAttack}
                 confirmText="Attack!"
                 variant="destructive"
@@ -278,4 +541,3 @@ const OpsPage = () => {
 };
 
 export default OpsPage;
-

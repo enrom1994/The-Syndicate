@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
+import { useTelegramPhoto } from '@/hooks/useTelegram';
 
 interface StatCardProps {
     name: string;
@@ -149,6 +150,8 @@ const ProfilePage = () => {
         },
     ];
 
+    const photoUrl = useTelegramPhoto();
+
     return (
         <MainLayout>
             {/* Background Image */}
@@ -164,8 +167,14 @@ const ProfilePage = () => {
                     transition={{ duration: 0.5 }}
                     className="flex items-center gap-3 mb-6"
                 >
-                    <div className="w-10 h-10 rounded-sm bg-gradient-gold flex items-center justify-center">
-                        <User className="w-5 h-5 text-primary-foreground" />
+                    <div className="w-16 h-16 rounded-lg bg-gradient-gold p-0.5 overflow-hidden shrink-0">
+                        <div className="w-full h-full bg-black rounded-[calc(0.5rem-2px)] overflow-hidden flex items-center justify-center">
+                            {photoUrl ? (
+                                <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <User className="w-8 h-8 text-primary" />
+                            )}
+                        </div>
                     </div>
                     <div>
                         <h1 className="font-cinzel text-xl font-bold text-foreground">Player Profile</h1>

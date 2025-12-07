@@ -1,10 +1,21 @@
 import { motion } from 'framer-motion';
-import { Gift, Calendar, Star, CheckCircle2, Lock, ChevronRight, Flame, Crown } from 'lucide-react';
-import { useState } from 'react';
+import { Gift, Calendar, Star, CheckCircle2, Lock, ChevronRight, Flame, Crown, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { GameIcon } from '@/components/GameIcon';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { haptic } from '@/lib/haptics';
+import { rewardCash, rewardDiamonds } from '@/components/RewardAnimation';
+
+interface DayReward {
+    day: number;
+    reward_type: 'cash' | 'diamonds' | 'energy' | 'item';
+    reward_amount: number;
+    reward_display: string;
+}
 
 interface DayRewardProps {
     day: number;
@@ -13,17 +24,18 @@ interface DayRewardProps {
     claimed: boolean;
     current: boolean;
     locked: boolean;
+    isProcessing?: boolean;
     onClaim?: () => void;
 }
 
 const rewardIcons = {
     cash: <GameIcon type="cash" className="w-8 h-8" />,
-    diamonds: <GameIcon type="diamond" className="w-12 h-12" />, // Increased size
+    diamonds: <GameIcon type="diamond" className="w-12 h-12" />,
     energy: <Gift className="w-6 h-6 text-yellow-400" />,
     item: <Crown className="w-6 h-6 text-purple-400" />,
 };
 
-const DayReward = ({ day, reward, rewardType, claimed, current, locked, onClaim }: DayRewardProps) => (
+const DayRewardComponent = ({ day, reward, rewardType, claimed, current, locked, isProcessing, onClaim }: DayRewardProps) => (
     <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -60,8 +72,9 @@ const DayReward = ({ day, reward, rewardType, claimed, current, locked, onClaim 
             <Button
                 className="btn-gold text-[10px] px-2 py-1 h-6 mt-2 w-full"
                 onClick={onClaim}
+                disabled={isProcessing}
             >
-                Claim
+                {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Claim'}
             </Button>
         )}
 
@@ -74,96 +87,144 @@ const DayReward = ({ day, reward, rewardType, claimed, current, locked, onClaim 
     </motion.div>
 );
 
-interface MissionProps {
-    title: string;
-    description: string;
-    progress: number;
-    target: number;
-    reward: string;
-    completed: boolean;
-    delay?: number;
-    onClaim?: () => void;
-}
-
-const Mission = ({ title, description, progress, target, reward, completed, delay = 0, onClaim }: MissionProps) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay }}
-        className={`noir-card p-4 ${completed ? 'border-l-2 border-green-500' : ''}`}
-    >
-        <div className="flex items-start justify-between mb-2">
-            <div>
-                <h3 className="font-cinzel font-semibold text-sm text-foreground">{title}</h3>
-                <p className="text-xs text-muted-foreground">{description}</p>
-            </div>
-            <span className="text-xs text-primary font-bold">{reward}</span>
-        </div>
-        <div className="flex items-center gap-2">
-            <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${(progress / target) * 100}%` }}
-                    transition={{ duration: 0.5, delay: delay + 0.2 }}
-                    className={`h-full rounded-full ${completed ? 'bg-green-500' : 'bg-gradient-gold'}`}
-                />
-            </div>
-            <span className="text-xs text-muted-foreground">{progress}/{target}</span>
-            {completed && (
-                <Button
-                    size="sm"
-                    className="btn-gold text-[10px] h-6 px-2"
-                    onClick={onClaim}
-                >
-                    Claim
-                </Button>
-            )}
-        </div>
-    </motion.div>
-);
-
 const DailyRewardsPage = () => {
     const { toast } = useToast();
-    const [currentStreak, setCurrentStreak] = useState(4);
+    const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
 
-    const weeklyRewards = [
-        { day: 1, reward: '$5K', rewardType: 'cash' as const, claimed: true },
-        { day: 2, reward: '10 💎', rewardType: 'diamonds' as const, claimed: true },
-        { day: 3, reward: '$10K', rewardType: 'cash' as const, claimed: true },
-        { day: 4, reward: '50 ⚡', rewardType: 'energy' as const, claimed: false },
-        { day: 5, reward: '25 💎', rewardType: 'diamonds' as const, claimed: false },
-        { day: 6, reward: '$25K', rewardType: 'cash' as const, claimed: false },
-    ];
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [dailyRewardDefinitions, setDailyRewardDefinitions] = useState<DayReward[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Day 7 is special - shown as a featured card
-    const weeklyBonus = {
+    // Get streak from player data
+    const currentStreak = player?.login_streak ?? 1;
+    const lastClaimDate = player?.last_daily_claim ? new Date(player.last_daily_claim) : null;
+    const today = new Date();
+    const canClaimToday = !lastClaimDate ||
+        lastClaimDate.toDateString() !== today.toDateString();
+
+    useEffect(() => {
+        loadDailyRewards();
+    }, []);
+
+    const loadDailyRewards = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('daily_reward_definitions')
+                .select('*')
+                .order('day', { ascending: true });
+
+            if (error) throw error;
+
+            const rewards = data?.map(d => ({
+                day: d.day,
+                reward_type: d.reward_type as 'cash' | 'diamonds' | 'energy' | 'item',
+                reward_amount: d.reward_amount,
+                reward_display: d.reward_type === 'cash'
+                    ? `$${(d.reward_amount / 1000).toFixed(0)}K`
+                    : d.reward_type === 'diamonds'
+                        ? `${d.reward_amount} 💎`
+                        : d.reward_type === 'energy'
+                            ? `${d.reward_amount} ⚡`
+                            : d.description || 'Item',
+            })) || [];
+
+            setDailyRewardDefinitions(rewards);
+        } catch (error) {
+            console.error('Error loading daily rewards:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleClaimDaily = async () => {
+        if (!player || !canClaimToday) return;
+
+        setIsProcessing(true);
+
+        try {
+            const currentDay = (currentStreak % 7) || 7;
+            const reward = dailyRewardDefinitions.find(r => r.day === currentDay);
+
+            if (!reward) {
+                throw new Error('Reward not found');
+            }
+
+            // Update player's streak and last claim date
+            const { error } = await supabase
+                .from('players')
+                .update({
+                    login_streak: currentStreak + 1,
+                    last_daily_claim: new Date().toISOString(),
+                })
+                .eq('id', player.id);
+
+            if (error) throw error;
+
+            // Give the reward
+            if (reward.reward_type === 'cash') {
+                await supabase.rpc('increment_cash', {
+                    player_id_input: player.id,
+                    amount: reward.reward_amount,
+                });
+                rewardCash(reward.reward_amount);
+            } else if (reward.reward_type === 'diamonds') {
+                await supabase.rpc('increment_diamonds', {
+                    player_id_input: player.id,
+                    amount: reward.reward_amount,
+                });
+                rewardDiamonds(reward.reward_amount);
+            } else if (reward.reward_type === 'energy') {
+                await supabase
+                    .from('players')
+                    .update({ energy: Math.min(player.energy + reward.reward_amount, player.max_energy) })
+                    .eq('id', player.id);
+            }
+
+            haptic.success();
+            await refetchPlayer();
+
+            toast({
+                title: 'Reward Claimed!',
+                description: `You received ${reward.reward_display}!`,
+            });
+        } catch (error) {
+            console.error('Error claiming daily reward:', error);
+            haptic.error();
+            toast({
+                title: 'Error',
+                description: 'Failed to claim reward. Please try again.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // Generate display data for the week
+    const weeklyRewards = dailyRewardDefinitions.slice(0, 6).map((reward) => ({
+        day: reward.day,
+        reward: reward.reward_display,
+        rewardType: reward.reward_type,
+        claimed: reward.day < (currentStreak % 7 || 7) || !canClaimToday && reward.day === (currentStreak % 7 || 7),
+    }));
+
+    // Day 7 bonus
+    const weeklyBonus = dailyRewardDefinitions.find(r => r.day === 7) || {
         day: 7,
-        reward: 'Rare Item',
-        rewardType: 'item' as const,
-        claimed: false,
+        reward_display: 'Rare Item',
+        reward_type: 'item' as const,
     };
+    const hasClaimed7 = currentStreak >= 7 && !canClaimToday;
 
-    const dailyMissions = [
-        { title: 'Complete 5 Jobs', description: 'Do any 5 PvE jobs', progress: 3, target: 5, reward: '$2,500', completed: false },
-        { title: 'Attack 3 Players', description: 'Win 3 PvP attacks', progress: 3, target: 3, reward: '5 💎', completed: true },
-        { title: 'Collect Income', description: 'Collect from all businesses', progress: 4, target: 4, reward: '$5,000', completed: true },
-        { title: 'Train Stats', description: 'Train any stat 1 time', progress: 0, target: 1, reward: '10 Energy', completed: false },
-    ];
-
-    const handleClaimDaily = () => {
-        toast({
-            title: 'Reward Claimed!',
-            description: 'You received 50 Energy!',
-        });
-        setCurrentStreak(5);
-    };
-
-    const handleClaimMission = (title: string, reward: string) => {
-        toast({
-            title: 'Mission Complete!',
-            description: `You earned ${reward}!`,
-        });
-    };
+    if (isAuthLoading || isLoading) {
+        return (
+            <MainLayout>
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+            </MainLayout>
+        );
+    }
 
     return (
         <MainLayout>
@@ -211,11 +272,15 @@ const DailyRewardsPage = () => {
                     <div className="overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
                         <div className="flex gap-2" style={{ minWidth: 'max-content' }}>
                             {weeklyRewards.map((reward) => (
-                                <DayReward
+                                <DayRewardComponent
                                     key={reward.day}
-                                    {...reward}
-                                    current={reward.day === currentStreak}
-                                    locked={reward.day > currentStreak}
+                                    day={reward.day}
+                                    reward={reward.reward}
+                                    rewardType={reward.rewardType}
+                                    claimed={reward.claimed}
+                                    current={reward.day === ((currentStreak % 7) || 7) && canClaimToday}
+                                    locked={reward.day > ((currentStreak % 7) || 7)}
+                                    isProcessing={isProcessing}
                                     onClaim={handleClaimDaily}
                                 />
                             ))}
@@ -230,14 +295,14 @@ const DailyRewardsPage = () => {
                     transition={{ duration: 0.5, delay: 0.2 }}
                     className="mb-6"
                 >
-                    <div className={`noir-card p-4 relative overflow-hidden ${currentStreak >= 7 ? 'ring-2 ring-primary' : ''}`}>
+                    <div className={`noir-card p-4 relative overflow-hidden ${(currentStreak % 7 || 7) === 7 && canClaimToday ? 'ring-2 ring-primary' : ''}`}>
                         {/* Background glow */}
                         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-primary/10 to-purple-500/10" />
 
                         <div className="relative flex items-center gap-4">
                             <div className={`w-16 h-16 rounded-lg flex items-center justify-center shrink-0
-                                ${currentStreak >= 7 ? 'bg-gradient-gold' : 'bg-muted/30'}`}>
-                                {currentStreak >= 7 ? (
+                                ${(currentStreak % 7 || 7) === 7 ? 'bg-gradient-gold' : 'bg-muted/30'}`}>
+                                {(currentStreak % 7 || 7) === 7 ? (
                                     <Crown className="w-8 h-8 text-primary-foreground" />
                                 ) : (
                                     <Lock className="w-6 h-6 text-muted-foreground" />
@@ -248,22 +313,26 @@ const DailyRewardsPage = () => {
                                     <span className="text-[10px] font-bold text-primary bg-primary/20 px-2 py-0.5 rounded">
                                         DAY 7 BONUS
                                     </span>
-                                    {weeklyBonus.claimed && (
+                                    {hasClaimed7 && (
                                         <CheckCircle2 className="w-4 h-4 text-green-400" />
                                     )}
                                 </div>
                                 <h3 className="font-cinzel font-bold text-lg text-foreground">
-                                    {weeklyBonus.reward}
+                                    {weeklyBonus.reward_display}
                                 </h3>
                                 <p className="text-xs text-muted-foreground">
-                                    {currentStreak >= 7
+                                    {(currentStreak % 7 || 7) === 7 && canClaimToday
                                         ? 'Weekly bonus unlocked!'
-                                        : `${7 - currentStreak} more day${7 - currentStreak > 1 ? 's' : ''} to unlock`}
+                                        : `${7 - (currentStreak % 7 || 7)} more day${7 - (currentStreak % 7 || 7) > 1 ? 's' : ''} to unlock`}
                                 </p>
                             </div>
-                            {currentStreak >= 7 && !weeklyBonus.claimed && (
-                                <Button className="btn-gold shrink-0">
-                                    Claim
+                            {(currentStreak % 7 || 7) === 7 && canClaimToday && !hasClaimed7 && (
+                                <Button
+                                    className="btn-gold shrink-0"
+                                    onClick={handleClaimDaily}
+                                    disabled={isProcessing}
+                                >
+                                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Claim'}
                                 </Button>
                             )}
                         </div>
@@ -272,7 +341,7 @@ const DailyRewardsPage = () => {
                         <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
                             <motion.div
                                 initial={{ width: 0 }}
-                                animate={{ width: `${(Math.min(currentStreak, 7) / 7) * 100}%` }}
+                                animate={{ width: `${(Math.min((currentStreak % 7) || 7, 7) / 7) * 100}%` }}
                                 transition={{ duration: 0.8, delay: 0.3 }}
                                 className="h-full rounded-full bg-gradient-gold"
                             />
@@ -280,23 +349,16 @@ const DailyRewardsPage = () => {
                     </div>
                 </motion.div>
 
-                {/* Daily Missions */}
+                {/* Info */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.5, delay: 0.3 }}
+                    className="noir-card p-4 text-center"
                 >
-                    <h2 className="font-cinzel text-sm font-semibold text-foreground mb-3">Daily Missions</h2>
-                    <div className="space-y-2">
-                        {dailyMissions.map((mission, index) => (
-                            <Mission
-                                key={mission.title}
-                                {...mission}
-                                delay={0.1 * index}
-                                onClaim={() => handleClaimMission(mission.title, mission.reward)}
-                            />
-                        ))}
-                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        Login every day to keep your streak going and earn bigger rewards!
+                    </p>
                 </motion.div>
             </div>
         </MainLayout>

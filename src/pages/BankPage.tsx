@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Landmark, ArrowDownToLine, ArrowUpFromLine, Shield, Clock, Wallet } from 'lucide-react';
+import { Landmark, ArrowDownToLine, ArrowUpFromLine, Shield, Clock, Wallet, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -7,25 +7,37 @@ import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
 import { GameIcon } from '@/components/GameIcon';
+import { useAuth } from '@/contexts/AuthContext';
+import { useGameStore } from '@/hooks/useGameStore';
 
 const BankPage = () => {
     const { toast } = useToast();
+    const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
+    const { deposit, withdraw } = useGameStore();
+
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [pendingAction, setPendingAction] = useState<{ type: 'deposit' | 'withdraw'; amount: number } | null>(null);
     const [depositAmount, setDepositAmount] = useState('');
     const [withdrawAmount, setWithdrawAmount] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    // Mock data
-    const walletCash = 12500000;
-    const bankedCash = 45000000;
-    const interestRate = 0.5; // 0.5% per day
-    const lastInterest = 225000; // Last interest earned
+    // Get data from player state (with defaults for loading state)
+    const walletCash = player?.cash ?? 0;
+    const bankedCash = player?.banked_cash ?? 0;
+    const interestRate = 0.5; // 0.5% per day (could be stored in config table)
+    const lastInterest = Math.floor(bankedCash * (interestRate / 100)); // Estimated daily interest
 
     const handleDeposit = () => {
         const amount = parseInt(depositAmount) || 0;
         if (amount > 0 && amount <= walletCash) {
             setPendingAction({ type: 'deposit', amount });
             setConfirmOpen(true);
+        } else if (amount > walletCash) {
+            toast({
+                title: 'Insufficient Funds',
+                description: 'You don\'t have enough cash in your wallet.',
+                variant: 'destructive',
+            });
         }
     };
 
@@ -34,24 +46,72 @@ const BankPage = () => {
         if (amount > 0 && amount <= bankedCash) {
             setPendingAction({ type: 'withdraw', amount });
             setConfirmOpen(true);
+        } else if (amount > bankedCash) {
+            toast({
+                title: 'Insufficient Funds',
+                description: 'You don\'t have enough cash in the vault.',
+                variant: 'destructive',
+            });
         }
     };
 
-    const confirmAction = () => {
-        if (pendingAction) {
+    const confirmAction = async () => {
+        if (!pendingAction) return;
+
+        setIsProcessing(true);
+
+        try {
+            let success = false;
+
+            if (pendingAction.type === 'deposit') {
+                success = await deposit(pendingAction.amount);
+            } else {
+                success = await withdraw(pendingAction.amount);
+            }
+
+            if (success) {
+                toast({
+                    title: pendingAction.type === 'deposit' ? 'Deposit Successful!' : 'Withdrawal Successful!',
+                    description: `$${pendingAction.amount.toLocaleString()} has been ${pendingAction.type === 'deposit' ? 'deposited to' : 'withdrawn from'} your vault.`,
+                });
+                setDepositAmount('');
+                setWithdrawAmount('');
+                // Refresh player data to update balances
+                await refetchPlayer();
+            } else {
+                toast({
+                    title: 'Transaction Failed',
+                    description: 'Could not complete the transaction. Please try again.',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Bank transaction error:', error);
             toast({
-                title: pendingAction.type === 'deposit' ? 'Deposit Successful!' : 'Withdrawal Successful!',
-                description: `$${pendingAction.amount.toLocaleString()} has been ${pendingAction.type === 'deposit' ? 'deposited to' : 'withdrawn from'} your vault.`,
+                title: 'Error',
+                description: 'An unexpected error occurred.',
+                variant: 'destructive',
             });
-            setDepositAmount('');
-            setWithdrawAmount('');
+        } finally {
+            setIsProcessing(false);
+            setConfirmOpen(false);
+            setPendingAction(null);
         }
-        setConfirmOpen(false);
-        setPendingAction(null);
     };
 
     const setMaxDeposit = () => setDepositAmount(walletCash.toString());
     const setMaxWithdraw = () => setWithdrawAmount(bankedCash.toString());
+
+    // Show loading state while auth is loading
+    if (isAuthLoading) {
+        return (
+            <MainLayout>
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+            </MainLayout>
+        );
+    }
 
     return (
         <MainLayout>
@@ -136,7 +196,7 @@ const BankPage = () => {
                         <span className="font-cinzel font-bold text-sm text-primary">+{interestRate}%</span>
                     </div>
                     <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
-                        <span className="text-xs text-muted-foreground">Last earned</span>
+                        <span className="text-xs text-muted-foreground">Est. daily earnings</span>
                         <span className="font-cinzel font-bold text-sm text-green-400">+${lastInterest.toLocaleString()}</span>
                     </div>
                 </motion.div>
@@ -159,12 +219,13 @@ const BankPage = () => {
                             value={depositAmount}
                             onChange={(e) => setDepositAmount(e.target.value)}
                             className="flex-1 bg-muted/30 border-border/50"
+                            disabled={isProcessing}
                         />
-                        <Button variant="outline" size="sm" onClick={setMaxDeposit} className="text-xs">
+                        <Button variant="outline" size="sm" onClick={setMaxDeposit} className="text-xs" disabled={isProcessing}>
                             Max
                         </Button>
-                        <Button className="btn-gold text-xs" onClick={handleDeposit}>
-                            Deposit
+                        <Button className="btn-gold text-xs" onClick={handleDeposit} disabled={isProcessing || !depositAmount}>
+                            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Deposit'}
                         </Button>
                     </div>
                 </motion.div>
@@ -187,12 +248,13 @@ const BankPage = () => {
                             value={withdrawAmount}
                             onChange={(e) => setWithdrawAmount(e.target.value)}
                             className="flex-1 bg-muted/30 border-border/50"
+                            disabled={isProcessing}
                         />
-                        <Button variant="outline" size="sm" onClick={setMaxWithdraw} className="text-xs">
+                        <Button variant="outline" size="sm" onClick={setMaxWithdraw} className="text-xs" disabled={isProcessing}>
                             Max
                         </Button>
-                        <Button variant="destructive" className="text-xs" onClick={handleWithdraw}>
-                            Withdraw
+                        <Button variant="destructive" className="text-xs" onClick={handleWithdraw} disabled={isProcessing || !withdrawAmount}>
+                            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Withdraw'}
                         </Button>
                     </div>
                 </motion.div>
@@ -204,7 +266,7 @@ const BankPage = () => {
                 title={pendingAction?.type === 'deposit' ? 'Confirm Deposit' : 'Confirm Withdrawal'}
                 description={`${pendingAction?.type === 'deposit' ? 'Deposit' : 'Withdraw'} $${pendingAction?.amount.toLocaleString()} ${pendingAction?.type === 'deposit' ? 'to' : 'from'} your vault?`}
                 onConfirm={confirmAction}
-                confirmText={pendingAction?.type === 'deposit' ? 'Deposit' : 'Withdraw'}
+                confirmText={isProcessing ? 'Processing...' : (pendingAction?.type === 'deposit' ? 'Deposit' : 'Withdraw')}
                 variant={pendingAction?.type === 'withdraw' ? 'destructive' : 'default'}
             />
         </MainLayout>

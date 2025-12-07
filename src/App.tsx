@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TonConnectProvider } from "@/providers/TonConnectProvider";
 import { RewardAnimationProvider } from "@/components/RewardAnimation";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { useGameStore } from "@/hooks/useGameStore";
+import { useEffect } from "react";
 import Index from "./pages/Index";
 import MarketPage from "./pages/MarketPage";
 import OpsPage from "./pages/OpsPage";
@@ -28,42 +31,71 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <TonConnectProvider>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <RewardAnimationProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/market" element={<MarketPage />} />
-              <Route path="/ops" element={<OpsPage />} />
-              <Route path="/family" element={<FamilyPage />} />
-              <Route path="/family/settings" element={<FamilySettingsPage />} />
-              <Route path="/family/browse" element={<BrowseFamiliesPage />} />
-              <Route path="/family/create" element={<CreateFamilyPage />} />
-              <Route path="/ranks" element={<RanksPage />} />
-              <Route path="/business" element={<BusinessPage />} />
-              <Route path="/inventory" element={<InventoryPage />} />
-              <Route path="/hire" element={<HirePage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/bank" element={<BankPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/daily-rewards" element={<DailyRewardsPage />} />
-              <Route path="/shop" element={<ShopPage />} />
-              <Route path="/bounty-board" element={<BountyBoardPage />} />
-              <Route path="/achievements" element={<AchievementsPage />} />
-              <Route path="/tasks" element={<TasksPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </RewardAnimationProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </TonConnectProvider>
-);
+import { useDeepLink } from "@/hooks/useDeepLink";
+
+// Syncs auth state with game store and loads initial data
+const GameInitializer = () => {
+  const { player, isAuthenticated } = useAuth();
+  const { setPlayerId, loadAllData, reset } = useGameStore();
+
+  useEffect(() => {
+    if (isAuthenticated && player?.id) {
+      setPlayerId(player.id);
+      loadAllData();
+    } else {
+      reset();
+    }
+  }, [isAuthenticated, player?.id, setPlayerId, loadAllData, reset]);
+
+  return null;
+};
+
+const DeepLinkHandler = () => {
+  useDeepLink();
+  return null;
+};
+
+const App = () => {
+  return (
+    <TonConnectProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <RewardAnimationProvider>
+              <GameInitializer />
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <DeepLinkHandler />
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/market" element={<MarketPage />} />
+                  <Route path="/ops" element={<OpsPage />} />
+                  <Route path="/family" element={<FamilyPage />} />
+                  <Route path="/family/settings" element={<FamilySettingsPage />} />
+                  <Route path="/family/browse" element={<BrowseFamiliesPage />} />
+                  <Route path="/family/create" element={<CreateFamilyPage />} />
+                  <Route path="/ranks" element={<RanksPage />} />
+                  <Route path="/business" element={<BusinessPage />} />
+                  <Route path="/inventory" element={<InventoryPage />} />
+                  <Route path="/hire" element={<HirePage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/bank" element={<BankPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/daily-rewards" element={<DailyRewardsPage />} />
+                  <Route path="/shop" element={<ShopPage />} />
+                  <Route path="/bounty-board" element={<BountyBoardPage />} />
+                  <Route path="/achievements" element={<AchievementsPage />} />
+                  <Route path="/tasks" element={<TasksPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </RewardAnimationProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </TonConnectProvider>
+  );
+};
 
 export default App;
-

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Home, ShoppingBag, Swords, Users, Trophy } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTelegramBackButton } from '@/hooks/useTelegram';
+import { useNotifications } from '@/hooks/useNotifications';
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -53,14 +54,8 @@ export const BottomNav = () => {
   // Enable Telegram back button handling
   useTelegramBackButton();
 
-  // Mock badge state - will come from context/notifications
-  const badges = {
-    home: true, // Has unclaimed daily reward
-    market: false,
-    ops: 3, // 3 new bounties
-    family: false,
-    ranks: false,
-  };
+  // Real badge state
+  const badges = useNotifications();
 
   const navItems = [
     { icon: <Home className="w-5 h-5" />, label: 'Home', path: '/', badge: badges.home },

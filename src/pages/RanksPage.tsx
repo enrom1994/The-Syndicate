@@ -1,8 +1,17 @@
 import { motion } from 'framer-motion';
-import { Trophy, Crown, DollarSign, MapPin, Skull, Star, Medal } from 'lucide-react';
-import { useState } from 'react';
+import { Trophy, Crown, DollarSign, MapPin, Skull, Star, Medal, Loader2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface LeaderboardEntry {
+    rank: number;
+    player_id: string;
+    username: string;
+    value: number;
+}
 
 interface LeaderboardEntryProps {
     rank: number;
@@ -13,7 +22,7 @@ interface LeaderboardEntryProps {
     delay?: number;
 }
 
-const LeaderboardEntry = ({ rank, name, family, value, isYou, delay = 0 }: LeaderboardEntryProps) => {
+const LeaderboardEntryComponent = ({ rank, name, family, value, isYou, delay = 0 }: LeaderboardEntryProps) => {
     const getRankIcon = () => {
         if (rank === 1) return <Crown className="w-5 h-5 text-yellow-500" />;
         if (rank === 2) return <Medal className="w-5 h-5 text-gray-400" />;
@@ -47,40 +56,133 @@ const LeaderboardEntry = ({ rank, name, family, value, isYou, delay = 0 }: Leade
     );
 };
 
+const formatValue = (value: number, type: string): string => {
+    if (type === 'networth') {
+        if (value >= 1000000000) return `$${(value / 1000000000).toFixed(1)}B`;
+        if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+        if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
+        return `$${value.toLocaleString()}`;
+    }
+    if (type === 'kills') {
+        return `${value.toLocaleString()} Kills`;
+    }
+    if (type === 'respect') {
+        return value.toLocaleString();
+    }
+    return value.toLocaleString();
+};
+
 const RanksPage = () => {
     const [activeTab, setActiveTab] = useState('networth');
+    const [leaderboardData, setLeaderboardData] = useState<Record<string, LeaderboardEntry[]>>({
+        networth: [],
+        kills: [],
+        respect: [],
+    });
+    const [isLoading, setIsLoading] = useState(true);
+    const [playerRank, setPlayerRank] = useState<{ networth: number; respect: number; kills: number } | null>(null);
 
-    const netWorthLeaders = [
-        { rank: 1, name: 'Don Corleone', family: 'The Corleone Family', value: '$482M' },
-        { rank: 2, name: 'Al Capone', family: 'Chicago Outfit', value: '$356M' },
-        { rank: 3, name: 'Lucky Luciano', family: 'Commission', value: '$298M' },
-        { rank: 4, name: 'Meyer Lansky', family: 'The Syndicate', value: '$245M' },
-        { rank: 5, name: 'Bugsy Siegel', family: 'Las Vegas', value: '$198M' },
-        { rank: 1247, name: 'Michael', family: 'The Corleone Family', value: '$12.5M', isYou: true },
-    ];
+    const { player } = useAuth();
 
+    const fetchLeaderboard = useCallback(async (type: string) => {
+        try {
+            const { data, error } = await supabase.rpc('get_leaderboard', {
+                leaderboard_type: type,
+                limit_count: 10,
+            });
+
+            if (error) {
+                console.error(`Error fetching ${type} leaderboard:`, error);
+                return [];
+            }
+
+            return data || [];
+        } catch (error) {
+            console.error(`Error fetching ${type} leaderboard:`, error);
+            return [];
+        }
+    }, []);
+
+    const calculatePlayerRank = useCallback(async () => {
+        if (!player?.id) return;
+
+        try {
+            // Get player's net worth rank
+            const netWorth = await supabase.rpc('calculate_net_worth', {
+                player_id_input: player.id,
+            });
+
+            // Count players with higher values to estimate rank
+            const { count: networthRank } = await supabase
+                .from('players')
+                .select('*', { count: 'exact', head: true })
+                .gt('cash', player.cash);
+
+            const { count: respectRank } = await supabase
+                .from('players')
+                .select('*', { count: 'exact', head: true })
+                .gt('respect', player.respect);
+
+            const { count: killsRank } = await supabase
+                .from('players')
+                .select('*', { count: 'exact', head: true })
+                .gt('total_kills', player.total_kills);
+
+            setPlayerRank({
+                networth: (networthRank || 0) + 1,
+                respect: (respectRank || 0) + 1,
+                kills: (killsRank || 0) + 1,
+            });
+        } catch (error) {
+            console.error('Error calculating player rank:', error);
+        }
+    }, [player]);
+
+    useEffect(() => {
+        const loadAllLeaderboards = async () => {
+            setIsLoading(true);
+
+            const [networth, kills, respect] = await Promise.all([
+                fetchLeaderboard('networth'),
+                fetchLeaderboard('kills'),
+                fetchLeaderboard('respect'),
+            ]);
+
+            setLeaderboardData({
+                networth,
+                kills,
+                respect,
+            });
+
+            await calculatePlayerRank();
+            setIsLoading(false);
+        };
+
+        loadAllLeaderboards();
+    }, [fetchLeaderboard, calculatePlayerRank]);
+
+    const getCurrentLeaderboard = () => {
+        const data = leaderboardData[activeTab] || [];
+        return data.map((entry) => ({
+            rank: Number(entry.rank),
+            name: entry.username || `Player ${entry.player_id.slice(0, 6)}`,
+            value: formatValue(entry.value, activeTab),
+            isYou: entry.player_id === player?.id,
+        }));
+    };
+
+    const getPlayerNetWorth = () => {
+        if (!player) return 0;
+        return player.cash + player.banked_cash;
+    };
+
+    // Territory is not implemented in DB yet - placeholder
     const territoryLeaders = [
         { rank: 1, name: 'The Gambino Family', value: '24 Zones' },
         { rank: 2, name: 'Chicago Outfit', value: '21 Zones' },
         { rank: 3, name: 'The Corleone Family', value: '18 Zones' },
         { rank: 4, name: 'Five Points Gang', value: '15 Zones' },
         { rank: 5, name: 'Purple Gang', value: '12 Zones' },
-    ];
-
-    const killLeaders = [
-        { rank: 1, name: 'Mad Dog Coll', family: 'Independent', value: '847 Kills' },
-        { rank: 2, name: 'Albert Anastasia', family: 'Murder Inc.', value: '723 Kills' },
-        { rank: 3, name: 'Lepke Buchalter', family: 'Murder Inc.', value: '654 Kills' },
-        { rank: 4, name: 'Tony Accardo', family: 'Chicago Outfit', value: '532 Kills' },
-        { rank: 5, name: 'Frank Nitti', family: 'Chicago Outfit', value: '489 Kills' },
-    ];
-
-    const respectLeaders = [
-        { rank: 1, name: 'Don Corleone', family: 'The Corleone Family', value: '98,542' },
-        { rank: 2, name: 'Carlo Gambino', family: 'The Gambino Family', value: '87,231' },
-        { rank: 3, name: 'Frank Costello', family: 'The Luciano Family', value: '76,892' },
-        { rank: 4, name: 'Joe Bonanno', family: 'The Bonanno Family', value: '65,423' },
-        { rank: 5, name: 'Tommy Lucchese', family: 'The Lucchese Family', value: '54,321' },
     ];
 
     return (
@@ -115,20 +217,28 @@ const RanksPage = () => {
                 >
                     <div className="flex items-center justify-between mb-3">
                         <span className="text-xs text-muted-foreground uppercase tracking-wide">Your Rank</span>
-                        <span className="font-cinzel font-bold text-2xl text-primary">#1,247</span>
+                        <span className="font-cinzel font-bold text-2xl text-primary">
+                            #{playerRank?.networth?.toLocaleString() ?? '---'}
+                        </span>
                     </div>
                     <div className="grid grid-cols-3 gap-3 text-center">
                         <div>
                             <p className="text-xs text-muted-foreground">Net Worth</p>
-                            <p className="font-cinzel font-bold text-sm text-foreground">$12.5M</p>
+                            <p className="font-cinzel font-bold text-sm text-foreground">
+                                {formatValue(getPlayerNetWorth(), 'networth')}
+                            </p>
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground">Respect</p>
-                            <p className="font-cinzel font-bold text-sm text-foreground">2,847</p>
+                            <p className="font-cinzel font-bold text-sm text-foreground">
+                                {player?.respect?.toLocaleString() ?? 0}
+                            </p>
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground">Kills</p>
-                            <p className="font-cinzel font-bold text-sm text-foreground">42</p>
+                            <p className="font-cinzel font-bold text-sm text-foreground">
+                                {player?.total_kills ?? 0}
+                            </p>
                         </div>
                     </div>
                 </motion.div>
@@ -149,33 +259,67 @@ const RanksPage = () => {
                         </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="networth" className="space-y-2 mt-0">
-                        <h3 className="font-cinzel text-xs text-muted-foreground mb-2">Top Net Worth</h3>
-                        {netWorthLeaders.map((entry, index) => (
-                            <LeaderboardEntry key={entry.rank + entry.name} {...entry} delay={0.05 * index} />
-                        ))}
-                    </TabsContent>
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-12">
+                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        </div>
+                    ) : (
+                        <>
+                            <TabsContent value="networth" className="space-y-2 mt-0">
+                                <h3 className="font-cinzel text-xs text-muted-foreground mb-2">Top Net Worth</h3>
+                                {getCurrentLeaderboard().length === 0 ? (
+                                    <p className="text-center text-muted-foreground text-sm py-4">No players yet</p>
+                                ) : (
+                                    getCurrentLeaderboard().map((entry, index) => (
+                                        <LeaderboardEntryComponent key={entry.rank + entry.name} {...entry} delay={0.05 * index} />
+                                    ))
+                                )}
+                            </TabsContent>
 
-                    <TabsContent value="territory" className="space-y-2 mt-0">
-                        <h3 className="font-cinzel text-xs text-muted-foreground mb-2">Territory Control (Families)</h3>
-                        {territoryLeaders.map((entry, index) => (
-                            <LeaderboardEntry key={entry.rank + entry.name} {...entry} delay={0.05 * index} />
-                        ))}
-                    </TabsContent>
+                            <TabsContent value="territory" className="space-y-2 mt-0">
+                                <h3 className="font-cinzel text-xs text-muted-foreground mb-2">Territory Control (Families)</h3>
+                                {territoryLeaders.map((entry, index) => (
+                                    <LeaderboardEntryComponent key={entry.rank + entry.name} {...entry} delay={0.05 * index} />
+                                ))}
+                            </TabsContent>
 
-                    <TabsContent value="kills" className="space-y-2 mt-0">
-                        <h3 className="font-cinzel text-xs text-muted-foreground mb-2">Most Kills</h3>
-                        {killLeaders.map((entry, index) => (
-                            <LeaderboardEntry key={entry.rank + entry.name} {...entry} delay={0.05 * index} />
-                        ))}
-                    </TabsContent>
+                            <TabsContent value="kills" className="space-y-2 mt-0">
+                                <h3 className="font-cinzel text-xs text-muted-foreground mb-2">Most Kills</h3>
+                                {leaderboardData.kills.length === 0 ? (
+                                    <p className="text-center text-muted-foreground text-sm py-4">No kills recorded yet</p>
+                                ) : (
+                                    leaderboardData.kills.map((entry, index) => (
+                                        <LeaderboardEntryComponent
+                                            key={entry.rank + entry.player_id}
+                                            rank={Number(entry.rank)}
+                                            name={entry.username || `Player ${entry.player_id.slice(0, 6)}`}
+                                            value={formatValue(entry.value, 'kills')}
+                                            isYou={entry.player_id === player?.id}
+                                            delay={0.05 * index}
+                                        />
+                                    ))
+                                )}
+                            </TabsContent>
 
-                    <TabsContent value="respect" className="space-y-2 mt-0">
-                        <h3 className="font-cinzel text-xs text-muted-foreground mb-2">Highest Respect</h3>
-                        {respectLeaders.map((entry, index) => (
-                            <LeaderboardEntry key={entry.rank + entry.name} {...entry} delay={0.05 * index} />
-                        ))}
-                    </TabsContent>
+                            <TabsContent value="respect" className="space-y-2 mt-0">
+                                <h3 className="font-cinzel text-xs text-muted-foreground mb-2">Highest Respect</h3>
+                                {leaderboardData.respect.length === 0 ? (
+                                    <p className="text-center text-muted-foreground text-sm py-4">No respect earned yet</p>
+                                ) : (
+                                    leaderboardData.respect.map((entry, index) => (
+                                        <LeaderboardEntryComponent
+                                            key={entry.rank + entry.player_id}
+                                            rank={Number(entry.rank)}
+                                            name={entry.username || `Player ${entry.player_id.slice(0, 6)}`}
+                                            value={formatValue(entry.value, 'respect')}
+                                            isYou={entry.player_id === player?.id}
+                                            delay={0.05 * index}
+                                        />
+                                    ))
+                                )}
+                            </TabsContent>
+                        </>
+                    )}
                 </Tabs>
 
                 <motion.div
