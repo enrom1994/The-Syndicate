@@ -107,14 +107,16 @@ serve(async (req) => {
         const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
         const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-        const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET');
+
+        // Try standard var first, then custom one
+        const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET') || Deno.env.get('JWT_SECRET');
 
         // Debug: log which variables are missing
         const missingVars = [];
         if (!botToken) missingVars.push('TELEGRAM_BOT_TOKEN');
         if (!supabaseUrl) missingVars.push('SUPABASE_URL');
         if (!supabaseServiceKey) missingVars.push('SUPABASE_SERVICE_ROLE_KEY');
-        if (!jwtSecret) missingVars.push('SUPABASE_JWT_SECRET');
+        if (!jwtSecret) missingVars.push('SUPABASE_JWT_SECRET/JWT_SECRET');
 
         if (missingVars.length > 0) {
             console.error('Missing environment variables:', missingVars.join(', '));
