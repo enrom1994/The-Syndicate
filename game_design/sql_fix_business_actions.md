@@ -1,3 +1,16 @@
+# Fix Business Purchase Error - UPDATED
+
+**I found the second error!** The database table is called `transactions`, not `transaction_log`. I have corrected the code.
+
+## Instructions
+
+1.  Open your **Supabase Dashboard**.
+2.  Go to the **SQL Editor**.
+3.  Click **New Query**.
+4.  Copy the code below entirely and paste it into the editor.
+5.  Click **Run**.
+
+```sql
 -- Function to buy a business securely
 CREATE OR REPLACE FUNCTION buy_business(
     player_id_input UUID,
@@ -12,16 +25,13 @@ DECLARE
     business_cost BIGINT;
     player_cash BIGINT;
     existing_business_id TEXT;
-    
-    -- Variables to hold the definition details
     def_id UUID;
     def_price INTEGER;
 BEGIN
-    -- 1. Check if business exists and get cost. 
-    -- Input is likely the 'id' UUID, not name.
+    -- 1. Check if business exists and get cost
     SELECT id, base_purchase_cost INTO def_id, def_price
     FROM business_definitions
-    WHERE id = business_id_input::UUID; -- Cast to UUID just in case
+    WHERE id = business_id_input::UUID;
 
     IF def_id IS NULL THEN
         RETURN jsonb_build_object('success', false, 'message', 'Invalid business ID');
@@ -76,7 +86,6 @@ SECURITY DEFINER
 AS $$
 DECLARE
     business_record RECORD;
-    def_record RECORD;
     upgrade_cost BIGINT;
     player_cash BIGINT;
 BEGIN
@@ -96,8 +105,7 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', 'Max level reached');
     END IF;
 
-    -- 3. Calculate Upgrade Cost
-    -- Formula: Base Cost * (Multiplier ^ Current Level)
+    -- 3. Calculate Upgrade Cost (Base * Multiplier^Level)
     upgrade_cost := (business_record.base_purchase_cost * POWER(business_record.upgrade_cost_multiplier, business_record.level))::BIGINT;
 
     -- 4. Check Cash
@@ -127,3 +135,4 @@ BEGIN
     RETURN jsonb_build_object('success', true, 'message', 'Business upgraded successfully');
 END;
 $$;
+```
