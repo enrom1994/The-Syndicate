@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Coins, Sword, TrendingUp, Building2, Users, Gift, Clock, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useNotifications } from '@/hooks/useNotifications';
 
 type ActivityType = 'income' | 'attack' | 'upgrade' | 'business' | 'family' | 'reward';
 
@@ -52,14 +53,16 @@ const ActivityItem = ({ activity, index }: ActivityItemProps) => (
 
 export const RecentActivity = () => {
     const navigate = useNavigate();
-    // Mock data - will come from notifications context
-    const activities: Activity[] = [
-        { id: '1', type: 'income', message: 'Collected $5,000', details: 'from Speakeasy', timeAgo: '2m' },
-        { id: '2', type: 'attack', message: 'Attacked Mike_NYC', details: 'Won! +$2,500', timeAgo: '15m' },
-        { id: '3', type: 'upgrade', message: 'Business upgraded', details: 'Nightclub to Level 3', timeAgo: '1h' },
-        { id: '4', type: 'reward', message: 'Daily reward claimed', details: '+50 Energy', timeAgo: '2h' },
-        { id: '5', type: 'family', message: 'Joined The Corleone Family', timeAgo: '1d' },
-    ];
+    const { notifications, isLoading } = useNotifications();
+
+    // Map notifications to activity format
+    const activities: Activity[] = notifications.slice(0, 5).map(n => ({
+        id: String(n.id), // Convert number ID to string
+        type: n.type as ActivityType, // Assuming type matches or you need a mapper
+        message: n.title,
+        details: n.message,
+        timeAgo: new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) // Simple formatting
+    }));
 
     return (
         <motion.section

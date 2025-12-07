@@ -33,38 +33,42 @@ telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_ready
 telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_expand 
 telegram-web-app.js:135 [Telegram.WebView] > postEvent web_app_setup_back_button 
 {is_visible: false}
-index-6MCma5FO.js:1653 [Auth] Telegram WebApp: true
-index-6MCma5FO.js:1653 [Auth] initData present: true
-index-6MCma5FO.js:1653 [Auth] initData length: 597
-index-6MCma5FO.js:1653 [Auth] initDataUnsafe.user: 
+index-D8Jio2Tk.js:1653 [Auth] Telegram WebApp: true
+index-D8Jio2Tk.js:1653 [Auth] initData present: true
+index-D8Jio2Tk.js:1653 [Auth] initData length: 597
+index-D8Jio2Tk.js:1653 [Auth] initDataUnsafe.user: 
 {id: 7058432307, first_name: 'Kwaad', last_name: 'Juice', username: 'Kwaad_Juice_TG', language_code: 'en', …}
-index-6MCma5FO.js:1653 [Auth] Calling Edge Function via supabase.functions.invoke...
-index-6MCma5FO.js:1653 [Auth] Edge Function success, data: 
-{token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhd…4ZSJ9.bomxggJ-SY4lhW7Njf-mp85ajJ1It4mNKtjciCMQ_Mc', user: {…}, player: {…}, isNewUser: true}
-index-6MCma5FO.js:1637 
+index-D8Jio2Tk.js:1653 [Auth] Calling Edge Function via supabase.functions.invoke...
+index-D8Jio2Tk.js:1653 [Auth] Edge Function success, data: 
+{token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJhd…4ZSJ9.ob2eotwjT_tJ4A_rMYeS3StO0Z3TpUbmWG2vx1szOV0', user: {…}, player: {…}, isNewUser: false}
+index-D8Jio2Tk.js:1637 
  GET https://giwolutowfkvkcxlcwus.supabase.co/auth/v1/user 403 (Forbidden)
-(anonymous)	@	index-6MCma5FO.js:1637
-Pee	@	index-6MCma5FO.js:1637
-qe	@	index-6MCma5FO.js:1637
-_getUser	@	index-6MCma5FO.js:1653
-_setSession	@	index-6MCma5FO.js:1653
-(anonymous)	@	index-6MCma5FO.js:1653
-(anonymous)	@	index-6MCma5FO.js:1653
-(anonymous)	@	index-6MCma5FO.js:1637
-index-6MCma5FO.js:1653 Login error: Error: Failed to set session
-    at index-6MCma5FO.js:1653:46389
-    at async index-6MCma5FO.js:1653:46635
-(anonymous)	@	index-6MCma5FO.js:1653
+(anonymous)	@	index-D8Jio2Tk.js:1637
+Pee	@	index-D8Jio2Tk.js:1637
+qe	@	index-D8Jio2Tk.js:1637
+_getUser	@	index-D8Jio2Tk.js:1653
+_setSession	@	index-D8Jio2Tk.js:1653
+(anonymous)	@	index-D8Jio2Tk.js:1653
+(anonymous)	@	index-D8Jio2Tk.js:1653
+(anonymous)	@	index-D8Jio2Tk.js:1637
+index-D8Jio2Tk.js:1653 [Auth] Failed to set session via Supabase client (likely 403 restricted): AuthSessionMissingError: Auth session missing!
+    at VC (index-D8Jio2Tk.js:1637:8175)
+    at async Pee (index-D8Jio2Tk.js:1637:9452)
+    at async qe (index-D8Jio2Tk.js:1637:9110)
+    at async ate._getUser (index-D8Jio2Tk.js:1653:9544)
+    at async ate._setSession (index-D8Jio2Tk.js:1653:11646)
+    at async index-D8Jio2Tk.js:1653:11209
+(anonymous)	@	index-D8Jio2Tk.js:1653
 await in (anonymous)		
-(anonymous)	@	index-6MCma5FO.js:1653
+(anonymous)	@	index-D8Jio2Tk.js:1653
 await in (anonymous)		
-(anonymous)	@	index-6MCma5FO.js:1653
-Gm	@	index-6MCma5FO.js:40
-ac	@	index-6MCma5FO.js:40
-m5	@	index-6MCma5FO.js:40
-pa	@	index-6MCma5FO.js:38
-xM	@	index-6MCma5FO.js:40
-ka	@	index-6MCma5FO.js:40
-k_	@	index-6MCma5FO.js:40
-E	@	index-6MCma5FO.js:25
-I	@	index-6MCma5FO.js:25
+(anonymous)	@	index-D8Jio2Tk.js:1653
+Gm	@	index-D8Jio2Tk.js:40
+ac	@	index-D8Jio2Tk.js:40
+m5	@	index-D8Jio2Tk.js:40
+pa	@	index-D8Jio2Tk.js:38
+xM	@	index-D8Jio2Tk.js:40
+ka	@	index-D8Jio2Tk.js:40
+k_	@	index-D8Jio2Tk.js:40
+E	@	index-D8Jio2Tk.js:25
+I	@	index-D8Jio2Tk.js:25
