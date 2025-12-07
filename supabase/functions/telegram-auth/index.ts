@@ -13,9 +13,18 @@ const corsHeaders = {
 // Validate Telegram initData using HMAC-SHA256
 async function validateTelegramData(initData: string, botToken: string): Promise<boolean> {
     try {
+        console.log('[Validation] Starting validation...');
+        console.log('[Validation] Bot token length:', botToken?.length || 0);
+        console.log('[Validation] initData length:', initData?.length || 0);
+
         const params = new URLSearchParams(initData);
         const hash = params.get('hash');
-        if (!hash) return false;
+        console.log('[Validation] Hash from initData:', hash?.slice(0, 20) + '...');
+
+        if (!hash) {
+            console.log('[Validation] No hash found in initData');
+            return false;
+        }
 
         // Remove hash from params for verification
         params.delete('hash');
@@ -25,6 +34,8 @@ async function validateTelegramData(initData: string, botToken: string): Promise
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([key, value]) => `${key}=${value}`)
             .join('\n');
+
+        console.log('[Validation] Data check string keys:', Array.from(params.keys()).join(', '));
 
         // Create secret key: HMAC-SHA256(botToken, "WebAppData")
         const encoder = new TextEncoder();
@@ -53,9 +64,12 @@ async function validateTelegramData(initData: string, botToken: string): Promise
             .map(b => b.toString(16).padStart(2, '0'))
             .join('');
 
+        console.log('[Validation] Calculated hash:', calculatedHashHex.slice(0, 20) + '...');
+        console.log('[Validation] Hashes match:', calculatedHashHex === hash);
+
         return calculatedHashHex === hash;
     } catch (error) {
-        console.error('Validation error:', error);
+        console.error('[Validation] Error:', error);
         return false;
     }
 }
