@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useGameStore } from '@/hooks/useGameStore';
 
 interface Player {
     id: string;
@@ -66,6 +67,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
                 setPlayer(null);
+                useGameStore.getState().setPlayerId(null);
                 return;
             }
 
@@ -81,7 +83,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 return;
             }
 
-            setPlayer(data);
+            if (data) {
+                setPlayer(data);
+
+                // Sync to GameStore
+                useGameStore.getState().setPlayerId(data.id);
+                useGameStore.getState().setPlayerStats({
+                    cash: data.cash,
+                    diamonds: data.diamonds,
+                    energy: data.energy,
+                    maxEnergy: data.max_energy,
+                    stamina: data.stamina,
+                    maxStamina: data.max_stamina,
+                    level: data.level,
+                    respect: data.respect
+                });
+            }
+
             setError(null);
         } catch (err) {
             console.error('Error fetching player:', err);
@@ -177,6 +195,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
 
             setPlayer(playerData);
+
+            // Sync to GameStore
+            useGameStore.getState().setPlayerId(playerData.id);
+            useGameStore.getState().setPlayerStats({
+                cash: playerData.cash,
+                diamonds: playerData.diamonds,
+                energy: playerData.energy,
+                maxEnergy: playerData.max_energy,
+                stamina: playerData.stamina,
+                maxStamina: playerData.max_stamina,
+                level: playerData.level,
+                respect: playerData.respect
+            });
+
             setError(null);
         } catch (err: any) {
             console.error('Login error:', err);

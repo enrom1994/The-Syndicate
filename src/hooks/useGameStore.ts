@@ -124,6 +124,16 @@ export interface ItemDefinition {
 interface GameState {
     // Player data (synced from AuthContext)
     playerId: string | null;
+    playerStats: {
+        cash: number;
+        diamonds: number;
+        energy: number;
+        maxEnergy: number;
+        stamina: number;
+        maxStamina: number;
+        level: number;
+        respect: number;
+    };
 
     // Loaded data
     inventory: InventoryItem[];
@@ -147,6 +157,7 @@ interface GameState {
 
     // Actions
     setPlayerId: (id: string | null) => void;
+    setPlayerStats: (stats: GameState['playerStats']) => void;
 
     // Data loading
     loadInventory: () => Promise<void>;
@@ -194,6 +205,16 @@ interface GameState {
 
 export const useGameStore = create<GameState>((set, get) => ({
     playerId: null,
+    playerStats: {
+        cash: 0,
+        diamonds: 0,
+        energy: 0,
+        maxEnergy: 100,
+        stamina: 0,
+        maxStamina: 100,
+        level: 1,
+        respect: 0,
+    },
 
     inventory: [],
     businesses: [],
@@ -213,6 +234,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     isLoadingDefinitions: false,
 
     setPlayerId: (id) => set({ playerId: id }),
+    setPlayerStats: (stats) => set({ playerStats: stats }),
 
     // Load inventory with item details
     loadInventory: async () => {
