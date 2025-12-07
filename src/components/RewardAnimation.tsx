@@ -16,7 +16,7 @@ interface Particle {
 
 const rewardIcons: Record<RewardType, React.ReactNode> = {
     cash: <GameIcon type="cash" className="w-8 h-8" />,
-    diamonds: <GameIcon type="diamond" className="w-8 h-8" />,
+    diamonds: <GameIcon type="diamond" className="w-12 h-12" />, // Increased size
     energy: <Zap className="w-6 h-6 text-yellow-400" />,
     item: <Gift className="w-6 h-6 text-purple-400" />,
 };

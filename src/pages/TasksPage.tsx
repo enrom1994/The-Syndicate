@@ -76,7 +76,7 @@ const TaskCard = ({
                                 {task.reward.type === 'cash' ? (
                                     <GameIcon type="cash" className="w-4 h-4" />
                                 ) : (
-                                    <GameIcon type="diamond" className="w-4 h-4" />
+                                    <GameIcon type="diamond" className="w-5 h-5" /> // Increased size
                                 )}
                                 {task.reward.type === 'cash'
                                     ? `$${(task.reward.amount / 1000).toFixed(0)}K`

@@ -48,7 +48,7 @@ const categoryIcons: Record<AchievementCategory, React.ReactNode> = {
     business: <Briefcase className="w-4 h-4" />,
     social: <Users className="w-4 h-4" />,
     wealth: <GameIcon type="cash" className="w-5 h-5" />,
-    milestone: <GameIcon type="diamond" className="w-5 h-5" />,
+    milestone: <GameIcon type="diamond" className="w-6 h-6" />, // Increased size
 };
 
 const AchievementCard = ({
@@ -87,7 +87,7 @@ const AchievementCard = ({
                             {achievement.reward.type === 'cash' ? (
                                 <GameIcon type="cash" className="w-4 h-4" />
                             ) : (
-                                <GameIcon type="diamond" className="w-4 h-4" />
+                                <GameIcon type="diamond" className="w-5 h-5" /> // Increased size
                             )}
                             <span>
                                 {achievement.reward.type === 'cash'

@@ -35,7 +35,7 @@ const DiamondPackage = ({ name, price, diamonds, bonus, popular, delay = 0, onBu
             {bonus && <p className="text-[10px] text-green-400">+{bonus} Bonus!</p>}
         </div>
         <div className="flex items-center justify-center gap-1 mb-3">
-            <GameIcon type="diamond" className="w-6 h-6" />
+            <GameIcon type="diamond" className="w-8 h-8" /> // Increased size
             <span className="font-cinzel font-bold text-xl text-foreground">{diamonds.toLocaleString()}</span>
         </div>
         <Button className="w-full btn-gold text-xs" onClick={onBuy}>
@@ -74,7 +74,7 @@ const BoosterItem = ({ name, description, icon, price, duration, delay = 0, onBu
                 </div>
             </div>
             <Button className="btn-gold text-xs shrink-0" onClick={onBuy}>
-                <GameIcon type="diamond" className="w-4 h-4 mr-1" />
+                <GameIcon type="diamond" className="w-5 h-5 mr-1" /> // Increased size
                 {price}
             </Button>
         </div>
@@ -150,7 +150,7 @@ const ShopPage = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-1 noir-card px-3 py-1.5">
-                        <GameIcon type="diamond" className="w-5 h-5" />
+                        <GameIcon type="diamond" className="w-8 h-8" /> // Increased size
                         <span className="font-cinzel font-bold text-sm text-foreground">{diamonds}</span>
                     </div>
                 </motion.div>
