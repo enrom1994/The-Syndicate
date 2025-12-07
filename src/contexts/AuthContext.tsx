@@ -134,19 +134,71 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     daily_streak: 0,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
-                    maxStamina: playerData.max_stamina,
-                    level: playerData.level,
-                    respect: playerData.respect
                 });
-
-                setError(null);
-            } catch (err: any) {
-                console.error('Login error:', err);
-                setError(err.message || 'Authentication failed');
-            } finally {
                 setIsLoading(false);
+                return;
             }
-        }, []);
+
+            // Call Telegram auth Edge Function
+            console.log('[Auth] Calling Edge Function via supabase.functions.invoke...');
+
+            // Use supabase.functions.invoke for automatic header handling (including Auth)
+            const { data, error: invokeError } = await supabase.functions.invoke('telegram-auth', {
+                body: { initData: tg.initData }
+            });
+
+            if (invokeError) {
+                console.error('[Auth] Function invocation error:', invokeError);
+                console.log('[Auth] Error details:', JSON.stringify(invokeError));
+                throw invokeError;
+            }
+
+            console.log('[Auth] Edge Function success. Player Data:', data.player);
+            console.log('[Auth] Player Cash from Function:', data.player?.cash);
+
+            const { token, player: playerData } = data;
+
+            // Set the session in Supabase
+            const { error: sessionError } = await supabase.auth.setSession({
+                access_token: token,
+                refresh_token: token,
+            });
+
+            if (sessionError) {
+                // Only log if it's NOT the expected "Auth session missing" or 403 error we get in this dev mode
+                const isExpectedError = sessionError.message?.includes('Auth session missing') ||
+                    sessionError.message?.includes('403') ||
+                    JSON.stringify(sessionError).includes('403');
+
+                if (!isExpectedError) {
+                    console.warn('[Auth] Session warning:', sessionError);
+                }
+            }
+
+            setPlayer(playerData);
+
+            // Sync to GameStore
+            console.log('[Auth] Syncing to GameStore. Cash:', playerData.cash);
+            useGameStore.getState().setPlayerId(playerData.id);
+            useGameStore.getState().setPlayerStats({
+                cash: playerData.cash,
+                diamonds: playerData.diamonds,
+                energy: playerData.energy,
+                maxEnergy: playerData.max_energy,
+                stamina: playerData.stamina,
+                maxStamina: playerData.max_stamina,
+                level: playerData.level,
+                respect: playerData.respect
+            });
+
+            setError(null);
+        } catch (err: any) {
+            console.error('Login error:', err);
+            setError(err.message || 'Authentication failed');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
     // Initial auth check and login
     useEffect(() => {
