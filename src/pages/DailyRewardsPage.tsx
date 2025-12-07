@@ -111,12 +111,12 @@ const DailyRewardsPage = () => {
             const { data, error } = await supabase
                 .from('daily_reward_definitions')
                 .select('*')
-                .order('day', { ascending: true });
+                .order('day_number', { ascending: true });
 
             if (error) throw error;
 
             const rewards = data?.map(d => ({
-                day: d.day,
+                day: d.day_number,
                 reward_type: d.reward_type as 'cash' | 'diamonds' | 'energy' | 'item',
                 reward_amount: d.reward_amount,
                 reward_display: d.reward_type === 'cash'
@@ -125,7 +125,7 @@ const DailyRewardsPage = () => {
                         ? `${d.reward_amount} 💎`
                         : d.reward_type === 'energy'
                             ? `${d.reward_amount} ⚡`
-                            : d.description || 'Item',
+                            : 'Mystery Reward',
             })) || [];
 
             setDailyRewardDefinitions(rewards);
