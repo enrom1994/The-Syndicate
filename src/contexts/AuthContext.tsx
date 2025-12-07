@@ -142,24 +142,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
 
             // Call Telegram auth Edge Function
-            console.log('[Auth] Calling Edge Function...');
-            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-            const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ initData: tg.initData }),
+            console.log('[Auth] Calling Edge Function via supabase.functions.invoke...');
+
+            // Use supabase.functions.invoke for automatic header handling (including Auth)
+            const { data, error: invokeError } = await supabase.functions.invoke('telegram-auth', {
+                body: { initData: tg.initData }
             });
 
-            console.log('[Auth] Edge Function response status:', response.status);
+            if (invokeError) {
+                console.error('[Auth] Function invocation error:', invokeError);
+                console.log('[Auth] Error details:', JSON.stringify(invokeError));
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Authentication failed');
+                // If the error is an object with context, it might be an HTTP error wrapped
+                throw invokeError;
             }
 
-            const { token, player: playerData } = await response.json();
+            console.log('[Auth] Edge Function success, data:', data);
+
+            const { token, player: playerData } = data;
 
             // Set the session in Supabase
             const { error: sessionError } = await supabase.auth.setSession({
