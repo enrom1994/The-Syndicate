@@ -180,26 +180,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const { token, player: playerData } = data;
 
             // Set the session in Supabase - handle potential restricted environment
-            const { error: sessionError } = await supabase.auth.setSession({
-                access_token: token,
-                refresh_token: token, // Using same token for refresh
-            });
-
-            if (sessionError) {
-                // Only log if it's NOT the expected "Auth session missing" or 403 error we get in this dev mode
-                const isExpectedError = sessionError.message?.includes('Auth session missing') ||
-                    sessionError.message?.includes('403') ||
-                    JSON.stringify(sessionError).includes('403');
-
-                if (!isExpectedError) {
-                    console.warn('[Auth] Session warning:', sessionError);
-                }
-            }
-
-            setPlayer(playerData);
-
-            // Sync to GameStore
-            useGameStore.getState().setPlayerId(playerData.id);
             useGameStore.getState().setPlayerStats({
                 cash: playerData.cash,
                 diamonds: playerData.diamonds,

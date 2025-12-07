@@ -109,14 +109,51 @@ serve(async (req) => {
         const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
         // Try system var first (SUPABASE_JWT_SECRET), then custom (JWT_SECRET)
-        // System var is required for setSession to work with Supabase Auth
-        const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET') || Deno.env.get('JWT_SECRET');
+        const systemSecret = Deno.env.get('SUPABASE_JWT_SECRET');
+        const customSecret = Deno.env.get('JWT_SECRET');
+
+        // Detailed debug for troubleshooting the 403 mismatch
+        console.log('[Auth Debug] SUPABASE_JWT_SECRET present:', !!systemSecret);
+        console.log('[Auth Debug] JWT_SECRET present:', !!customSecret);
+        if (systemSecret && customSecret) {
+            console.log('[Auth Debug] Secrets match:', systemSecret === customSecret);
+        }
+
+        let jwtSecret = systemSecret || customSecret;
+        let keyBytes: Uint8Array;
+
+        if (jwtSecret) {
+            jwtSecret = jwtSecret.trim();
+            console.log('[Auth Debug] Secret length:', jwtSecret.length);
+
+            // Supabase Legacy Secrets are often Base64 encoded (contain +, /, =).
+            // We must try to decode them to bytes to match Supabase Auth's signing method.
+            const isBase64 = /^[A-Za-z0-9+/]+={0,2}$/.test(jwtSecret) && jwtSecret.length > 40;
+
+            if (isBase64) {
+                try {
+                    const binaryString = atob(jwtSecret);
+                    keyBytes = Uint8Array.from(binaryString, (char) => char.charCodeAt(0));
+                    console.log('[Auth Debug] Detected and decoded Base64 secret');
+                } catch (e) {
+                    console.log('[Auth Debug] Base64 decode failed, falling back to raw utf-8');
+                    keyBytes = new TextEncoder().encode(jwtSecret);
+                }
+            } else {
+                // Modern secrets or simple strings
+                keyBytes = new TextEncoder().encode(jwtSecret);
+            }
+        } else {
+            // Should verify error handling later if secret missing
+            keyBytes = new Uint8Array(0);
+        }
 
         // Debug: log which variables are missing
         const missingVars = [];
         if (!botToken) missingVars.push('TELEGRAM_BOT_TOKEN');
         if (!supabaseUrl) missingVars.push('SUPABASE_URL');
         if (!supabaseServiceKey) missingVars.push('SUPABASE_SERVICE_ROLE_KEY');
+        // We warn if BOTH are missing, but also if only custom is present (potential mismatch risk)
         if (!jwtSecret) missingVars.push('SUPABASE_JWT_SECRET/JWT_SECRET');
 
         if (missingVars.length > 0) {
@@ -245,7 +282,8 @@ serve(async (req) => {
         // Generate JWT token
         const key = await crypto.subtle.importKey(
             'raw',
-            new TextEncoder().encode(jwtSecret),
+            // @ts-ignore: Deno type definition mismatch for BufferSource
+            keyBytes,
             { name: 'HMAC', hash: 'SHA-256' },
             false,
             ['sign', 'verify']
