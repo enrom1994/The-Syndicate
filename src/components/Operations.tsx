@@ -98,12 +98,13 @@ export const Operations = () => {
       description: 'View your weapons, equipment, and contraband',
       path: '/inventory',
     },
-    {
-      icon: <Bell className="w-6 h-6 text-primary-foreground" />,
-      title: 'Activity',
-      description: 'View attack logs, income, and notifications',
-      path: '/notifications',
-    },
+    // Removed the 'Activity' button from here as requested
+    // {
+    //   icon: <Bell className="w-6 h-6 text-primary-foreground" />,
+    //   title: 'Activity',
+    //   description: 'View attack logs, income, and notifications',
+    //   path: '/notifications',
+    // },
   ];
 
   return (
@@ -133,4 +134,3 @@ export const Operations = () => {
     </section>
   );
 };
-

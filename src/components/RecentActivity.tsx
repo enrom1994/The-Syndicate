@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
-import { Coins, Sword, TrendingUp, Building2, Users, Gift, Clock } from 'lucide-react';
+import { Coins, Sword, TrendingUp, Building2, Users, Gift, Clock, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 type ActivityType = 'income' | 'attack' | 'upgrade' | 'business' | 'family' | 'reward';
 
@@ -49,6 +51,7 @@ const ActivityItem = ({ activity, index }: ActivityItemProps) => (
 );
 
 export const RecentActivity = () => {
+    const navigate = useNavigate();
     // Mock data - will come from notifications context
     const activities: Activity[] = [
         { id: '1', type: 'income', message: 'Collected $5,000', details: 'from Speakeasy', timeAgo: '2m' },
@@ -70,7 +73,14 @@ export const RecentActivity = () => {
                     <Clock className="w-4 h-4 text-primary" />
                     Recent Activity
                 </h3>
-                <span className="text-[10px] text-muted-foreground">Last 5 events</span>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => navigate('/notifications')}
+                >
+                    View All <ChevronRight className="w-3 h-3 ml-1" />
+                </Button>
             </div>
 
             <div className="noir-card p-3">
