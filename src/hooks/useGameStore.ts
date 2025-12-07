@@ -705,84 +705,29 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     // Inventory actions
     buyItem: async (itemId, quantity = 1) => {
-        const { playerId, itemDefinitions, spendCash, loadInventory } = get();
+        const { playerId, loadInventory } = get();
         if (!playerId) return false;
 
-        const itemDef = itemDefinitions.find(i => i.id === itemId);
-        if (!itemDef) {
-            console.error('Item definition not found:', itemId);
+        const { data, error } = await supabase.rpc('buy_item', {
+            player_id_input: playerId,
+            item_id_input: itemId,
+            quantity_input: quantity,
+        });
+
+        if (error) {
+            console.error('Failed to buy item:', error);
             return false;
         }
 
-        const totalCost = itemDef.buy_price * quantity;
+        const result = data as { success: boolean; message: string };
 
-        // Spend cash
-        const success = await spendCash(totalCost, `buy_item:${itemDef.name}`);
-        if (!success) return false;
-
-        // Insert or update inventory
-        const { error } = await supabase
-            .from('player_inventory')
-            .upsert({
-                player_id: playerId,
-                item_id: itemId,
-                quantity: 1, // Will be incremented by trigger or we need to handle quantity logic if valid
-                // Note: If using ON CONFLICT (player_id, item_id) DO UPDATE SET quantity = player_inventory.quantity + excluded.quantity
-                // We assume the DB has this or we need to fetch first. 
-                // Simplified: upsert might replace. Let's check schema.
-                // Schema says UNIQUE(player_id, item_id).
-                // Upsert with onConflict handles update? 
-                // Supabase upsert doesn't auto-increment on conflict without explicit instruction usually.
-                // Let's use RPC or safer logic.
-            }, {
-                onConflict: 'player_id,item_id',
-            });
-
-        // Wait, standard upsert replaces the row or fails if we don't specify how to handle conflict.
-        // Better approach: explicit check or RPC for "add item".
-        // Let's use a robust logical flow:
-        // 1. Check if exists.
-        // 2. Update or Insert.
-
-        // Actually, for simplicity and correctness, let's look at how we handled hiring.
-        // In hiring we used upsert with quantity 1.
-
-        // Let's verify if we need a custom query for incrementing.
-        const { data: existing } = await supabase
-            .from('player_inventory')
-            .select('quantity')
-            .eq('player_id', playerId)
-            .eq('item_id', itemId)
-            .single();
-
-        let invError;
-        if (existing) {
-            const { error: updateError } = await supabase
-                .from('player_inventory')
-                .update({ quantity: existing.quantity + quantity })
-                .eq('player_id', playerId)
-                .eq('item_id', itemId);
-            invError = updateError;
+        if (result.success) {
+            await loadInventory();
+            return true;
         } else {
-            const { error: insertError } = await supabase
-                .from('player_inventory')
-                .insert({
-                    player_id: playerId,
-                    item_id: itemId,
-                    quantity: quantity,
-                    is_equipped: false
-                });
-            invError = insertError;
-        }
-
-        if (invError) {
-            console.error('Failed to update inventory:', invError);
-            // Refund? Complex. For now log error.
+            console.error('Buy item failed:', result.message);
             return false;
         }
-
-        await loadInventory();
-        return true;
     },
 
     equipItem: async (inventoryId) => {
@@ -851,34 +796,28 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     // Crew actions
     hireCrew: async (crewId) => {
-        const { playerId, crewDefinitions, spendCash, loadCrew } = get();
+        const { playerId, loadCrew } = get();
         if (!playerId) return false;
 
-        const def = crewDefinitions.find(c => c.id === crewId);
-        if (!def) return false;
-
-        // Spend cash
-        const success = await spendCash(def.hire_cost, 'crew_hire');
-        if (!success) return false;
-
-        // Insert or update crew
-        const { error } = await supabase
-            .from('player_crew')
-            .upsert({
-                player_id: playerId,
-                crew_id: crewId,
-                quantity: 1, // Will be incremented by trigger if exists
-            }, {
-                onConflict: 'player_id,crew_id',
-            });
+        const { data, error } = await supabase.rpc('hire_crew', {
+            player_id_input: playerId,
+            crew_id_input: crewId,
+        });
 
         if (error) {
             console.error('Failed to hire crew:', error);
             return false;
         }
 
-        await loadCrew();
-        return true;
+        const result = data as { success: boolean; message: string };
+
+        if (result.success) {
+            await loadCrew();
+            return true;
+        } else {
+            console.error('Hire crew failed:', result.message);
+            return false;
+        }
     },
 
     // Achievement actions
@@ -922,35 +861,25 @@ export const useGameStore = create<GameState>((set, get) => ({
         const task = tasks.find(t => t.id === playerTaskId);
         if (!task || task.is_completed) return false;
 
-        // Credit reward
-        if (task.reward_type === 'cash') {
-            await supabase.rpc('increment_cash', {
-                player_id_input: playerId,
-                amount: task.reward_amount,
-                source: 'task',
-            });
-        } else if (task.reward_type === 'diamonds') {
-            await supabase.rpc('increment_diamonds', {
-                player_id_input: playerId,
-                amount: task.reward_amount,
-                source: 'task',
-            });
+        const { data, error } = await supabase.rpc('complete_task', {
+            player_id_input: playerId,
+            task_id_input: task.task_id,
+        });
+
+        if (error) {
+            console.error('Failed to complete task:', error);
+            return false;
         }
 
-        // Insert/update task completion
-        await supabase
-            .from('player_tasks')
-            .upsert({
-                player_id: playerId,
-                task_id: task.task_id,
-                is_completed: true,
-                completed_at: new Date().toISOString(),
-            }, {
-                onConflict: 'player_id,task_id',
-            });
+        const result = data as { success: boolean; message: string };
 
-        await loadTasks();
-        return true;
+        if (result.success) {
+            await loadTasks();
+            return true;
+        } else {
+            console.error('Complete task failed:', result.message);
+            return false;
+        }
     },
 
     reset: () => set({
