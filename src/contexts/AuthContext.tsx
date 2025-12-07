@@ -186,12 +186,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             });
 
             if (sessionError) {
-                console.warn('[Auth] Failed to set session via Supabase client (likely 403 restricted):', sessionError);
-                // Fallback: This is expected in some environments. 
-                // We have the valid token and player data from the trusted Edge Function.
-                // We proceed by manually setting the player state.
-                // Note: Standard Supabase client calls might fail if they rely on the session cookie/storage
-                // but our custom API calls using the token will work.
+                // Only log if it's NOT the expected "Auth session missing" or 403 error we get in this dev mode
+                const isExpectedError = sessionError.message?.includes('Auth session missing') ||
+                    sessionError.message?.includes('403') ||
+                    JSON.stringify(sessionError).includes('403');
+
+                if (!isExpectedError) {
+                    console.warn('[Auth] Session warning:', sessionError);
+                }
             }
 
             setPlayer(playerData);

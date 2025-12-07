@@ -108,7 +108,8 @@ serve(async (req) => {
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
         const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-        // Try standard var first, then custom one
+        // Try system var first (SUPABASE_JWT_SECRET), then custom (JWT_SECRET)
+        // System var is required for setSession to work with Supabase Auth
         const jwtSecret = Deno.env.get('SUPABASE_JWT_SECRET') || Deno.env.get('JWT_SECRET');
 
         // Debug: log which variables are missing
