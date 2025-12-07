@@ -78,26 +78,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 .single();
 
             if (fetchError) {
-                console.error('Failed to fetch player:', fetchError);
-                setError('Failed to load player data');
-                return;
-            }
-
-            if (data) {
-                setPlayer(data);
-
-                // Sync to GameStore
-                useGameStore.getState().setPlayerId(data.id);
-                useGameStore.getState().setPlayerStats({
-                    cash: data.cash,
-                    diamonds: data.diamonds,
-                    energy: data.energy,
-                    maxEnergy: data.max_energy,
-                    stamina: data.stamina,
-                    maxStamina: data.max_stamina,
-                    level: data.level,
-                    respect: data.respect
-                });
             }
 
             setError(null);
@@ -154,51 +134,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     daily_streak: 0,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
+                    maxStamina: playerData.max_stamina,
+                    level: playerData.level,
+                    respect: playerData.respect
                 });
+
+                setError(null);
+            } catch (err: any) {
+                console.error('Login error:', err);
+                setError(err.message || 'Authentication failed');
+            } finally {
                 setIsLoading(false);
-                return;
             }
-
-            // Call Telegram auth Edge Function
-            console.log('[Auth] Calling Edge Function via supabase.functions.invoke...');
-
-            // Use supabase.functions.invoke for automatic header handling (including Auth)
-            const { data, error: invokeError } = await supabase.functions.invoke('telegram-auth', {
-                body: { initData: tg.initData }
-            });
-
-            if (invokeError) {
-                console.error('[Auth] Function invocation error:', invokeError);
-                console.log('[Auth] Error details:', JSON.stringify(invokeError));
-
-                // If the error is an object with context, it might be an HTTP error wrapped
-                throw invokeError;
-            }
-
-            console.log('[Auth] Edge Function success, data:', data);
-
-            const { token, player: playerData } = data;
-
-            // Set the session in Supabase - handle potential restricted environment
-            useGameStore.getState().setPlayerStats({
-                cash: playerData.cash,
-                diamonds: playerData.diamonds,
-                energy: playerData.energy,
-                maxEnergy: playerData.max_energy,
-                stamina: playerData.stamina,
-                maxStamina: playerData.max_stamina,
-                level: playerData.level,
-                respect: playerData.respect
-            });
-
-            setError(null);
-        } catch (err: any) {
-            console.error('Login error:', err);
-            setError(err.message || 'Authentication failed');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+        }, []);
 
     // Initial auth check and login
     useEffect(() => {
