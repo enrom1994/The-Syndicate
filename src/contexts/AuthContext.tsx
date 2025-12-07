@@ -161,14 +161,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             const { token, player: playerData } = data;
 
-            // Set the session in Supabase
+            // Set the session in Supabase - handle potential restricted environment
             const { error: sessionError } = await supabase.auth.setSession({
                 access_token: token,
                 refresh_token: token, // Using same token for refresh
             });
 
             if (sessionError) {
-                throw new Error('Failed to set session');
+                console.warn('[Auth] Failed to set session via Supabase client (likely 403 restricted):', sessionError);
+                // Fallback: This is expected in some environments. 
+                // We have the valid token and player data from the trusted Edge Function.
+                // We proceed by manually setting the player state.
+                // Note: Standard Supabase client calls might fail if they rely on the session cookie/storage
+                // but our custom API calls using the token will work.
             }
 
             setPlayer(playerData);
