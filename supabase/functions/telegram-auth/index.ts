@@ -119,7 +119,9 @@ serve(async (req) => {
             console.log('[Auth Debug] Secrets match:', systemSecret === customSecret);
         }
 
-        let jwtSecret = systemSecret || customSecret;
+        // Prioritize custom secret (JWT_SECRET) over system secret (SUPABASE_JWT_SECRET)
+        // This is crucial when the system secret might be stale after a rotation.
+        let jwtSecret = customSecret || systemSecret;
         let keyBytes: Uint8Array;
 
         if (jwtSecret) {
