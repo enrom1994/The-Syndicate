@@ -96,9 +96,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             // Get Telegram WebApp initData
             const tg = window.Telegram?.WebApp;
-            if (!tg?.initData) {
+
+            // Debug logging
+            console.log('[Auth] Telegram WebApp:', !!tg);
+            console.log('[Auth] initData present:', !!tg?.initData);
+            console.log('[Auth] initData length:', tg?.initData?.length || 0);
+            console.log('[Auth] initDataUnsafe.user:', tg?.initDataUnsafe?.user);
+
+            if (!tg?.initData || tg.initData.length === 0) {
                 // Development fallback - create mock player
-                console.warn('No Telegram WebApp detected - using development mode');
+                console.warn('[Auth] No Telegram initData - using development mode');
                 setPlayer({
                     id: 'dev-player',
                     telegram_id: 123456789,
@@ -135,6 +142,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
 
             // Call Telegram auth Edge Function
+            console.log('[Auth] Calling Edge Function...');
             const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
             const response = await fetch(`${supabaseUrl}/functions/v1/telegram-auth`, {
                 method: 'POST',
@@ -143,6 +151,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 },
                 body: JSON.stringify({ initData: tg.initData }),
             });
+
+            console.log('[Auth] Edge Function response status:', response.status);
 
             if (!response.ok) {
                 const errorData = await response.json();
