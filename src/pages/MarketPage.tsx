@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, Store } from 'lucide-react'; // Import Store icon
 import { useState } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 interface MarketItemProps {
     name: string;
@@ -47,6 +48,7 @@ const MarketItem = ({ name, description, price, stat, image, delay = 0, onBuy }:
 
 const MarketPage = () => {
     const { toast } = useToast();
+    const navigate = useNavigate(); // Initialize useNavigate
     const [activeTab, setActiveTab] = useState('weapons');
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [pendingItem, setPendingItem] = useState<{ name: string; price: number } | null>(null);
@@ -101,14 +103,26 @@ const MarketPage = () => {
                     transition={{ duration: 0.5 }}
                     className="mb-6"
                 >
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-sm bg-gradient-gold flex items-center justify-center">
-                            <ShoppingBag className="w-5 h-5 text-primary-foreground" />
+                    <div className="flex items-center justify-between mb-6"> {/* Added justify-between */}
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-sm bg-gradient-gold flex items-center justify-center">
+                                <ShoppingBag className="w-5 h-5 text-primary-foreground" />
+                            </div>
+                            <div>
+                                <h1 className="font-cinzel text-xl font-bold text-foreground">Black Market</h1>
+                                <p className="text-xs text-muted-foreground">Illegal goods & rare items</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="font-cinzel text-xl font-bold text-foreground">Black Market</h1>
-                            <p className="text-xs text-muted-foreground">Illegal goods & rare items</p>
-                        </div>
+                        {/* New Shop button */}
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-auto px-2 py-1 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                            onClick={() => navigate('/shop')}
+                        >
+                            <Store className="w-4 h-4" />
+                            Shop
+                        </Button>
                     </div>
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -151,8 +165,8 @@ const MarketPage = () => {
                             ))}
                         </TabsContent>
                     </Tabs>
-                </motion.div> {/* This motion.div was not closed, and the outer div was closed with a syntax error */}
-            </div> {/* This closes the outer div */}
+                </motion.div>
+            </div>
 
             <ConfirmDialog
                 open={confirmOpen}

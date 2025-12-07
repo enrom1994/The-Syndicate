@@ -166,7 +166,7 @@ export const PlayerStats = () => {
         <p className="text-[10px] text-muted-foreground mt-1.5">2,550 XP to Level 26</p>
       </motion.div>
 
-      {/* Quick Actions - Only Shop remains here */}
+      {/* Quick Actions - No buttons here anymore */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -174,14 +174,7 @@ export const PlayerStats = () => {
         className="mt-4"
       >
         <div className="flex items-center justify-between gap-2">
-          {/* Removed Rewards and Bounties buttons */}
-          <QuickAction
-            icon={<GameIcon type="diamond" className="w-5 h-5" />}
-            label="Shop"
-            badge={diamonds}
-            onClick={() => navigate('/shop')}
-            delay={0.2}
-          />
+          {/* All quick actions moved to QuickActions component */}
         </div>
       </motion.div>
     </section>
