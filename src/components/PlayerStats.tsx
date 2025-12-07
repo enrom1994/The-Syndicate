@@ -74,7 +74,7 @@ export const PlayerStats = () => {
   const energy = 85;
   const maxEnergy = 100;
   const diamonds = 150;
-  const dailyRewardAvailable = true;
+  // const dailyRewardAvailable = true; // No longer needed here
 
   return (
     <section className="py-6 px-4">
@@ -166,7 +166,7 @@ export const PlayerStats = () => {
         <p className="text-[10px] text-muted-foreground mt-1.5">2,550 XP to Level 26</p>
       </motion.div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - Only Shop remains here */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -174,26 +174,13 @@ export const PlayerStats = () => {
         className="mt-4"
       >
         <div className="flex items-center justify-between gap-2">
-          <QuickAction
-            icon={<Calendar className="w-4 h-4 text-primary-foreground" />}
-            label="Rewards"
-            badge={dailyRewardAvailable ? '!' : undefined}
-            onClick={() => navigate('/daily-rewards')}
-            delay={0.1}
-          />
+          {/* Removed Rewards and Bounties buttons */}
           <QuickAction
             icon={<GameIcon type="diamond" className="w-5 h-5" />}
             label="Shop"
             badge={diamonds}
             onClick={() => navigate('/shop')}
             delay={0.2}
-          />
-          <QuickAction
-            icon={<Target className="w-4 h-4 text-primary-foreground" />}
-            label="Bounties"
-            badge={4}
-            onClick={() => navigate('/bounty-board')}
-            delay={0.3}
           />
         </div>
       </motion.div>
