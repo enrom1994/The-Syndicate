@@ -77,7 +77,7 @@ export const PlayerStats = () => {
         // Get net worth leaderboard and find player's position
         const { data, error } = await supabase.rpc('get_leaderboard', {
           leaderboard_type: 'networth',
-          result_limit: 100
+          limit_count: 100
         });
 
         if (error) {
