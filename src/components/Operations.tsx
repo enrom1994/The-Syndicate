@@ -1,15 +1,14 @@
 import { motion } from 'framer-motion';
-import { Users, Briefcase, User, Landmark, Package, Gift, Gavel } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface OperationCardProps {
-  icon: React.ReactNode;
+  iconSrc: string;
   title: string;
   onClick?: () => void;
   delay?: number;
 }
 
-const OperationCard = ({ icon, title, onClick, delay = 0 }: OperationCardProps) => (
+const OperationCard = ({ iconSrc, title, onClick, delay = 0 }: OperationCardProps) => (
   <motion.button
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -19,8 +18,8 @@ const OperationCard = ({ icon, title, onClick, delay = 0 }: OperationCardProps) 
     className="noir-card p-2.5 text-left w-full group hover:border-primary/30 transition-all duration-300"
   >
     <div className="flex items-center gap-2">
-      <div className="w-7 h-7 rounded-sm bg-gradient-gold flex items-center justify-center shrink-0 group-hover:shadow-gold transition-shadow duration-300">
-        {icon}
+      <div className="w-7 h-7 rounded-sm bg-gradient-gold flex items-center justify-center shrink-0 group-hover:shadow-gold transition-shadow duration-300 overflow-hidden">
+        <img src={iconSrc} alt={title} className="w-5 h-5 object-contain" />
       </div>
       <div className="flex-1 min-w-0">
         <h3 className="font-cinzel font-semibold text-sm text-foreground truncate">{title}</h3>
@@ -34,37 +33,37 @@ export const Operations = () => {
 
   const operations = [
     {
-      icon: <Users className="w-4 h-4 text-primary-foreground" />,
+      iconSrc: '/icons/hire.png',
       title: 'Hire',
       path: '/hire',
     },
     {
-      icon: <Gavel className="w-4 h-4 text-primary-foreground" />,
+      iconSrc: '/icons/auctionhouse.png',
       title: 'Auction House',
       path: '/auction',
     },
     {
-      icon: <Briefcase className="w-4 h-4 text-primary-foreground" />,
+      iconSrc: '/icons/business.png',
       title: 'Business',
       path: '/business',
     },
     {
-      icon: <User className="w-4 h-4 text-primary-foreground" />,
+      iconSrc: '/icons/profile.png',
       title: 'Profile',
       path: '/profile',
     },
     {
-      icon: <Gift className="w-4 h-4 text-primary-foreground" />,
+      iconSrc: '/icons/daily.png',
       title: 'Daily',
       path: '/daily-rewards',
     },
     {
-      icon: <Landmark className="w-4 h-4 text-primary-foreground" />,
+      iconSrc: '/icons/thevault.png',
       title: 'The Vault',
       path: '/bank',
     },
     {
-      icon: <Package className="w-4 h-4 text-primary-foreground" />,
+      iconSrc: '/icons/inventory.png',
       title: 'Inventory',
       path: '/inventory',
     },
@@ -85,7 +84,7 @@ export const Operations = () => {
         {operations.map((op, index) => (
           <OperationCard
             key={op.title}
-            icon={op.icon}
+            iconSrc={op.iconSrc}
             title={op.title}
             delay={0.05 * (index + 1)}
             onClick={() => navigate(op.path)}
