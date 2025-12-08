@@ -205,6 +205,12 @@ const AuctionPage = () => {
         return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
     };
 
+    // Get item image from name (same as MarketPage)
+    const getItemImage = (itemName: string) => {
+        const slug = itemName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return `/images/blackmarket/${slug}.png`;
+    };
+
     const myListings = listings.filter(l => l.is_my_listing);
     const myBids = listings.filter(l => l.is_my_bid && !l.is_my_listing);
 
@@ -266,16 +272,26 @@ const AuctionPage = () => {
                                         animate={{ opacity: 1, y: 0 }}
                                         className="noir-card p-4"
                                     >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <h3 className="font-cinzel font-bold text-foreground">
-                                                    {listing.quantity}x {listing.item_name}
-                                                </h3>
-                                                <p className="text-xs text-muted-foreground">by {listing.seller_name}</p>
-                                            </div>
-                                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                <Clock className="w-3 h-3" />
-                                                {formatTimeRemaining(listing.expires_at)}
+                                        <div className="flex gap-3 mb-3">
+                                            <img
+                                                src={getItemImage(listing.item_name)}
+                                                alt={listing.item_name}
+                                                className="w-12 h-12 rounded object-cover bg-muted"
+                                                onError={(e) => { (e.target as HTMLImageElement).src = '/images/placeholder.png'; }}
+                                            />
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <h3 className="font-cinzel font-bold text-foreground">
+                                                            {listing.quantity}x {listing.item_name}
+                                                        </h3>
+                                                        <p className="text-xs text-muted-foreground">by {listing.seller_name}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                        <Clock className="w-3 h-3" />
+                                                        {formatTimeRemaining(listing.expires_at)}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -334,13 +350,23 @@ const AuctionPage = () => {
                                         animate={{ opacity: 1, y: 0 }}
                                         className="noir-card p-4"
                                     >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h3 className="font-cinzel font-bold text-foreground">
-                                                {listing.quantity}x {listing.item_name}
-                                            </h3>
-                                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                <Clock className="w-3 h-3" />
-                                                {formatTimeRemaining(listing.expires_at)}
+                                        <div className="flex gap-3 mb-3">
+                                            <img
+                                                src={getItemImage(listing.item_name)}
+                                                alt={listing.item_name}
+                                                className="w-12 h-12 rounded object-cover bg-muted"
+                                                onError={(e) => { (e.target as HTMLImageElement).src = '/images/placeholder.png'; }}
+                                            />
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-start">
+                                                    <h3 className="font-cinzel font-bold text-foreground">
+                                                        {listing.quantity}x {listing.item_name}
+                                                    </h3>
+                                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                        <Clock className="w-3 h-3" />
+                                                        {formatTimeRemaining(listing.expires_at)}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="text-xs text-muted-foreground mb-3">
@@ -377,19 +403,29 @@ const AuctionPage = () => {
                                         animate={{ opacity: 1, y: 0 }}
                                         className="noir-card p-4"
                                     >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h3 className="font-cinzel font-bold text-foreground">
-                                                {listing.quantity}x {listing.item_name}
-                                            </h3>
-                                            <span className="text-xs text-primary font-bold">WINNING</span>
+                                        <div className="flex gap-3 mb-2">
+                                            <img
+                                                src={getItemImage(listing.item_name)}
+                                                alt={listing.item_name}
+                                                className="w-12 h-12 rounded object-cover bg-muted"
+                                                onError={(e) => { (e.target as HTMLImageElement).src = '/images/placeholder.png'; }}
+                                            />
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <h3 className="font-cinzel font-bold text-foreground">
+                                                        {listing.quantity}x {listing.item_name}
+                                                    </h3>
+                                                    <span className="text-xs text-primary font-bold">WINNING</span>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Your bid: {listing.current_bid} {listing.currency}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" />
+                                                    {formatTimeRemaining(listing.expires_at)}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <p className="text-xs text-muted-foreground">
-                                            Your bid: {listing.current_bid} {listing.currency}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <Clock className="w-3 h-3" />
-                                            {formatTimeRemaining(listing.expires_at)}
-                                        </p>
                                     </motion.div>
                                 ))
                             )}
