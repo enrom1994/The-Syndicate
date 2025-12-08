@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Trophy, Crown, DollarSign, MapPin, Skull, Star, Medal, Loader2 } from 'lucide-react';
+import { Trophy, Crown, DollarSign, Skull, Star, Medal, Loader2 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -81,6 +81,7 @@ const RanksPage = () => {
     });
     const [isLoading, setIsLoading] = useState(true);
     const [playerRank, setPlayerRank] = useState<{ networth: number; respect: number; kills: number } | null>(null);
+    const [seasonInfo, setSeasonInfo] = useState<{ name: string; days_remaining: number; prize_pool: string } | null>(null);
 
     const { player } = useAuth();
 
@@ -154,6 +155,20 @@ const RanksPage = () => {
                 respect,
             });
 
+            // Load season info
+            try {
+                const { data } = await supabase.rpc('get_current_season');
+                if (data) {
+                    setSeasonInfo({
+                        name: data.name || 'Season 1',
+                        days_remaining: data.days_remaining || 0,
+                        prize_pool: data.prize_pool || '500 TON'
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to load season:', err);
+            }
+
             await calculatePlayerRank();
             setIsLoading(false);
         };
@@ -176,15 +191,6 @@ const RanksPage = () => {
         return player.cash + player.banked_cash;
     };
 
-    // Territory is not implemented in DB yet - placeholder
-    const territoryLeaders = [
-        { rank: 1, name: 'The Gambino Family', value: '24 Zones' },
-        { rank: 2, name: 'Chicago Outfit', value: '21 Zones' },
-        { rank: 3, name: 'The Corleone Family', value: '18 Zones' },
-        { rank: 4, name: 'Five Points Gang', value: '15 Zones' },
-        { rank: 5, name: 'Purple Gang', value: '12 Zones' },
-    ];
-
     return (
         <MainLayout>
             {/* Background Image */}
@@ -205,7 +211,9 @@ const RanksPage = () => {
                     </div>
                     <div>
                         <h1 className="font-cinzel text-xl font-bold text-foreground">Leaderboard</h1>
-                        <p className="text-xs text-muted-foreground">Season 1 • 8 days remaining</p>
+                        <p className="text-xs text-muted-foreground">
+                            {seasonInfo ? `${seasonInfo.name} • ${seasonInfo.days_remaining} days remaining` : 'Loading...'}
+                        </p>
                     </div>
                 </motion.div>
 
@@ -244,12 +252,9 @@ const RanksPage = () => {
                 </motion.div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-4 bg-muted/30 rounded-sm mb-4">
+                    <TabsList className="grid w-full grid-cols-3 bg-muted/30 rounded-sm mb-4">
                         <TabsTrigger value="networth" className="font-cinzel text-[10px] p-2">
                             <DollarSign className="w-4 h-4" />
-                        </TabsTrigger>
-                        <TabsTrigger value="territory" className="font-cinzel text-[10px] p-2">
-                            <MapPin className="w-4 h-4" />
                         </TabsTrigger>
                         <TabsTrigger value="kills" className="font-cinzel text-[10px] p-2">
                             <Skull className="w-4 h-4" />
@@ -274,13 +279,6 @@ const RanksPage = () => {
                                         <LeaderboardEntryComponent key={entry.rank + entry.name} {...entry} delay={0.05 * index} />
                                     ))
                                 )}
-                            </TabsContent>
-
-                            <TabsContent value="territory" className="space-y-2 mt-0">
-                                <h3 className="font-cinzel text-xs text-muted-foreground mb-2">Territory Control (Families)</h3>
-                                {territoryLeaders.map((entry, index) => (
-                                    <LeaderboardEntryComponent key={entry.rank + entry.name} {...entry} delay={0.05 * index} />
-                                ))}
                             </TabsContent>
 
                             <TabsContent value="kills" className="space-y-2 mt-0">

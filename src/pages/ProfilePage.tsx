@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useTelegram, useTelegramPhoto } from '@/hooks/useTelegram';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore } from '@/hooks/useGameStore';
+import { supabase } from '@/lib/supabase';
+import { haptic } from '@/lib/haptics';
 
 // Compact Stat Card for training
 interface StatCardProps {
@@ -104,15 +106,40 @@ const ProfilePage = () => {
     const confirmTrain = async () => {
         if (!pendingTrain || !player) return;
 
-        // TODO: Call actual training RPC when available
-        toast({
-            title: 'Training Complete!',
-            description: `${pendingTrain.name} has increased by 1 level.`,
-        });
+        try {
+            const { data, error } = await supabase.rpc('train_stat', {
+                target_player_id: player.id,
+                stat_name: pendingTrain.stat,
+                training_cost: pendingTrain.cost
+            });
 
-        setConfirmOpen(false);
-        setPendingTrain(null);
-        await refetchPlayer();
+            if (error) throw error;
+
+            if (data?.success) {
+                haptic.success();
+                toast({
+                    title: 'Training Complete!',
+                    description: data.message || `${pendingTrain.name} has increased by 1 level.`,
+                });
+                await refetchPlayer();
+            } else {
+                toast({
+                    title: 'Training Failed',
+                    description: data?.message || 'Could not complete training',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Training error:', error);
+            toast({
+                title: 'Error',
+                description: 'An unexpected error occurred',
+                variant: 'destructive',
+            });
+        } finally {
+            setConfirmOpen(false);
+            setPendingTrain(null);
+        }
     };
 
     // Calculate Net Worth
