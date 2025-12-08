@@ -71,8 +71,9 @@ const mapNotificationType = (notifType: string): ActivityType => {
     if (notifType.includes('attack') || notifType.includes('combat')) return 'attack';
     if (notifType.includes('job')) return 'job';
     if (notifType.includes('business') || notifType.includes('income')) return 'business';
-    if (notifType.includes('reward') || notifType.includes('daily')) return 'reward';
+    if (notifType.includes('reward') || notifType.includes('daily') || notifType.includes('task')) return 'reward';
     if (notifType.includes('family')) return 'family';
+    if (notifType.includes('purchase') || notifType.includes('upgrade')) return 'business';
     return 'income';
 };
 
