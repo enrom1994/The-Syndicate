@@ -137,7 +137,7 @@ const JobCard = ({ id, name, description, reward, energy, isProcessing, delay = 
 const OpsPage = () => {
     const { toast } = useToast();
     const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
-    const { jobDefinitions, isLoadingDefinitions, completeJob } = useGameStore();
+    const { jobDefinitions, isLoadingDefinitions, completeJob, performAttack } = useGameStore();
 
     const [activeTab, setActiveTab] = useState('attack');
     const [targets, setTargets] = useState<TargetPlayer[]>([]);
@@ -260,6 +260,7 @@ const OpsPage = () => {
                             Jobs
                         </TabsTrigger>
                     </TabsList>
+
 
                     <TabsContent value="attack" className="space-y-3 mt-0">
                         {isLoadingTargets ? (

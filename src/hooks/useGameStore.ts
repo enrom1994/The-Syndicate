@@ -167,81 +167,11 @@ interface GameState {
     loadTasks: () => Promise<void>;
     loadDefinitions: () => Promise<void>;
     loadAllData: () => Promise<void>;
-
-    // Currency actions
-    spendCash: (amount: number, reason: string) => Promise<boolean>;
-    spendDiamonds: (amount: number, reason: string) => Promise<boolean>;
-
-    // Energy/Stamina
-    useEnergy: (amount: number) => Promise<boolean>;
-    useStamina: (amount: number) => Promise<boolean>;
-
-    // Bank
-    deposit: (amount: number) => Promise<boolean>;
-
-        const achievement = achievements.find(a => a.id === playerAchievementId);
-if (!achievement || !achievement.is_unlocked || achievement.is_claimed) return false;
-
-// Credit reward
-if (achievement.reward_type === 'cash') {
-    await supabase.rpc('increment_cash', {
-        player_id_input: playerId,
-        amount: achievement.reward_amount,
-        source: 'achievement',
-    });
-} else {
-    await supabase.rpc('increment_diamonds', {
-        player_id_input: playerId,
-        amount: achievement.reward_amount,
-        source: 'achievement',
-    });
-}
-
-// Mark as claimed
-await supabase
-    .from('player_achievements')
-    .update({ is_claimed: true, claimed_at: new Date().toISOString() })
-    .eq('id', playerAchievementId);
-
-await loadAchievements();
-return true;
-    },
-
-// Task actions
-completeTask: async (playerTaskId) => {
-    const { playerId, tasks, loadTasks } = get();
-    if (!playerId) return false;
-
-    const task = tasks.find(t => t.id === playerTaskId);
-    if (!task || task.is_completed) return false;
-
-    const { data, error } = await supabase.rpc('complete_task', {
-        player_id_input: playerId,
-        task_id_input: task.task_id,
-    });
-
-    if (error) {
-        console.error('Failed to complete task:', error);
-        return false;
-    }
-
-    const result = data as { success: boolean; message: string };
-
-    if (result.success) {
-        await loadTasks();
-        return true;
-    } else {
-        console.error('Complete task failed:', result.message);
-        return false;
-    }
-},
-
-    reset: () => set({
-        playerId: null,
-        inventory: [],
-        businesses: [],
-        crew: [],
-        achievements: [],
-        tasks: [],
-    }),
+    playerId: null,
+    inventory: [],
+    businesses: [],
+    crew: [],
+    achievements: [],
+    tasks: [],
+}),
 }));
