@@ -122,16 +122,14 @@ const MarketPage = () => {
         }
     };
 
-    // Filter items by category
+    // Filter items by category (contraband removed - only via production/auction)
     const weapons = itemDefinitions.filter(i => i.category === 'weapon');
-    const contraband = itemDefinitions.filter(i => i.category === 'contraband');
     const equipment = itemDefinitions.filter(i => i.category === 'equipment');
 
     const formatStat = (item: ItemDefinition) => {
         if (item.attack_bonus > 0) return `+${item.attack_bonus} Attack`;
         if (item.defense_bonus > 0) return `+${item.defense_bonus} Defense`;
         if (item.income_bonus > 0) return `+${item.income_bonus}% Income`;
-        if (item.category === 'contraband' && item.sell_price) return `Sells for $${item.sell_price}`;
         return '';
     };
 
@@ -190,9 +188,8 @@ const MarketPage = () => {
                     </div>
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 bg-muted/30 rounded-sm mb-4">
+                        <TabsList className="grid w-full grid-cols-2 bg-muted/30 rounded-sm mb-4">
                             <TabsTrigger value="weapons" className="font-cinzel text-xs">Weapons</TabsTrigger>
-                            <TabsTrigger value="contraband" className="font-cinzel text-xs">Contraband</TabsTrigger>
                             <TabsTrigger value="equipment" className="font-cinzel text-xs">Equipment</TabsTrigger>
                         </TabsList>
 
@@ -215,24 +212,6 @@ const MarketPage = () => {
                             ))}
                         </TabsContent>
 
-                        <TabsContent value="contraband" className="space-y-3 mt-0">
-                            {contraband.length === 0 && !isStoreLoading && (
-                                <p className="text-center text-muted-foreground text-xs py-8">No contraband available.</p>
-                            )}
-                            {contraband.map((item, index) => (
-                                <MarketItem
-                                    key={item.id}
-                                    id={item.id}
-                                    name={item.name}
-                                    description={item.description || ''}
-                                    price={item.buy_price}
-                                    stat={formatStat(item)}
-                                    image={getImage(item)}
-                                    delay={0.1 * index}
-                                    onBuy={() => handleBuyClick(item)}
-                                />
-                            ))}
-                        </TabsContent>
 
                         <TabsContent value="equipment" className="space-y-3 mt-0">
                             {equipment.length === 0 && !isStoreLoading && (
