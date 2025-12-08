@@ -18,8 +18,8 @@ const OperationCard = ({ iconSrc, title, onClick, delay = 0 }: OperationCardProp
     className="noir-card p-2.5 text-left w-full group hover:border-primary/30 transition-all duration-300"
   >
     <div className="flex items-center gap-2">
-      <div className="w-7 h-7 rounded-sm bg-gradient-gold flex items-center justify-center shrink-0 group-hover:shadow-gold transition-shadow duration-300 overflow-hidden">
-        <img src={iconSrc} alt={title} className="w-5 h-5 object-contain" />
+      <div className="w-10 h-10 rounded-sm flex items-center justify-center shrink-0 overflow-hidden">
+        <img src={iconSrc} alt={title} className="w-10 h-10 object-contain" />
       </div>
       <div className="flex-1 min-w-0">
         <h3 className="font-cinzel font-semibold text-sm text-foreground truncate">{title}</h3>

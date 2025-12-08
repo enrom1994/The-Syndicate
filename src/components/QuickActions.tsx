@@ -48,8 +48,8 @@ export const QuickActions = () => {
                     className={`relative p-3 rounded-sm border text-left transition-all hover:scale-[1.02] active:scale-[0.98] ${action.color}`}
                 >
                     <div className="flex items-start justify-between mb-2">
-                        <div className="p-2 rounded-full bg-background/50 backdrop-blur-sm">
-                            <img src={action.iconSrc} alt={action.label} className="w-5 h-5 object-contain" />
+                        <div className="w-10 h-10 flex items-center justify-center">
+                            <img src={action.iconSrc} alt={action.label} className="w-10 h-10 object-contain" />
                         </div>
                         <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
                     </div>
