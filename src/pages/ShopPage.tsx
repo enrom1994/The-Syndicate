@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Store, Zap, Shield, TrendingUp, Clock, Crown, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useTonConnectUI } from '@tonconnect/ui-react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,7 +11,7 @@ import { GameIcon } from '@/components/GameIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
-import { rewardDiamonds } from '@/components/RewardAnimation';
+import { TON_RECEIVING_ADDRESS, toNanoTon } from '@/lib/ton-config';
 
 interface PackageProps {
     name: string;
@@ -113,6 +114,7 @@ const formatDuration = (minutes: number): string => {
 const ShopPage = () => {
     const { toast } = useToast();
     const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
+    const [tonConnectUI] = useTonConnectUI();
 
     const [activeTab, setActiveTab] = useState('diamonds');
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -122,14 +124,17 @@ const ShopPage = () => {
         price: string;
         boosterId?: string;
         diamondCost?: number;
+        tonAmount?: number;
+        diamondsToCredit?: number;
+        protectionMinutes?: number;
     } | null>(null);
     const [processingId, setProcessingId] = useState<string | null>(null);
 
     const diamondPackages = [
-        { name: 'Small', price: '1 TON', diamonds: 120 },
-        { name: 'Standard', price: '3 TON', diamonds: 420, bonus: '60' },
-        { name: 'Value', price: '10 TON', diamonds: 1600, bonus: '400', popular: true },
-        { name: 'Godfather', price: '30 TON', diamonds: 5000, bonus: '1500' },
+        { name: 'Small', price: '1 TON', tonAmount: 1, diamonds: 120 },
+        { name: 'Standard', price: '3 TON', tonAmount: 3, diamonds: 420, bonus: '60' },
+        { name: 'Value', price: '10 TON', tonAmount: 10, diamonds: 1600, bonus: '400', popular: true },
+        { name: 'Godfather', price: '30 TON', tonAmount: 30, diamonds: 5000, bonus: '1500' },
     ];
 
     const protectionPacks = [
@@ -138,8 +143,18 @@ const ShopPage = () => {
         { id: 'premium', name: 'Premium Protection', price: '1 TON', description: 'All protections + Attack boost', duration: '24 hours', durationMinutes: 1440 },
     ];
 
-    const handleBuyDiamonds = (name: string, price: string) => {
-        setPendingPurchase({ type: 'diamonds', name, price });
+    const handleBuyDiamonds = (name: string, price: string, tonAmount: number, diamonds: number) => {
+        if (!tonConnectUI.wallet) {
+            tonConnectUI.openModal();
+            return;
+        }
+        setPendingPurchase({
+            type: 'diamonds',
+            name,
+            price,
+            tonAmount,
+            diamondsToCredit: diamonds
+        });
         setConfirmOpen(true);
     };
 
@@ -163,8 +178,18 @@ const ShopPage = () => {
     };
 
     const handleBuyProtection = (pack: typeof protectionPacks[0]) => {
-        // This would integrate with TON payments
-        setPendingPurchase({ type: 'protection', name: pack.name, price: pack.price });
+        if (!tonConnectUI.wallet) {
+            tonConnectUI.openModal();
+            return;
+        }
+        const tonAmount = parseFloat(pack.price.replace(' TON', ''));
+        setPendingPurchase({
+            type: 'protection',
+            name: pack.name,
+            price: pack.price,
+            tonAmount,
+            protectionMinutes: pack.durationMinutes,
+        });
         setConfirmOpen(true);
     };
 
@@ -200,17 +225,64 @@ const ShopPage = () => {
                     title: 'Booster Activated!',
                     description: `${pendingPurchase.name} is now active for ${formatDuration(booster?.duration_minutes || 60)}.`,
                 });
-            } else if (pendingPurchase.type === 'diamonds') {
-                // TON payment would be handled here
-                toast({
-                    title: 'TON Payment Required',
-                    description: 'Please complete the TON transaction in your wallet.',
+            } else if (pendingPurchase.type === 'diamonds' && pendingPurchase.tonAmount && pendingPurchase.diamondsToCredit) {
+                // Send TON transaction
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutes
+                    messages: [
+                        {
+                            address: TON_RECEIVING_ADDRESS,
+                            amount: toNanoTon(pendingPurchase.tonAmount).toString(),
+                        }
+                    ]
+                };
+
+                await tonConnectUI.sendTransaction(transaction);
+
+                // Credit diamonds after successful payment
+                await supabase.rpc('increment_diamonds', {
+                    player_id_input: player.id,
+                    amount: pendingPurchase.diamondsToCredit,
+                    source: 'ton_purchase',
                 });
-            } else if (pendingPurchase.type === 'protection') {
-                // TON payment would be handled here
+
+                haptic.success();
+                await refetchPlayer();
+
                 toast({
-                    title: 'TON Payment Required',
-                    description: 'Please complete the TON transaction in your wallet.',
+                    title: 'Diamonds Purchased!',
+                    description: `You received ${pendingPurchase.diamondsToCredit.toLocaleString()} diamonds!`,
+                });
+            } else if (pendingPurchase.type === 'protection' && pendingPurchase.tonAmount && pendingPurchase.protectionMinutes) {
+                // Send TON transaction
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 600,
+                    messages: [
+                        {
+                            address: TON_RECEIVING_ADDRESS,
+                            amount: toNanoTon(pendingPurchase.tonAmount).toString(),
+                        }
+                    ]
+                };
+
+                await tonConnectUI.sendTransaction(transaction);
+
+                // Apply protection shield booster
+                const expiresAt = new Date();
+                expiresAt.setMinutes(expiresAt.getMinutes() + pendingPurchase.protectionMinutes);
+
+                await supabase.from('player_boosters').upsert({
+                    player_id: player.id,
+                    booster_type: 'shield',
+                    expires_at: expiresAt.toISOString(),
+                }, { onConflict: 'player_id,booster_type' });
+
+                haptic.success();
+                await refetchPlayer();
+
+                toast({
+                    title: 'Protection Activated!',
+                    description: `You are protected for the next ${pendingPurchase.protectionMinutes >= 60 ? `${pendingPurchase.protectionMinutes / 60} hours` : `${pendingPurchase.protectionMinutes} minutes`}!`,
                 });
             }
         } catch (error) {
@@ -287,7 +359,7 @@ const ShopPage = () => {
                                     key={pkg.name}
                                     {...pkg}
                                     delay={0.1 * index}
-                                    onBuy={() => handleBuyDiamonds(pkg.name, pkg.price)}
+                                    onBuy={() => handleBuyDiamonds(pkg.name, pkg.price, pkg.tonAmount, pkg.diamonds)}
                                 />
                             ))}
                         </div>
