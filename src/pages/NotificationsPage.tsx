@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Bell, Swords, Briefcase, Users, Target, Check, Trash2, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,6 +9,7 @@ import { GameIcon } from '@/components/GameIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
+import { SkeletonList } from '@/components/Skeleton';
 
 interface Notification {
     id: string;
@@ -17,11 +19,13 @@ interface Notification {
     is_read: boolean;
     created_at: string;
     time_ago: string;
+    attacker_id?: string;
 }
 
 interface NotificationItemProps {
     notification: Notification;
     onMarkRead: () => void;
+    onRevenge?: () => void;
     delay?: number;
 }
 
@@ -43,7 +47,7 @@ const typeColors: Record<string, string> = {
     bounty: 'bg-yellow-600',
 };
 
-const NotificationItem = ({ notification, onMarkRead, delay = 0 }: NotificationItemProps) => (
+const NotificationItem = ({ notification, onMarkRead, onRevenge, delay = 0 }: NotificationItemProps) => (
     <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -61,6 +65,17 @@ const NotificationItem = ({ notification, onMarkRead, delay = 0 }: NotificationI
             {notification.description && (
                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notification.description}</p>
             )}
+            {/* Revenge button for attack notifications */}
+            {notification.type === 'attack' && notification.title.includes('attacked you') && onRevenge && (
+                <Button
+                    size="sm"
+                    className="mt-2 btn-gold text-xs h-7"
+                    onClick={onRevenge}
+                >
+                    <Swords className="w-3 h-3 mr-1" />
+                    Revenge
+                </Button>
+            )}
         </div>
         {!notification.is_read && (
             <Button
@@ -77,11 +92,18 @@ const NotificationItem = ({ notification, onMarkRead, delay = 0 }: NotificationI
 
 const NotificationsPage = () => {
     const { player } = useAuth();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('all');
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
+
+    const handleRevenge = (notification: Notification) => {
+        // Navigate to ops page for revenge attack
+        haptic.medium();
+        navigate('/ops');
+    };
 
     // Load notifications
     useEffect(() => {
@@ -174,8 +196,15 @@ const NotificationsPage = () => {
     if (isLoading) {
         return (
             <MainLayout>
-                <div className="flex items-center justify-center min-h-[60vh]">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <div className="py-6 px-4">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-sm bg-muted/50 animate-pulse" />
+                        <div className="space-y-2">
+                            <div className="h-5 w-24 bg-muted/50 rounded animate-pulse" />
+                            <div className="h-3 w-16 bg-muted/50 rounded animate-pulse" />
+                        </div>
+                    </div>
+                    <SkeletonList count={5} />
                 </div>
             </MainLayout>
         );
@@ -251,6 +280,7 @@ const NotificationsPage = () => {
                                     notification={notification}
                                     delay={0.05 * index}
                                     onMarkRead={() => markAsRead(notification.id)}
+                                    onRevenge={notification.type === 'attack' ? () => handleRevenge(notification) : undefined}
                                 />
                             ))
                         ) : (
