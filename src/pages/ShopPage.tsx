@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Store, Zap, Shield, TrendingUp, Clock, Crown, Loader2 } from 'lucide-react';
+import { Store, Zap, Shield, TrendingUp, Clock, Crown, Loader2, Bot } from 'lucide-react';
 import { useState } from 'react';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { MainLayout } from '@/components/MainLayout';
@@ -129,6 +129,7 @@ const ShopPage = () => {
         protectionMinutes?: number;
     } | null>(null);
     const [processingId, setProcessingId] = useState<string | null>(null);
+    const [hasAutoCollect, setHasAutoCollect] = useState(player?.auto_collect_businesses ?? false);
 
     const diamondPackages = [
         { name: 'Small', price: '1 TON', tonAmount: 1, diamonds: 120 },
@@ -189,6 +190,27 @@ const ShopPage = () => {
             price: pack.price,
             tonAmount,
             protectionMinutes: pack.durationMinutes,
+        });
+        setConfirmOpen(true);
+    };
+
+    const handleBuyAutoCollect = () => {
+        if (!tonConnectUI.wallet) {
+            tonConnectUI.openModal();
+            return;
+        }
+        if (hasAutoCollect) {
+            toast({
+                title: 'Already Owned',
+                description: 'You already have Auto-Collector enabled!',
+            });
+            return;
+        }
+        setPendingPurchase({
+            type: 'auto_collect' as any,
+            name: 'Business Auto-Collector',
+            price: '5 TON',
+            tonAmount: 5,
         });
         setConfirmOpen(true);
     };
@@ -284,6 +306,36 @@ const ShopPage = () => {
                     title: 'Protection Activated!',
                     description: `You are protected for the next ${pendingPurchase.protectionMinutes >= 60 ? `${pendingPurchase.protectionMinutes / 60} hours` : `${pendingPurchase.protectionMinutes} minutes`}!`,
                 });
+            } else if ((pendingPurchase.type as string) === 'auto_collect' && pendingPurchase.tonAmount) {
+                // Send TON transaction for Auto-Collector
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 600,
+                    messages: [
+                        {
+                            address: TON_RECEIVING_ADDRESS,
+                            amount: toNanoTon(pendingPurchase.tonAmount).toString(),
+                        }
+                    ]
+                };
+
+                await tonConnectUI.sendTransaction(transaction);
+
+                // Activate auto-collect in database
+                const { data, error } = await supabase.rpc('purchase_auto_collect', {
+                    target_player_id: player.id
+                });
+
+                if (error) throw error;
+                if (!data?.success) throw new Error(data?.message || 'Failed to activate');
+
+                haptic.success();
+                setHasAutoCollect(true);
+                await refetchPlayer();
+
+                toast({
+                    title: 'Auto-Collector Activated! 🤖',
+                    description: 'Your businesses will now auto-collect income!',
+                });
             }
         } catch (error) {
             console.error('Purchase error:', error);
@@ -340,7 +392,7 @@ const ShopPage = () => {
                 </motion.div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 bg-muted/30 rounded-sm mb-4">
+                    <TabsList className="grid w-full grid-cols-4 bg-muted/30 rounded-sm mb-4">
                         <TabsTrigger value="diamonds" className="font-cinzel text-[10px]">
                             Diamonds
                         </TabsTrigger>
@@ -349,6 +401,9 @@ const ShopPage = () => {
                         </TabsTrigger>
                         <TabsTrigger value="protection" className="font-cinzel text-[10px]">
                             Protection
+                        </TabsTrigger>
+                        <TabsTrigger value="upgrades" className="font-cinzel text-[10px]">
+                            Upgrades
                         </TabsTrigger>
                     </TabsList>
 
@@ -412,6 +467,58 @@ const ShopPage = () => {
                                 </div>
                             </motion.div>
                         ))}
+                    </TabsContent>
+
+                    <TabsContent value="upgrades" className="space-y-3 mt-0">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                            className={`noir-card p-4 ${hasAutoCollect ? 'opacity-60' : 'ring-2 ring-primary'}`}
+                        >
+                            <div className="flex items-start gap-3">
+                                <div className="w-12 h-12 rounded-sm bg-gradient-to-br from-green-600 to-emerald-800 flex items-center justify-center shrink-0">
+                                    <Bot className="w-6 h-6 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-cinzel font-bold text-sm text-foreground">Business Auto-Collector</h3>
+                                        <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded">PERMANENT</span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Automatically collects income from all your businesses every hour. Never miss out on earnings again!
+                                    </p>
+                                    <ul className="mt-2 space-y-1">
+                                        <li className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                            ✓ Auto-collect from all businesses
+                                        </li>
+                                        <li className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                            ✓ Works 24/7, even offline
+                                        </li>
+                                        <li className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                            ✓ One-time purchase, forever yours
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <Button
+                                className="w-full mt-4 btn-gold"
+                                onClick={handleBuyAutoCollect}
+                                disabled={hasAutoCollect || processingId === 'auto_collect'}
+                            >
+                                {hasAutoCollect ? (
+                                    '✓ Already Owned'
+                                ) : processingId === 'auto_collect' ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    '5 TON - Buy Now'
+                                )}
+                            </Button>
+                        </motion.div>
+
+                        <p className="text-xs text-muted-foreground text-center">
+                            Premium upgrades are permanent and never expire
+                        </p>
                     </TabsContent>
                 </Tabs>
             </div>

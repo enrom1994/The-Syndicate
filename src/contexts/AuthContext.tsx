@@ -33,6 +33,7 @@ interface Player {
     newbie_shield_expires_at: string | null;
     last_daily_claim: string | null;
     daily_streak: number;
+    auto_collect_businesses: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -142,39 +143,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.log('[Auth] initDataUnsafe.user:', tg?.initDataUnsafe?.user);
 
             if (!tg?.initData || tg.initData.length === 0) {
-                // Development fallback - create mock player
-                console.warn('[Auth] No Telegram initData - using development mode');
-                setPlayer({
-                    id: 'dev-player',
-                    telegram_id: 123456789,
-                    username: 'DevPlayer',
-                    first_name: 'Developer',
-                    avatar_url: null,
-                    cash: 50000,
-                    banked_cash: 0,
-                    diamonds: 50,
-                    respect: 0,
-                    level: 1,
-                    experience: 0,
-                    energy: 100,
-                    max_energy: 100,
-                    stamina: 50,
-                    max_stamina: 50,
-                    strength: 10,
-                    defense: 10,
-                    agility: 10,
-                    intelligence: 10,
-                    total_attacks: 0,
-                    total_attacks_won: 0,
-                    total_jobs_completed: 0,
-                    total_kills: 0,
-                    protection_expires_at: null,
-                    newbie_shield_expires_at: null,
-                    last_daily_claim: null,
-                    daily_streak: 0,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                });
+                // No Telegram data - reject authentication
+                console.error('[Auth] No Telegram initData - authentication rejected');
+                setError('This app must be opened from Telegram');
                 setIsLoading(false);
                 return;
             }
