@@ -31,6 +31,7 @@ import TasksPage from "./pages/TasksPage";
 import LuckyWheelPage from "./pages/LuckyWheelPage";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ScrollToTop } from "@/components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => {
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
+                  <ScrollToTop />
                   <DeepLinkHandler />
                   <ErrorBoundary>
                     <Routes>
