@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Users, ShoppingBag, Home, Briefcase, User, Landmark, Package, Gift, Gavel } from 'lucide-react';
+import { Users, Briefcase, User, Landmark, Package, Gift, Gavel } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface OperationCardProps {
@@ -7,10 +7,9 @@ interface OperationCardProps {
   title: string;
   onClick?: () => void;
   delay?: number;
-  badge?: string;
 }
 
-const OperationCard = ({ icon, title, onClick, delay = 0, badge }: OperationCardProps) => (
+const OperationCard = ({ icon, title, onClick, delay = 0 }: OperationCardProps) => (
   <motion.button
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -24,14 +23,7 @@ const OperationCard = ({ icon, title, onClick, delay = 0, badge }: OperationCard
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <h3 className="font-cinzel font-semibold text-sm text-foreground truncate">{title}</h3>
-          {badge && (
-            <span className="px-1 py-0.5 text-[8px] bg-destructive/20 text-destructive rounded-sm">
-              {badge}
-            </span>
-          )}
-        </div>
+        <h3 className="font-cinzel font-semibold text-sm text-foreground truncate">{title}</h3>
       </div>
     </div>
   </motion.button>
@@ -45,23 +37,11 @@ export const Operations = () => {
       icon: <Users className="w-4 h-4 text-primary-foreground" />,
       title: 'Hire',
       path: '/hire',
-      badge: 'NEW',
-    },
-    {
-      icon: <ShoppingBag className="w-4 h-4 text-primary-foreground" />,
-      title: 'Black Market',
-      path: '/market',
     },
     {
       icon: <Gavel className="w-4 h-4 text-primary-foreground" />,
       title: 'Auction House',
       path: '/auction',
-      badge: 'SOON',
-    },
-    {
-      icon: <Home className="w-4 h-4 text-primary-foreground" />,
-      title: 'Family',
-      path: '/family',
     },
     {
       icon: <Briefcase className="w-4 h-4 text-primary-foreground" />,
@@ -107,7 +87,6 @@ export const Operations = () => {
             key={op.title}
             icon={op.icon}
             title={op.title}
-            badge={op.badge}
             delay={0.05 * (index + 1)}
             onClick={() => navigate(op.path)}
           />
