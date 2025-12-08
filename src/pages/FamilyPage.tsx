@@ -1,12 +1,15 @@
 import { motion } from 'framer-motion';
-import { Crown, Star, Shield, Sword, User, Users, MoreVertical, Eye, ArrowUp, ArrowDown, UserMinus, Plus, LogOut, Settings } from 'lucide-react';
-import { useState } from 'react';
+import { Crown, Star, Shield, Sword, User, Users, MoreVertical, Eye, ArrowUp, ArrowDown, UserMinus, Plus, LogOut, Settings, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { haptic } from '@/lib/haptics';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -27,13 +30,34 @@ import { GameIcon } from '@/components/GameIcon';
 type FamilyRole = 'Boss' | 'Underboss' | 'Consigliere' | 'Caporegime' | 'Soldier' | 'Street Runner';
 
 interface Member {
-    id: string;
-    name: string;
+    player_id: string;
+    username: string | null;
+    first_name: string | null;
     role: FamilyRole;
-    contribution: string;
-    online: boolean;
+    contribution: number;
     level: number;
     respect: number;
+    joined_at: string;
+}
+
+interface FamilyData {
+    id: string;
+    name: string;
+    tag: string | null;
+    description: string | null;
+    treasury: number;
+    total_respect: number;
+    is_recruiting: boolean;
+    min_level_required: number;
+    created_at: string;
+}
+
+interface PlayerFamilyResponse {
+    has_family: boolean;
+    family?: FamilyData;
+    my_role?: FamilyRole;
+    my_contribution?: number;
+    members?: Member[];
 }
 
 const roleHierarchy: FamilyRole[] = ['Boss', 'Underboss', 'Consigliere', 'Caporegime', 'Soldier', 'Street Runner'];
@@ -48,15 +72,12 @@ const roleIcons: Record<FamilyRole, React.ReactNode> = {
 
 // Permission checks based on role
 const canPromote = (myRole: FamilyRole, targetRole: FamilyRole): boolean => {
-    const myIndex = roleHierarchy.indexOf(myRole);
-    const targetIndex = roleHierarchy.indexOf(targetRole);
-    if (myRole === 'Boss') return targetIndex > 0; // Boss can promote anyone except to Boss
-    if (myRole === 'Underboss') return targetIndex >= 4; // Underboss can promote Soldiers only
+    if (myRole === 'Boss') return targetRole !== 'Boss' && roleHierarchy.indexOf(targetRole) > 1;
+    if (myRole === 'Underboss') return roleHierarchy.indexOf(targetRole) >= 4;
     return false;
 };
 
 const canDemote = (myRole: FamilyRole, targetRole: FamilyRole): boolean => {
-    const myIndex = roleHierarchy.indexOf(myRole);
     const targetIndex = roleHierarchy.indexOf(targetRole);
     if (myRole === 'Boss') return targetIndex > 0 && targetIndex < roleHierarchy.length - 1;
     if (myRole === 'Underboss') return targetIndex >= 3 && targetIndex < roleHierarchy.length - 1;
@@ -86,6 +107,7 @@ const MemberCard = ({ member, myRole, isMe, delay = 0, onAction }: MemberCardPro
     const canPromoteThis = canPromote(myRole, member.role);
     const canDemoteThis = canDemote(myRole, member.role);
     const canKickThis = canKick(myRole, member.role);
+    const displayName = member.username || member.first_name || 'Unknown';
 
     return (
         <motion.div
@@ -98,19 +120,16 @@ const MemberCard = ({ member, myRole, isMe, delay = 0, onAction }: MemberCardPro
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isMe ? 'bg-gradient-gold' : 'bg-muted'}`}>
                     {roleIcons[member.role]}
                 </div>
-                {member.online && (
-                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
-                )}
             </div>
             <div className="flex-1 min-w-0">
                 <p className={`font-cinzel font-semibold text-sm truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>
-                    {member.name} {isMe && <span className="text-xs font-inter">(You)</span>}
+                    {displayName} {isMe && <span className="text-xs font-inter">(You)</span>}
                 </p>
                 <p className="text-xs text-muted-foreground">{member.role} • Lv.{member.level}</p>
             </div>
             <div className="text-right shrink-0">
                 <p className="text-xs text-muted-foreground">Contributed</p>
-                <p className="font-cinzel font-bold text-sm text-primary">{member.contribution}</p>
+                <p className="font-cinzel font-bold text-sm text-primary">${member.contribution.toLocaleString()}</p>
             </div>
             {showActions && (
                 <DropdownMenu>
@@ -165,29 +184,55 @@ const MemberCard = ({ member, myRole, isMe, delay = 0, onAction }: MemberCardPro
 const FamilyPage = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
+    const { player, refetchPlayer } = useAuth();
 
-    // Mock data - will come from context/backend
-    const hasFamily = true; // Toggle to show browse page for players without family
-    const myRole: FamilyRole = 'Boss'; // Current player's role
-    const myId = 'player-1';
-
-    const [members, setMembers] = useState<Member[]>([
-        { id: 'player-1', name: 'Michael', role: 'Boss', contribution: '$250K', online: true, level: 45, respect: 12500 },
-        { id: '2', name: 'Tom Hagen', role: 'Consigliere', contribution: '$180K', online: true, level: 38, respect: 8900 },
-        { id: '3', name: 'Sonny', role: 'Underboss', contribution: '$210K', online: false, level: 42, respect: 11200 },
-        { id: '4', name: 'Clemenza', role: 'Caporegime', contribution: '$145K', online: true, level: 35, respect: 7800 },
-        { id: '5', name: 'Luca Brasi', role: 'Soldier', contribution: '$125K', online: true, level: 30, respect: 5600 },
-        { id: '6', name: 'Rocco Lampone', role: 'Soldier', contribution: '$89K', online: true, level: 25, respect: 3200 },
-        { id: '7', name: 'Al Neri', role: 'Street Runner', contribution: '$67K', online: false, level: 18, respect: 1500 },
-    ]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [familyData, setFamilyData] = useState<PlayerFamilyResponse | null>(null);
+    const [members, setMembers] = useState<Member[]>([]);
+    const [myRole, setMyRole] = useState<FamilyRole>('Street Runner');
 
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [confirmAction, setConfirmAction] = useState<{ type: string; member: Member | null }>({ type: '', member: null });
+    const [isProcessing, setIsProcessing] = useState(false);
+
     const [contributeOpen, setContributeOpen] = useState(false);
     const [contributeAmount, setContributeAmount] = useState(10000);
+
     const [leaveOpen, setLeaveOpen] = useState(false);
 
-    const playerCash = 5000000;
+    // Load family data
+    const loadFamilyData = async () => {
+        if (!player?.id) return;
+
+        try {
+            const { data, error } = await supabase.rpc('get_player_family', {
+                target_player_id: player.id
+            });
+
+            if (error) throw error;
+
+            const response = data as PlayerFamilyResponse;
+            setFamilyData(response);
+
+            if (response.has_family && response.members) {
+                setMembers(response.members);
+                setMyRole(response.my_role || 'Street Runner');
+            }
+        } catch (error) {
+            console.error('Failed to load family data:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to load family data',
+                variant: 'destructive'
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadFamilyData();
+    }, [player?.id]);
 
     // Sort members by role hierarchy
     const sortedMembers = [...members].sort((a, b) =>
@@ -196,59 +241,153 @@ const FamilyPage = () => {
 
     const handleMemberAction = (member: Member, action: 'promote' | 'demote' | 'kick' | 'view' | 'transfer') => {
         if (action === 'view') {
-            // Navigate to profile page
-            toast({ title: 'Opening Profile', description: `Viewing ${member.name}'s profile...` });
+            toast({ title: 'Opening Profile', description: `Viewing ${member.username || member.first_name}'s profile...` });
             return;
         }
         setConfirmAction({ type: action, member });
         setConfirmOpen(true);
     };
 
-    const confirmMemberAction = () => {
+    const confirmMemberAction = async () => {
         const { type, member } = confirmAction;
-        if (!member) return;
+        if (!member || !player?.id) return;
 
-        if (type === 'promote') {
-            const currentIndex = roleHierarchy.indexOf(member.role);
-            const newRole = roleHierarchy[currentIndex - 1];
-            setMembers(prev => prev.map(m =>
-                m.id === member.id ? { ...m, role: newRole } : m
-            ));
-            toast({ title: 'Member Promoted', description: `${member.name} is now ${newRole}` });
-        } else if (type === 'demote') {
-            const currentIndex = roleHierarchy.indexOf(member.role);
-            const newRole = roleHierarchy[currentIndex + 1];
-            setMembers(prev => prev.map(m =>
-                m.id === member.id ? { ...m, role: newRole } : m
-            ));
-            toast({ title: 'Member Demoted', description: `${member.name} is now ${newRole}` });
-        } else if (type === 'kick') {
-            setMembers(prev => prev.filter(m => m.id !== member.id));
-            toast({ title: 'Member Removed', description: `${member.name} has been kicked from the family`, variant: 'destructive' });
-        } else if (type === 'transfer') {
-            setMembers(prev => prev.map(m => {
-                if (m.id === member.id) return { ...m, role: 'Boss' as FamilyRole };
-                if (m.id === myId) return { ...m, role: 'Underboss' as FamilyRole };
-                return m;
-            }));
-            toast({ title: 'Leadership Transferred', description: `${member.name} is now the Boss. You are now Underboss.` });
-        }
+        setIsProcessing(true);
         setConfirmOpen(false);
+
+        try {
+            let result;
+
+            if (type === 'promote' || type === 'demote') {
+                const currentIndex = roleHierarchy.indexOf(member.role);
+                const newRole = type === 'promote'
+                    ? roleHierarchy[currentIndex - 1]
+                    : roleHierarchy[currentIndex + 1];
+
+                const { data, error } = await supabase.rpc('set_member_role', {
+                    actor_id: player.id,
+                    target_player_id: member.player_id,
+                    new_role: newRole
+                });
+                if (error) throw error;
+                result = data;
+
+                if (result?.success) {
+                    haptic.success();
+                    toast({ title: type === 'promote' ? 'Member Promoted' : 'Member Demoted', description: result.message });
+                    await loadFamilyData();
+                }
+            } else if (type === 'kick') {
+                const { data, error } = await supabase.rpc('kick_member', {
+                    actor_id: player.id,
+                    target_player_id: member.player_id
+                });
+                if (error) throw error;
+                result = data;
+
+                if (result?.success) {
+                    haptic.success();
+                    toast({ title: 'Member Removed', description: result.message, variant: 'destructive' });
+                    await loadFamilyData();
+                }
+            } else if (type === 'transfer') {
+                const { data, error } = await supabase.rpc('transfer_boss', {
+                    current_boss_id: player.id,
+                    new_boss_id: member.player_id
+                });
+                if (error) throw error;
+                result = data;
+
+                if (result?.success) {
+                    haptic.success();
+                    toast({ title: 'Leadership Transferred', description: result.message });
+                    await loadFamilyData();
+                }
+            }
+
+            if (result && !result.success) {
+                toast({ title: 'Error', description: result.message, variant: 'destructive' });
+            }
+        } catch (error) {
+            console.error('Action error:', error);
+            toast({ title: 'Error', description: 'Action failed. Please try again.', variant: 'destructive' });
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
-    const handleContribute = () => {
-        toast({ title: 'Contribution Made', description: `You contributed $${contributeAmount.toLocaleString()} to the treasury` });
-        setContributeOpen(false);
+    const handleContribute = async () => {
+        if (!player?.id || contributeAmount <= 0) return;
+
+        setIsProcessing(true);
+
+        try {
+            const { data, error } = await supabase.rpc('contribute_to_treasury', {
+                contributor_id: player.id,
+                amount: contributeAmount
+            });
+
+            if (error) throw error;
+
+            if (data?.success) {
+                haptic.success();
+                toast({ title: 'Contribution Made', description: data.message });
+                setContributeOpen(false);
+                await refetchPlayer();
+                await loadFamilyData();
+            } else {
+                toast({ title: 'Error', description: data?.message || 'Failed to contribute', variant: 'destructive' });
+            }
+        } catch (error) {
+            console.error('Contribute error:', error);
+            toast({ title: 'Error', description: 'Failed to contribute. Please try again.', variant: 'destructive' });
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
-    const handleLeaveFamily = () => {
-        toast({ title: 'Left Family', description: 'You have left the family', variant: 'destructive' });
+    const handleLeaveFamily = async () => {
+        if (!player?.id) return;
+
+        setIsProcessing(true);
         setLeaveOpen(false);
-        // In real app, would redirect to browse page
+
+        try {
+            const { data, error } = await supabase.rpc('leave_family', {
+                leaver_id: player.id
+            });
+
+            if (error) throw error;
+
+            if (data?.success) {
+                haptic.success();
+                toast({ title: 'Left Family', description: data.message });
+                await refetchPlayer();
+                navigate('/family/browse');
+            } else {
+                toast({ title: 'Error', description: data?.message || 'Failed to leave family', variant: 'destructive' });
+            }
+        } catch (error) {
+            console.error('Leave error:', error);
+            toast({ title: 'Error', description: 'Failed to leave family. Please try again.', variant: 'destructive' });
+        } finally {
+            setIsProcessing(false);
+        }
     };
+
+    // Loading state
+    if (isLoading) {
+        return (
+            <MainLayout>
+                <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+            </MainLayout>
+        );
+    }
 
     // If player has no family, show option to browse/create
-    if (!hasFamily) {
+    if (!familyData?.has_family) {
         return (
             <MainLayout>
                 <div className="py-12 px-4 text-center">
@@ -272,6 +411,8 @@ const FamilyPage = () => {
         );
     }
 
+    const family = familyData.family!;
+
     return (
         <MainLayout>
             {/* Background Image */}
@@ -292,12 +433,13 @@ const FamilyPage = () => {
                             <Users className="w-5 h-5 text-primary-foreground" />
                         </div>
                         <div>
-                            <h1 className="font-cinzel text-xl font-bold text-foreground">The Corleone Family</h1>
-                            <p className="text-xs text-muted-foreground">{members.length} Members • Rank #3</p>
+                            <h1 className="font-cinzel text-xl font-bold text-foreground">
+                                {family.tag ? `[${family.tag}] ` : ''}{family.name}
+                            </h1>
+                            <p className="text-xs text-muted-foreground">{members.length} Members</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
-                        {/* Browse other families */}
                         <Button
                             size="icon"
                             variant="ghost"
@@ -330,19 +472,19 @@ const FamilyPage = () => {
                 >
                     <div className="grid grid-cols-3 gap-3 mb-4">
                         <div className="text-center">
-                            <p className="text-xs text-muted-foreground">Net Worth</p>
-                            <p className="font-cinzel font-bold text-lg text-primary">$482M</p>
+                            <p className="text-xs text-muted-foreground">Total Respect</p>
+                            <p className="font-cinzel font-bold text-lg text-primary">{family.total_respect.toLocaleString()}</p>
                         </div>
                         <div className="text-center">
-                            <p className="text-xs text-muted-foreground">Territory</p>
-                            <p className="font-cinzel font-bold text-lg text-foreground">12</p>
+                            <p className="text-xs text-muted-foreground">Your Role</p>
+                            <p className="font-cinzel font-bold text-lg text-foreground">{myRole}</p>
                         </div>
                         <div className="text-center">
                             <p className="text-xs text-muted-foreground">Treasury</p>
-                            <p className="font-cinzel font-bold text-lg text-foreground">$15.2M</p>
+                            <p className="font-cinzel font-bold text-lg text-foreground">${family.treasury.toLocaleString()}</p>
                         </div>
                     </div>
-                    <Button className="w-full btn-gold text-xs" onClick={() => setContributeOpen(true)}>
+                    <Button className="w-full btn-gold text-xs" onClick={() => setContributeOpen(true)} disabled={isProcessing}>
                         <GameIcon type="cash" className="w-4 h-4 mr-2" />
                         Contribute to Treasury
                     </Button>
@@ -369,10 +511,10 @@ const FamilyPage = () => {
                     <div className="noir-card p-4 space-y-2">
                         {sortedMembers.map((member, index) => (
                             <MemberCard
-                                key={member.id}
+                                key={member.player_id}
                                 member={member}
                                 myRole={myRole}
-                                isMe={member.id === myId}
+                                isMe={member.player_id === player?.id}
                                 delay={0.05 * index}
                                 onAction={handleMemberAction}
                             />
@@ -392,6 +534,7 @@ const FamilyPage = () => {
                             variant="outline"
                             className="w-full border-destructive/50 text-destructive hover:bg-destructive/10"
                             onClick={() => setLeaveOpen(true)}
+                            disabled={isProcessing}
                         >
                             <LogOut className="w-4 h-4 mr-2" />
                             Leave Family
@@ -412,7 +555,7 @@ const FamilyPage = () => {
                     <div className="space-y-4 py-4">
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">Your Cash:</span>
-                            <span className="font-bold">${playerCash.toLocaleString()}</span>
+                            <span className="font-bold">${(player?.cash ?? 0).toLocaleString()}</span>
                         </div>
                         <Input
                             type="number"
@@ -420,13 +563,13 @@ const FamilyPage = () => {
                             onChange={(e) => setContributeAmount(parseInt(e.target.value) || 0)}
                             className="bg-muted/30 border-border/50"
                             min={1000}
-                            max={playerCash}
+                            max={player?.cash ?? 0}
                         />
                         <div className="grid grid-cols-4 gap-2">
                             {[10000, 50000, 100000, 500000].map((amount) => (
                                 <button
                                     key={amount}
-                                    onClick={() => setContributeAmount(Math.min(amount, playerCash))}
+                                    onClick={() => setContributeAmount(Math.min(amount, player?.cash ?? 0))}
                                     className="p-2 text-[10px] rounded-sm bg-muted/30 border border-border/50 text-muted-foreground hover:border-primary/50"
                                 >
                                     ${(amount / 1000)}K
@@ -436,7 +579,8 @@ const FamilyPage = () => {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setContributeOpen(false)}>Cancel</Button>
-                        <Button className="btn-gold" onClick={handleContribute}>
+                        <Button className="btn-gold" onClick={handleContribute} disabled={isProcessing || contributeAmount <= 0}>
+                            {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                             Contribute ${contributeAmount.toLocaleString()}
                         </Button>
                     </DialogFooter>
@@ -454,10 +598,10 @@ const FamilyPage = () => {
                                 'Transfer Leadership?'
                 }
                 description={
-                    confirmAction.type === 'promote' ? `Promote ${confirmAction.member?.name} to a higher rank?` :
-                        confirmAction.type === 'demote' ? `Demote ${confirmAction.member?.name} to a lower rank?` :
-                            confirmAction.type === 'kick' ? `Remove ${confirmAction.member?.name} from the family? This cannot be undone.` :
-                                `Transfer Boss role to ${confirmAction.member?.name}? You will become Underboss.`
+                    confirmAction.type === 'promote' ? `Promote ${confirmAction.member?.username || confirmAction.member?.first_name} to a higher rank?` :
+                        confirmAction.type === 'demote' ? `Demote ${confirmAction.member?.username || confirmAction.member?.first_name} to a lower rank?` :
+                            confirmAction.type === 'kick' ? `Remove ${confirmAction.member?.username || confirmAction.member?.first_name} from the family? This cannot be undone.` :
+                                `Transfer Boss role to ${confirmAction.member?.username || confirmAction.member?.first_name}? You will become Underboss.`
                 }
                 onConfirm={confirmMemberAction}
                 confirmText={
@@ -484,4 +628,3 @@ const FamilyPage = () => {
 };
 
 export default FamilyPage;
-
