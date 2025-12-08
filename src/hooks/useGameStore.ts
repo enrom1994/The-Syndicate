@@ -712,35 +712,32 @@ export const useGameStore = create<GameState>((set, get) => ({
     },
 
     collectIncome: async (playerBusinessId) => {
-        const { playerId, businesses, loadBusinesses } = get();
+        const { playerId, loadBusinesses } = get();
         if (!playerId) return 0;
 
-        const business = businesses.find(b => b.id === playerBusinessId);
-        if (!business) return 0;
-
-        // Calculate time-based income
-        const lastCollected = new Date(business.last_collected);
-        const now = new Date();
-        const hoursPassed = (now.getTime() - lastCollected.getTime()) / (1000 * 60 * 60);
-        const income = Math.floor(business.income_per_hour * hoursPassed);
-
-        if (income <= 0) return 0;
-
-        // Credit the income
-        await supabase.rpc('increment_cash', {
+        const { data, error } = await supabase.rpc('collect_business_income', {
             player_id_input: playerId,
-            amount: income,
-            source: 'business_income',
+            player_business_id_input: playerBusinessId,
         });
 
-        // Update last collected
-        await supabase
-            .from('player_businesses')
-            .update({ last_collected: now.toISOString() })
-            .eq('id', playerBusinessId);
+        if (error) {
+            console.error('Failed to collect income:', error);
+            return 0;
+        }
 
-        await loadBusinesses();
-        return income;
+        const result = data as {
+            success: boolean;
+            message: string;
+            amount?: number;
+        };
+
+        if (result.success) {
+            await loadBusinesses();
+            return result.amount || 0;
+        } else {
+            console.log('Collect income:', result.message);
+            return 0;
+        }
     },
 
     // Inventory actions
