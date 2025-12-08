@@ -10,7 +10,9 @@ interface TonConnectProviderProps {
 
 export const TonConnectProvider = ({ children }: TonConnectProviderProps) => {
   return (
-    <TonConnectUIProvider manifestUrl={manifestUrl}>
+    <TonConnectUIProvider
+      manifestUrl={manifestUrl}
+    >
       {children}
     </TonConnectUIProvider>
   );
