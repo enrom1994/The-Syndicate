@@ -56,6 +56,7 @@ BEGIN
     WHERE pb.player_id = target_player_id;
     
     -- Count attacks received since last login
+    -- Fixed: use created_at instead of attacked_at
     SELECT 
         COUNT(*),
         COALESCE(SUM(cash_transferred), 0)::BIGINT
@@ -63,7 +64,7 @@ BEGIN
     FROM attack_log
     WHERE defender_id = target_player_id
     AND attacker_won = true
-    AND attacked_at > last_login;
+    AND created_at > last_login;
     
     -- Update last login time
     UPDATE players SET last_login_at = NOW() WHERE id = target_player_id;
