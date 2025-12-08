@@ -193,6 +193,9 @@ interface GameState {
     unequipItem: (inventoryId: string) => Promise<boolean>;
     sellItem: (inventoryId: string, quantity?: number) => Promise<boolean>;
 
+    // Equipment limits based on crew
+    getEquipmentLimits: () => { weaponSlots: number; equipmentSlots: number; equippedWeapons: number; equippedEquipment: number };
+
     // Crew actions
     hireCrew: (crewId: string) => Promise<boolean>;
 
@@ -259,6 +262,24 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     setPlayerId: (id) => set({ playerId: id }),
     setPlayerStats: (stats) => set({ playerStats: stats }),
+
+    // Calculate equipment limits based on crew
+    getEquipmentLimits: () => {
+        const { crew, inventory } = get();
+        // Weapon slots = Hitmen + Enforcers
+        const weaponSlots = crew
+            .filter(c => c.type === 'Hitman' || c.type === 'Enforcer')
+            .reduce((sum, c) => sum + c.quantity, 0);
+        // Equipment slots = Bodyguards  
+        const equipmentSlots = crew
+            .filter(c => c.type === 'Bodyguard')
+            .reduce((sum, c) => sum + c.quantity, 0);
+        // Count currently equipped
+        const equippedWeapons = inventory.filter(i => i.category === 'weapon' && i.is_equipped).length;
+        const equippedEquipment = inventory.filter(i => i.category === 'equipment' && i.is_equipped).length;
+
+        return { weaponSlots, equipmentSlots, equippedWeapons, equippedEquipment };
+    },
 
     // Load inventory with item details
     loadInventory: async () => {

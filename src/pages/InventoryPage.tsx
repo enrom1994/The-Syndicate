@@ -172,7 +172,8 @@ const InventoryPage = () => {
         loadInventory,
         equipItem,
         unequipItem,
-        sellItem
+        sellItem,
+        getEquipmentLimits
     } = useGameStore();
 
     const [activeTab, setActiveTab] = useState('weapons');
@@ -205,10 +206,36 @@ const InventoryPage = () => {
     };
 
     const handleEquip = async (item: InventoryItemType) => {
+        // Check equipment limits based on crew
+        const { weaponSlots, equipmentSlots, equippedWeapons, equippedEquipment } = getEquipmentLimits();
+
+        if (item.category === 'weapon' && equippedWeapons >= weaponSlots) {
+            toast({
+                title: 'No Weapon Slots',
+                description: weaponSlots === 0
+                    ? 'Hire Hitmen or Enforcers to equip weapons.'
+                    : `You can only equip ${weaponSlots} weapons. Unequip one first or hire more crew.`,
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        if (item.category === 'equipment' && equippedEquipment >= equipmentSlots) {
+            toast({
+                title: 'No Equipment Slots',
+                description: equipmentSlots === 0
+                    ? 'Hire Bodyguards to equip defensive gear.'
+                    : `You can only equip ${equipmentSlots} items. Unequip one first or hire more Bodyguards.`,
+                variant: 'destructive',
+            });
+            return;
+        }
+
         setProcessingItemId(item.id);
         try {
             const success = await equipItem(item.id);
             if (success) {
+                await refetchPlayer(); // Refresh player stats
                 toast({
                     title: 'Item Equipped!',
                     description: `${item.name} is now equipped.`,
@@ -230,6 +257,7 @@ const InventoryPage = () => {
         try {
             const success = await unequipItem(item.id);
             if (success) {
+                await refetchPlayer(); // Refresh player stats
                 toast({
                     title: 'Item Removed',
                     description: `${item.name} has been unequipped.`,
@@ -320,7 +348,7 @@ const InventoryPage = () => {
                     className="noir-card p-4 mb-6"
                 >
                     <h3 className="font-cinzel text-xs text-muted-foreground mb-2">EQUIPPED BONUSES</h3>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 mb-3">
                         <div className="flex items-center gap-2">
                             <Sword className="w-4 h-4 text-red-400" />
                             <span className="text-xs text-muted-foreground">Attack:</span>
@@ -332,6 +360,16 @@ const InventoryPage = () => {
                             <span className="font-cinzel font-bold text-sm text-blue-400">+{totalDefenseBonus}</span>
                         </div>
                     </div>
+                    {/* Slot usage */}
+                    {(() => {
+                        const { weaponSlots, equipmentSlots, equippedWeapons, equippedEquipment } = getEquipmentLimits();
+                        return (
+                            <div className="flex gap-4 text-xs text-muted-foreground border-t border-muted/20 pt-2">
+                                <span>Weapons: <span className={equippedWeapons >= weaponSlots ? 'text-red-400' : 'text-primary'}>{equippedWeapons}/{weaponSlots || 0}</span></span>
+                                <span>Equipment: <span className={equippedEquipment >= equipmentSlots ? 'text-red-400' : 'text-primary'}>{equippedEquipment}/{equipmentSlots || 0}</span></span>
+                            </div>
+                        );
+                    })()}
                 </motion.div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

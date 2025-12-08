@@ -66,12 +66,13 @@ const formatTimeAgo = (date: Date): string => {
     return `${days}d ago`;
 };
 
-// Map transaction type to activity type
-const mapTransactionType = (txType: string): ActivityType => {
-    if (txType.includes('job')) return 'job';
-    if (txType.includes('attack') || txType.includes('pvp')) return 'attack';
-    if (txType.includes('business')) return 'business';
-    if (txType.includes('reward') || txType.includes('daily')) return 'reward';
+// Map notification type to activity type
+const mapNotificationType = (notifType: string): ActivityType => {
+    if (notifType.includes('attack') || notifType.includes('combat')) return 'attack';
+    if (notifType.includes('job')) return 'job';
+    if (notifType.includes('business') || notifType.includes('income')) return 'business';
+    if (notifType.includes('reward') || notifType.includes('daily')) return 'reward';
+    if (notifType.includes('family')) return 'family';
     return 'income';
 };
 
@@ -87,22 +88,22 @@ export const RecentActivity = () => {
         const fetchActivity = async () => {
             setIsLoading(true);
             try {
-                // Fetch recent transactions
-                const { data: transactions, error } = await supabase
-                    .from('transactions')
-                    .select('*')
-                    .eq('player_id', player.id)
-                    .order('created_at', { ascending: false })
-                    .limit(5);
+                // Fetch recent notifications (same source as Activity page)
+                const { data, error } = await supabase
+                    .rpc('get_notifications', {
+                        target_player_id: player.id,
+                        limit_count: 5
+                    });
 
                 if (error) throw error;
 
-                const mapped: Activity[] = (transactions || []).map(tx => ({
-                    id: tx.id,
-                    type: mapTransactionType(tx.transaction_type),
-                    message: tx.description || tx.transaction_type.replace(/_/g, ' '),
-                    details: tx.currency === 'cash' ? `+$${tx.amount.toLocaleString()}` : `+${tx.amount} ${tx.currency}`,
-                    timeAgo: formatTimeAgo(new Date(tx.created_at)),
+                const notifications = data?.notifications || [];
+                const mapped: Activity[] = notifications.map((notif: any) => ({
+                    id: notif.id,
+                    type: mapNotificationType(notif.type),
+                    message: notif.title || 'Activity',
+                    details: notif.description,
+                    timeAgo: notif.time_ago || 'Just now',
                 }));
 
                 setActivities(mapped);
