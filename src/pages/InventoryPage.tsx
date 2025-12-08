@@ -16,7 +16,7 @@ interface InventoryItemProps {
     stat?: string;
     rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
     category: 'weapon' | 'equipment' | 'contraband';
-    icon: React.ReactNode;
+    iconUrl: string | null;  // Changed from React.ReactNode to string
     equipped?: boolean;
     isProcessing?: boolean;
     delay?: number;
@@ -40,78 +40,95 @@ const rarityBadgeColors = {
 };
 
 const InventoryItemComponent = ({
-    id, name, quantity, stat, rarity, category, icon, equipped, isProcessing, delay = 0,
+    id, name, quantity, stat, rarity, category, iconUrl, equipped, isProcessing, delay = 0,
     onEquip, onUnequip, onSell
-}: InventoryItemProps) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay }}
-        className={`noir-card p-3 border-l-2 ${rarityColors[rarity]} ${equipped ? 'ring-1 ring-primary' : ''}`}
-    >
-        <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-sm bg-muted/50 flex items-center justify-center shrink-0">
-                {icon}
-            </div>
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                    <h3 className="font-cinzel font-semibold text-sm text-foreground truncate">{name}</h3>
-                    {equipped && (
-                        <span className="px-1.5 py-0.5 text-[10px] bg-primary/20 text-primary rounded-sm">
-                            EQUIPPED
+}: InventoryItemProps) => {
+    // Fallback icon based on category
+    const FallbackIcon = category === 'weapon' ? Sword : category === 'equipment' ? Shield : FlaskConical;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay }}
+            className={`noir-card p-3 border-l-2 ${rarityColors[rarity]} ${equipped ? 'ring-1 ring-primary' : ''}`}
+        >
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-sm bg-muted/50 flex items-center justify-center shrink-0 overflow-hidden">
+                    {iconUrl ? (
+                        <img
+                            src={iconUrl}
+                            alt={name}
+                            className="w-full h-full object-contain p-1"
+                            onError={(e) => {
+                                // On error, hide image and show fallback icon
+                                e.currentTarget.style.display = 'none';
+                            }}
+                        />
+                    ) : (
+                        <FallbackIcon className="w-5 h-5 text-muted-foreground" />
+                    )}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                        <h3 className="font-cinzel font-semibold text-sm text-foreground truncate">{name}</h3>
+                        {equipped && (
+                            <span className="px-1.5 py-0.5 text-[10px] bg-primary/20 text-primary rounded-sm">
+                                EQUIPPED
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`px-1.5 py-0.5 text-[10px] rounded-sm ${rarityBadgeColors[rarity]}`}>
+                            {rarity.toUpperCase()}
                         </span>
-                    )}
+                        {stat && <span className="text-xs text-primary">{stat}</span>}
+                    </div>
                 </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                    <span className={`px-1.5 py-0.5 text-[10px] rounded-sm ${rarityBadgeColors[rarity]}`}>
-                        {rarity.toUpperCase()}
-                    </span>
-                    {stat && <span className="text-xs text-primary">{stat}</span>}
+                <div className="text-right mr-2">
+                    <p className="font-cinzel font-bold text-sm text-foreground">x{quantity}</p>
                 </div>
+                {category === 'contraband' ? (
+                    <Button
+                        className="btn-gold h-8 px-2 text-xs"
+                        onClick={onSell}
+                        disabled={isProcessing}
+                    >
+                        {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Sell'}
+                    </Button>
+                ) : equipped ? (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2 text-xs"
+                        onClick={onUnequip}
+                        disabled={isProcessing}
+                    >
+                        {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : (
+                            <>
+                                <X className="w-3 h-3 mr-1" />
+                                Remove
+                            </>
+                        )}
+                    </Button>
+                ) : (
+                    <Button
+                        className="btn-gold h-8 px-2 text-xs"
+                        onClick={onEquip}
+                        disabled={isProcessing}
+                    >
+                        {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : (
+                            <>
+                                <Check className="w-3 h-3 mr-1" />
+                                Equip
+                            </>
+                        )}
+                    </Button>
+                )}
             </div>
-            <div className="text-right mr-2">
-                <p className="font-cinzel font-bold text-sm text-foreground">x{quantity}</p>
-            </div>
-            {category === 'contraband' ? (
-                <Button
-                    className="btn-gold h-8 px-2 text-xs"
-                    onClick={onSell}
-                    disabled={isProcessing}
-                >
-                    {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Sell'}
-                </Button>
-            ) : equipped ? (
-                <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 px-2 text-xs"
-                    onClick={onUnequip}
-                    disabled={isProcessing}
-                >
-                    {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : (
-                        <>
-                            <X className="w-3 h-3 mr-1" />
-                            Remove
-                        </>
-                    )}
-                </Button>
-            ) : (
-                <Button
-                    className="btn-gold h-8 px-2 text-xs"
-                    onClick={onEquip}
-                    disabled={isProcessing}
-                >
-                    {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : (
-                        <>
-                            <Check className="w-3 h-3 mr-1" />
-                            Equip
-                        </>
-                    )}
-                </Button>
-            )}
-        </div>
-    </motion.div>
-);
+        </motion.div>
+    );
+};
 
 interface CrewMemberProps {
     name: string;
@@ -352,7 +369,7 @@ const InventoryPage = () => {
                                             stat={formatStat(item)}
                                             rarity={item.rarity}
                                             category={item.category}
-                                            icon={getIcon(item.category)}
+                                            iconUrl={item.icon}
                                             equipped={item.is_equipped}
                                             isProcessing={processingItemId === item.id}
                                             delay={0.05 * index}
@@ -376,7 +393,7 @@ const InventoryPage = () => {
                                             stat={formatStat(item)}
                                             rarity={item.rarity}
                                             category={item.category}
-                                            icon={getIcon(item.category)}
+                                            iconUrl={item.icon}
                                             equipped={item.is_equipped}
                                             isProcessing={processingItemId === item.id}
                                             delay={0.05 * index}
@@ -400,7 +417,7 @@ const InventoryPage = () => {
                                             stat={formatStat(item)}
                                             rarity={item.rarity}
                                             category={item.category}
-                                            icon={getIcon(item.category)}
+                                            iconUrl={item.icon}
                                             isProcessing={processingItemId === item.id}
                                             delay={0.05 * index}
                                             onSell={() => handleSell(item)}

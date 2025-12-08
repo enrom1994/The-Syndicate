@@ -6,6 +6,7 @@ export interface InventoryItem {
     id: string;
     item_id: string;
     name: string;
+    icon: string | null;
     category: 'weapon' | 'equipment' | 'contraband';
     quantity: number;
     is_equipped: boolean;
@@ -280,7 +281,8 @@ export const useGameStore = create<GameState>((set, get) => ({
             attack_bonus,
             defense_bonus,
             income_bonus,
-            sell_price
+            sell_price,
+            icon
           )
         `)
                 .eq('player_id', playerId);
@@ -291,6 +293,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                 id: item.id,
                 item_id: item.item_id,
                 name: item.item_definitions?.name || 'Unknown',
+                icon: item.item_definitions?.icon || null,
                 category: item.item_definitions?.category || 'weapon',
                 quantity: item.quantity,
                 is_equipped: item.is_equipped,
