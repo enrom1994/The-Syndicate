@@ -96,7 +96,7 @@ const DailyRewardsPage = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     // Get streak from player data
-    const currentStreak = player?.login_streak ?? 1;
+    const currentStreak = player?.daily_streak ?? 1;
     const lastClaimDate = player?.last_daily_claim ? new Date(player.last_daily_claim) : null;
     const today = new Date();
     const canClaimToday = !lastClaimDate ||
@@ -153,7 +153,7 @@ const DailyRewardsPage = () => {
             const { error } = await supabase
                 .from('players')
                 .update({
-                    login_streak: currentStreak + 1,
+                    daily_streak: currentStreak + 1,
                     last_daily_claim: new Date().toISOString(),
                 })
                 .eq('id', player.id);
