@@ -34,11 +34,11 @@ export const QuickActions = () => {
             color: 'bg-red-500/10 border-red-500/20',
         },
         {
-            label: 'Daily',
-            icon: <Gift className="w-5 h-5 text-green-400" />,
-            path: '/daily-rewards',
-            desc: 'Free Gifts',
-            color: 'bg-green-500/10 border-green-500/20',
+            label: 'Lucky Wheel',
+            icon: <Gift className="w-5 h-5 text-purple-400" />,
+            path: '/lucky-wheel',
+            desc: 'Free Spin',
+            color: 'bg-purple-500/10 border-purple-500/20',
         },
     ];
 

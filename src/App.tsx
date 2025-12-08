@@ -28,7 +28,9 @@ import ShopPage from "./pages/ShopPage";
 import BountyBoardPage from "./pages/BountyBoardPage";
 import AchievementsPage from "./pages/AchievementsPage";
 import TasksPage from "./pages/TasksPage";
+import LuckyWheelPage from "./pages/LuckyWheelPage";
 import NotFound from "./pages/NotFound";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -89,6 +91,7 @@ const App = () => {
                     <Route path="/bounty-board" element={<BountyBoardPage />} />
                     <Route path="/achievements" element={<AchievementsPage />} />
                     <Route path="/tasks" element={<TasksPage />} />
+                    <Route path="/lucky-wheel" element={<LuckyWheelPage />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </BrowserRouter>
