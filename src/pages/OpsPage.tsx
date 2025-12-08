@@ -144,9 +144,133 @@ const OpsPage = () => {
     const [isLoadingTargets, setIsLoadingTargets] = useState(true);
     const [processingId, setProcessingId] = useState<string | null>(null);
 
-    // ... (rest of state)
+    // Combat modal state
+    const [combatResult, setCombatResult] = useState<{
+        open: boolean;
+        result: 'victory' | 'defeat';
+        targetName: string;
+        cashGained: number;
+        cashLost: number;
+        respectGained: number;
+        respectLost: number;
+    }>({ open: false, result: 'victory', targetName: '', cashGained: 0, cashLost: 0, respectGained: 0, respectLost: 0 });
 
-    // ... (rest of effects and functions)
+    // Confirm dialog state
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [pendingAttack, setPendingAttack] = useState<TargetPlayer | null>(null);
+
+    useEffect(() => {
+        loadTargets();
+    }, [player?.id]);
+
+    const loadTargets = async () => {
+        if (!player?.id) return;
+
+        setIsLoadingTargets(true);
+        try {
+            // Get random players to attack (excluding self)
+            const { data, error } = await supabase
+                .from('players')
+                .select('id, username, cash, defense, attack')
+                .neq('id', player.id)
+                .gt('cash', 1000)
+                .limit(5);
+
+            if (error) throw error;
+
+            setTargets(data || []);
+        } catch (error) {
+            console.error('Error loading targets:', error);
+        } finally {
+            setIsLoadingTargets(false);
+        }
+    };
+
+    const getRisk = (defense: number): 'Low' | 'Medium' | 'High' => {
+        if (defense < 30) return 'Low';
+        if (defense < 70) return 'Medium';
+        return 'High';
+    };
+
+    const formatNetWorth = (cash: number): string => {
+        if (cash >= 1000000) return `$${(cash / 1000000).toFixed(1)}M`;
+        if (cash >= 1000) return `$${(cash / 1000).toFixed(1)}K`;
+        return `$${cash}`;
+    };
+
+    const handleAttackClick = (target: TargetPlayer) => {
+        if ((player?.stamina ?? 0) < 10) {
+            toast({
+                title: 'Not Enough Stamina',
+                description: 'You need at least 10 stamina to attack.',
+                variant: 'destructive',
+            });
+            return;
+        }
+        setPendingAttack(target);
+        setConfirmOpen(true);
+    };
+
+    const executeAttack = async () => {
+        if (!pendingAttack || !player) return;
+
+        setConfirmOpen(false);
+        setProcessingId(pendingAttack.id);
+
+        try {
+            const result = await performAttack(pendingAttack.id);
+
+            if (!result.success) {
+                haptic.error();
+                toast({
+                    title: 'Attack Failed',
+                    description: result.message || 'Could not perform attack.',
+                    variant: 'destructive',
+                });
+                return;
+            }
+
+            if (result.result === 'victory') {
+                haptic.success();
+                if (result.cash_stolen) rewardCash(result.cash_stolen);
+
+                setCombatResult({
+                    open: true,
+                    result: 'victory',
+                    targetName: pendingAttack.username || 'Unknown',
+                    cashGained: result.cash_stolen || 0,
+                    cashLost: 0,
+                    respectGained: result.respect_gained || 0,
+                    respectLost: 0,
+                });
+            } else {
+                haptic.error();
+
+                setCombatResult({
+                    open: true,
+                    result: 'defeat',
+                    targetName: pendingAttack.username || 'Unknown',
+                    cashGained: 0,
+                    cashLost: result.cash_lost || 0,
+                    respectGained: 0,
+                    respectLost: result.respect_lost || 0,
+                });
+            }
+
+            await refetchPlayer();
+            await loadTargets();
+        } catch (error) {
+            console.error('Attack error:', error);
+            toast({
+                title: 'Attack Failed',
+                description: 'An error occurred during the attack.',
+                variant: 'destructive',
+            });
+        } finally {
+            setProcessingId(null);
+            setPendingAttack(null);
+        }
+    };
 
     const handleJobExecute = async (job: JobDefinition) => {
         if (!player) return;
@@ -168,13 +292,12 @@ const OpsPage = () => {
                     className: result.leveled_up ? 'bg-primary text-primary-foreground' : '',
                 });
 
-                // Refetch player to get new stats (especially if leveled up)
                 await refetchPlayer();
             } else {
                 haptic.error();
                 toast({
                     title: 'Job Failed',
-                    description: result.message,
+                    description: result.message || 'An error occurred.',
                     variant: 'destructive',
                 });
             }
@@ -182,8 +305,8 @@ const OpsPage = () => {
             console.error('Job error:', error);
             haptic.error();
             toast({
-                title: 'Error',
-                description: 'An unexpected error occurred.',
+                title: 'Job Failed',
+                description: 'An error occurred while executing the job.',
                 variant: 'destructive',
             });
         } finally {
@@ -261,7 +384,6 @@ const OpsPage = () => {
                         </TabsTrigger>
                     </TabsList>
 
-
                     <TabsContent value="attack" className="space-y-3 mt-0">
                         {isLoadingTargets ? (
                             <div className="flex items-center justify-center py-12">
@@ -309,7 +431,7 @@ const OpsPage = () => {
                                     id={job.id}
                                     name={job.name}
                                     description={job.description || ''}
-                                    reward={job.base_reward}
+                                    reward={job.cash_reward}
                                     energy={job.energy_cost}
                                     isProcessing={processingId === job.id}
                                     delay={0.1 * index}
