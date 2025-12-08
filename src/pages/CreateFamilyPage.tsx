@@ -1,33 +1,36 @@
 import { motion } from 'framer-motion';
-import { Crown, Users, ArrowLeft, Plus, AlertTriangle } from 'lucide-react';
+import { Crown, Users, ArrowLeft, Plus, AlertTriangle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { haptic } from '@/lib/haptics';
+import { GameIcon } from '@/components/GameIcon';
 
 const CreateFamilyPage = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
+    const { player, refetchPlayer } = useAuth();
 
     const [familyName, setFamilyName] = useState('');
     const [familyTag, setFamilyTag] = useState('');
     const [description, setDescription] = useState('');
-    const [initialDeposit, setInitialDeposit] = useState(100000);
     const [confirmOpen, setConfirmOpen] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    // Mock player cash
-    const playerCash = 5000000;
-    const minDeposit = 100000;
+    const diamondCost = 100;
 
     const isValid =
         familyName.length >= 3 &&
         familyTag.length >= 2 &&
         familyTag.length <= 4 &&
-        initialDeposit >= minDeposit &&
-        initialDeposit <= playerCash;
+        (player?.diamonds ?? 0) >= diamondCost;
 
     const handleCreate = () => {
         if (isValid) {
@@ -35,13 +38,47 @@ const CreateFamilyPage = () => {
         }
     };
 
-    const confirmCreate = () => {
-        toast({
-            title: 'Family Created!',
-            description: `${familyName} [${familyTag}] is now established. You are the Boss!`,
-        });
-        navigate('/family');
+    const confirmCreate = async () => {
+        if (!player?.id) return;
+
+        setIsProcessing(true);
         setConfirmOpen(false);
+
+        try {
+            const { data, error } = await supabase.rpc('create_family', {
+                creator_id: player.id,
+                family_name: familyName,
+                family_tag: familyTag,
+                family_description: description || null
+            });
+
+            if (error) throw error;
+
+            if (data?.success) {
+                haptic.success();
+                toast({
+                    title: 'Family Created!',
+                    description: `${familyName} [${familyTag}] is now established. You are the Boss!`,
+                });
+                await refetchPlayer();
+                navigate('/family');
+            } else {
+                toast({
+                    title: 'Error',
+                    description: data?.message || 'Failed to create family',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Create family error:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to create family. Please try again.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     return (
@@ -139,42 +176,36 @@ const CreateFamilyPage = () => {
                                 2-4 letters, shown as [{familyTag || '???'}]
                             </p>
                         </div>
-                        <span className="font-bold text-foreground">${playerCash.toLocaleString()}</span>
-                    </div>
 
-                    <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">
-                            Deposit Amount (min ${minDeposit.toLocaleString()})
-                        </label>
-                        <Input
-                            type="number"
-                            value={initialDeposit}
-                            onChange={(e) => setInitialDeposit(parseInt(e.target.value) || 0)}
-                            className="bg-muted/30 border-border/50"
-                            min={minDeposit}
-                            max={playerCash}
-                        />
-                    </div>
+                        {/* Description */}
+                        <div>
+                            <label className="text-xs text-muted-foreground mb-1 block">
+                                Description (optional)
+                            </label>
+                            <Textarea
+                                placeholder="A brief description of your family..."
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                className="bg-muted/30 border-border/50 min-h-[60px]"
+                                maxLength={200}
+                            />
+                        </div>
 
-                    <div className="grid grid-cols-4 gap-2">
-                        {[100000, 250000, 500000, 1000000].map((amount) => (
-                            <button
-                                key={amount}
-                                onClick={() => setInitialDeposit(Math.min(amount, playerCash))}
-                                className={`p-2 text-[10px] rounded-sm transition-all ${initialDeposit === amount
-                                    ? 'bg-primary/20 border border-primary text-primary'
-                                    : 'bg-muted/30 border border-border/50 text-muted-foreground'
-                                    }`}
-                                disabled={amount > playerCash}
-                            >
-                                ${(amount / 1000)}K
-                            </button>
-                        ))}
+                        {/* Cost Display */}
+                        <div className="flex items-center justify-between p-3 bg-muted/30 rounded-sm">
+                            <span className="text-xs text-muted-foreground">Creation Cost:</span>
+                            <div className="flex items-center gap-1">
+                                <GameIcon type="diamond" className="w-5 h-5" />
+                                <span className="font-cinzel font-bold text-foreground">{diamondCost}</span>
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Your Diamonds:</span>
+                            <span className={`font-bold ${(player?.diamonds ?? 0) >= diamondCost ? 'text-primary' : 'text-destructive'}`}>
+                                {player?.diamonds ?? 0} 💎
+                            </span>
+                        </div>
                     </div>
-
-                    <p className="text-[10px] text-muted-foreground">
-                        This funds your family's treasury for operations, bounties, and wars.
-                    </p>
                 </motion.div>
 
                 {/* Create Button */}
@@ -186,10 +217,14 @@ const CreateFamilyPage = () => {
                     <Button
                         className="w-full btn-gold"
                         onClick={handleCreate}
-                        disabled={!isValid}
+                        disabled={!isValid || isProcessing}
                     >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create Family (${initialDeposit.toLocaleString()})
+                        {isProcessing ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                            <Plus className="w-4 h-4 mr-2" />
+                        )}
+                        Create Family (100 💎)
                     </Button>
                 </motion.div>
             </div >
@@ -198,7 +233,7 @@ const CreateFamilyPage = () => {
                 open={confirmOpen}
                 onOpenChange={setConfirmOpen}
                 title="Create Family?"
-                description={`Create "${familyName}" [${familyTag}] with an initial treasury of $${initialDeposit.toLocaleString()}? You will become the Boss.`}
+                description={`Create "${familyName}" [${familyTag}] for 100 diamonds? You will become the Boss.`}
                 onConfirm={confirmCreate}
                 confirmText="Create Family"
             />

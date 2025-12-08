@@ -1,30 +1,37 @@
 import { motion } from 'framer-motion';
-import { Users, Crown, Plus, Coins, Search, Star, Shield, ArrowLeft, UserPlus } from 'lucide-react';
-import { useState } from 'react';
+import { Users, Crown, Plus, Search, ArrowLeft, UserPlus, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { haptic } from '@/lib/haptics';
 
-interface FamilyCardProps {
+interface Family {
+    id: string;
     name: string;
-    tag: string;
-    memberCount: number;
-    maxMembers: number;
-    rank: number;
-    netWorth: string;
-    recruitmentStatus: 'open' | 'invite-only' | 'closed';
-    minLevel: number;
-    delay?: number;
-    onApply: () => void;
+    tag: string | null;
+    description: string | null;
+    treasury: number;
+    total_respect: number;
+    is_recruiting: boolean;
+    min_level_required: number;
+    member_count: number;
+    boss_name: string | null;
 }
 
-const FamilyCard = ({
-    name, tag, memberCount, maxMembers, rank, netWorth,
-    recruitmentStatus, minLevel, delay = 0, onApply
-}: FamilyCardProps) => (
+interface FamilyCardProps {
+    family: Family;
+    delay?: number;
+    onJoin: () => void;
+    isJoining: boolean;
+}
+
+const FamilyCard = ({ family, delay = 0, onJoin, isJoining }: FamilyCardProps) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -38,85 +45,130 @@ const FamilyCard = ({
                 </div>
                 <div>
                     <h3 className="font-cinzel font-bold text-sm text-foreground">
-                        [{tag}] {name}
+                        {family.tag ? `[${family.tag}] ` : ''}{family.name}
                     </h3>
                     <p className="text-[10px] text-muted-foreground">
-                        Rank #{rank} • {memberCount}/{maxMembers} members
+                        {family.member_count} members • Boss: {family.boss_name || 'Unknown'}
                     </p>
                 </div>
             </div>
-            <span className={`px-2 py-0.5 text-[10px] rounded-sm ${recruitmentStatus === 'open'
-                    ? 'bg-green-500/20 text-green-400'
-                    : recruitmentStatus === 'invite-only'
-                        ? 'bg-yellow-500/20 text-yellow-400'
-                        : 'bg-red-500/20 text-red-400'
-                }`}>
-                {recruitmentStatus === 'open' ? 'Open' : recruitmentStatus === 'invite-only' ? 'Invite Only' : 'Closed'}
+            <span className="px-2 py-0.5 text-[10px] rounded-sm bg-green-500/20 text-green-400">
+                Open
             </span>
         </div>
 
         <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
             <div className="bg-muted/20 p-2 rounded-sm">
-                <span className="text-muted-foreground">Net Worth</span>
-                <p className="font-cinzel font-bold text-primary">{netWorth}</p>
+                <span className="text-muted-foreground">Treasury</span>
+                <p className="font-cinzel font-bold text-primary">${family.treasury.toLocaleString()}</p>
             </div>
             <div className="bg-muted/20 p-2 rounded-sm">
                 <span className="text-muted-foreground">Min Level</span>
-                <p className="font-cinzel font-bold text-foreground">Lv. {minLevel}</p>
+                <p className="font-cinzel font-bold text-foreground">Lv. {family.min_level_required}</p>
             </div>
         </div>
 
-        {recruitmentStatus === 'open' && (
-            <Button className="w-full btn-gold text-xs" onClick={onApply}>
+        {family.description && (
+            <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{family.description}</p>
+        )}
+
+        <Button
+            className="w-full btn-gold text-xs"
+            onClick={onJoin}
+            disabled={isJoining}
+        >
+            {isJoining ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            ) : (
                 <UserPlus className="w-4 h-4 mr-1" />
-                Apply to Join
-            </Button>
-        )}
-        {recruitmentStatus === 'invite-only' && (
-            <Button variant="outline" className="w-full text-xs" disabled>
-                Invite Required
-            </Button>
-        )}
-        {recruitmentStatus === 'closed' && (
-            <Button variant="outline" className="w-full text-xs" disabled>
-                Not Recruiting
-            </Button>
-        )}
+            )}
+            Join Family
+        </Button>
     </motion.div>
 );
 
 const BrowseFamiliesPage = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
+    const { player } = useAuth();
+
     const [searchQuery, setSearchQuery] = useState('');
+    const [families, setFamilies] = useState<Family[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
+    const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
+    const [isJoining, setIsJoining] = useState(false);
 
-    // Mock data
-    const families = [
-        { name: 'The Corleone Family', tag: 'CRL', memberCount: 32, maxMembers: 50, rank: 1, netWorth: '$482M', recruitmentStatus: 'invite-only' as const, minLevel: 10 },
-        { name: 'Barzini Syndicate', tag: 'BRZ', memberCount: 28, maxMembers: 50, rank: 2, netWorth: '$356M', recruitmentStatus: 'open' as const, minLevel: 5 },
-        { name: 'Tattaglia Crime Ring', tag: 'TAT', memberCount: 45, maxMembers: 50, rank: 3, netWorth: '$289M', recruitmentStatus: 'open' as const, minLevel: 3 },
-        { name: 'Stracci Brothers', tag: 'STR', memberCount: 18, maxMembers: 30, rank: 4, netWorth: '$145M', recruitmentStatus: 'closed' as const, minLevel: 1 },
-        { name: 'Cuneo Organization', tag: 'CUN', memberCount: 22, maxMembers: 40, rank: 5, netWorth: '$98M', recruitmentStatus: 'open' as const, minLevel: 1 },
-    ];
+    const loadFamilies = async (query?: string) => {
+        try {
+            const { data, error } = await supabase.rpc('search_families', {
+                search_query: query || null,
+                result_limit: 20
+            });
 
-    const filteredFamilies = families.filter(f =>
-        f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        f.tag.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+            if (error) throw error;
+            setFamilies(data as Family[] || []);
+        } catch (error) {
+            console.error('Failed to load families:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-    const handleApply = (familyName: string) => {
-        setSelectedFamily(familyName);
+    useEffect(() => {
+        loadFamilies();
+    }, []);
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            loadFamilies(searchQuery);
+        }, 300);
+        return () => clearTimeout(timeout);
+    }, [searchQuery]);
+
+    const handleJoin = (family: Family) => {
+        setSelectedFamily(family);
         setConfirmOpen(true);
     };
 
-    const confirmApply = () => {
-        toast({
-            title: 'Application Sent!',
-            description: `Your application to join ${selectedFamily} has been submitted.`,
-        });
+    const confirmJoin = async () => {
+        if (!player?.id || !selectedFamily) return;
+
         setConfirmOpen(false);
+        setIsJoining(true);
+
+        try {
+            const { data, error } = await supabase.rpc('join_family', {
+                joiner_id: player.id,
+                target_family_id: selectedFamily.id
+            });
+
+            if (error) throw error;
+
+            if (data?.success) {
+                haptic.success();
+                toast({
+                    title: 'Welcome!',
+                    description: data.message,
+                });
+                navigate('/family');
+            } else {
+                toast({
+                    title: 'Cannot Join',
+                    description: data?.message || 'Failed to join family',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Join error:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to join family. Please try again.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsJoining(false);
+        }
     };
 
     return (
@@ -185,21 +237,29 @@ const BrowseFamiliesPage = () => {
                 </motion.div>
 
                 {/* Families List */}
-                <div className="space-y-3">
-                    {filteredFamilies.map((family, index) => (
-                        <FamilyCard
-                            key={family.tag}
-                            {...family}
-                            delay={0.1 * index}
-                            onApply={() => handleApply(family.name)}
-                        />
-                    ))}
-                </div>
+                {isLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {families.map((family, index) => (
+                            <FamilyCard
+                                key={family.id}
+                                family={family}
+                                delay={0.1 * index}
+                                onJoin={() => handleJoin(family)}
+                                isJoining={isJoining && selectedFamily?.id === family.id}
+                            />
+                        ))}
+                    </div>
+                )}
 
-                {filteredFamilies.length === 0 && (
+                {!isLoading && families.length === 0 && (
                     <div className="text-center py-12">
                         <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
                         <p className="text-sm text-muted-foreground">No families found</p>
+                        <p className="text-xs text-muted-foreground mt-1">Be the first to create one!</p>
                     </div>
                 )}
             </div>
@@ -207,10 +267,10 @@ const BrowseFamiliesPage = () => {
             <ConfirmDialog
                 open={confirmOpen}
                 onOpenChange={setConfirmOpen}
-                title="Apply to Join?"
-                description={`Send an application to join ${selectedFamily}? The family leadership will review your request.`}
-                onConfirm={confirmApply}
-                confirmText="Apply"
+                title="Join Family?"
+                description={`Join ${selectedFamily?.name}? You will start as a Street Runner.`}
+                onConfirm={confirmJoin}
+                confirmText="Join"
             />
         </MainLayout>
     );
