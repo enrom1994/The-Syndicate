@@ -660,59 +660,55 @@ export const useGameStore = create<GameState>((set, get) => ({
         return data === true;
     },
 
-    // Business actions
+    // Business actions - use RPC for SECURITY DEFINER bypass
     buyBusiness: async (businessId) => {
-        const { playerId, businessDefinitions, spendCash, loadBusinesses } = get();
+        const { playerId, loadBusinesses } = get();
         if (!playerId) return false;
 
-        const def = businessDefinitions.find(b => b.id === businessId);
-        if (!def) return false;
-
-        // Spend cash first
-        const success = await spendCash(def.base_purchase_cost, 'business_purchase');
-        if (!success) return false;
-
-        // Insert the business
-        const { error } = await supabase
-            .from('player_businesses')
-            .insert({
-                player_id: playerId,
-                business_id: businessId,
-                level: 1,
-            });
+        const { data, error } = await supabase.rpc('buy_business', {
+            player_id_input: playerId,
+            business_id_input: businessId,
+        });
 
         if (error) {
             console.error('Failed to buy business:', error);
             return false;
         }
 
-        await loadBusinesses();
-        return true;
+        const result = data as { success: boolean; message: string };
+
+        if (result.success) {
+            await loadBusinesses();
+            return true;
+        } else {
+            console.error('Buy business failed:', result.message);
+            return false;
+        }
     },
 
     upgradeBusiness: async (playerBusinessId) => {
-        const { businesses, spendCash, loadBusinesses } = get();
+        const { playerId, loadBusinesses } = get();
+        if (!playerId) return false;
 
-        const business = businesses.find(b => b.id === playerBusinessId);
-        if (!business || business.level >= business.max_level) return false;
-
-        // Spend cash
-        const success = await spendCash(business.upgrade_cost, 'business_upgrade');
-        if (!success) return false;
-
-        // Upgrade the business
-        const { error } = await supabase
-            .from('player_businesses')
-            .update({ level: business.level + 1 })
-            .eq('id', playerBusinessId);
+        const { data, error } = await supabase.rpc('upgrade_business', {
+            player_id_input: playerId,
+            player_business_id_input: playerBusinessId,
+        });
 
         if (error) {
             console.error('Failed to upgrade business:', error);
             return false;
         }
 
-        await loadBusinesses();
-        return true;
+        const result = data as { success: boolean; message: string };
+
+        if (result.success) {
+            await loadBusinesses();
+            return true;
+        } else {
+            console.error('Upgrade business failed:', result.message);
+            return false;
+        }
     },
 
     collectIncome: async (playerBusinessId) => {
