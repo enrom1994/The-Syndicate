@@ -33,37 +33,37 @@ export const Operations = () => {
 
   const operations = [
     {
-      iconSrc: '/icons/hire.png',
+      iconSrc: '/images/icons/hire.png',
       title: 'Hire',
       path: '/hire',
     },
     {
-      iconSrc: '/icons/auctionhouse.png',
+      iconSrc: '/images/icons/auctionhouse.png',
       title: 'Auction House',
       path: '/auction',
     },
     {
-      iconSrc: '/icons/business.png',
+      iconSrc: '/images/icons/business.png',
       title: 'Business',
       path: '/business',
     },
     {
-      iconSrc: '/icons/profile.png',
+      iconSrc: '/images/icons/profile.png',
       title: 'Profile',
       path: '/profile',
     },
     {
-      iconSrc: '/icons/daily.png',
+      iconSrc: '/images/icons/daily.png',
       title: 'Daily',
       path: '/daily-rewards',
     },
     {
-      iconSrc: '/icons/thevault.png',
+      iconSrc: '/images/icons/thevault.png',
       title: 'The Vault',
       path: '/bank',
     },
     {
-      iconSrc: '/icons/inventory.png',
+      iconSrc: '/images/icons/inventory.png',
       title: 'Inventory',
       path: '/inventory',
     },

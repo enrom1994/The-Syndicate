@@ -8,28 +8,28 @@ export const QuickActions = () => {
     const actions = [
         {
             label: 'Tasks',
-            iconSrc: '/icons/tasks.png',
+            iconSrc: '/images/icons/tasks.png',
             path: '/tasks',
             desc: 'Earn Rewards',
             color: 'bg-blue-500/10 border-blue-500/20',
         },
         {
             label: 'Achievements',
-            iconSrc: '/icons/Achievements.png',
+            iconSrc: '/images/icons/achievements.png',
             path: '/achievements',
             desc: 'Milestones',
             color: 'bg-yellow-500/10 border-yellow-500/20',
         },
         {
             label: 'Bounties',
-            iconSrc: '/icons/bounty.png',
+            iconSrc: '/images/icons/bounty.png',
             path: '/bounty-board',
             desc: 'Find Targets',
             color: 'bg-red-500/10 border-red-500/20',
         },
         {
             label: 'Lucky Wheel',
-            iconSrc: '/icons/luckywheel.png',
+            iconSrc: '/images/icons/luckywheel.png',
             path: '/lucky-wheel',
             desc: 'Free Spin',
             color: 'bg-purple-500/10 border-purple-500/20',
