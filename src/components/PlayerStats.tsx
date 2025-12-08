@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Crown, Users, Shield, TrendingUp, DollarSign } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -6,6 +7,7 @@ import { GameIcon } from './GameIcon';
 import { useEnergyRegen } from '@/hooks/useEnergyRegen';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore } from '@/hooks/useGameStore';
+import { supabase } from '@/lib/supabase';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -63,6 +65,45 @@ export const PlayerStats = () => {
   const { player } = useAuth();
   const { crew: hiredCrew, businesses } = useGameStore();
 
+  // State for leaderboard rank
+  const [playerRank, setPlayerRank] = useState<number | null>(null);
+
+  // Fetch player's leaderboard rank
+  useEffect(() => {
+    const fetchRank = async () => {
+      if (!player?.id) return;
+
+      try {
+        // Get net worth leaderboard and find player's position
+        const { data, error } = await supabase.rpc('get_leaderboard', {
+          leaderboard_type: 'networth',
+          result_limit: 100
+        });
+
+        if (error) {
+          console.error('Error fetching leaderboard:', error);
+          return;
+        }
+
+        // Find player's rank in the leaderboard
+        const playerIndex = data?.findIndex((entry: any) => entry.player_id === player.id);
+        if (playerIndex !== undefined && playerIndex >= 0) {
+          setPlayerRank(playerIndex + 1);
+        } else {
+          // Player not in top 100, estimate rank
+          setPlayerRank(100);
+        }
+      } catch (err) {
+        console.error('Failed to fetch rank:', err);
+      }
+    };
+
+    fetchRank();
+    // Refresh rank every 60 seconds
+    const interval = setInterval(fetchRank, 60000);
+    return () => clearInterval(interval);
+  }, [player?.id]);
+
   // Energy system with auto-regen - use player's actual energy
   const { energy, formattedTime } = useEnergyRegen(
     player?.energy ?? 100,
@@ -100,7 +141,7 @@ export const PlayerStats = () => {
       >
         <h2 className="font-cinzel text-base font-semibold text-foreground">Your Empire</h2>
         <Link to="/ranks" className="stat-badge text-primary hover:bg-primary/20 transition-colors cursor-pointer">
-          Rank #{player?.respect ? Math.max(1, 1000 - player.respect) : '---'}
+          Rank #{playerRank ?? '---'}
         </Link>
       </motion.div>
 
