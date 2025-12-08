@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Users, ShoppingBag, Swords, Home, Briefcase, Target, User, Landmark, Package, Gift } from 'lucide-react';
+import { Users, ShoppingBag, Home, Briefcase, User, Landmark, Package, Gift, Gavel } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface OperationCardProps {
@@ -53,9 +53,10 @@ export const Operations = () => {
       path: '/market',
     },
     {
-      icon: <Swords className="w-4 h-4 text-primary-foreground" />,
-      title: 'Attack',
-      path: '/ops',
+      icon: <Gavel className="w-4 h-4 text-primary-foreground" />,
+      title: 'Auction House',
+      path: '/auction',
+      badge: 'SOON',
     },
     {
       icon: <Home className="w-4 h-4 text-primary-foreground" />,
@@ -66,11 +67,6 @@ export const Operations = () => {
       icon: <Briefcase className="w-4 h-4 text-primary-foreground" />,
       title: 'Business',
       path: '/business',
-    },
-    {
-      icon: <Target className="w-4 h-4 text-primary-foreground" />,
-      title: 'Missions',
-      path: '/ops',
     },
     {
       icon: <User className="w-4 h-4 text-primary-foreground" />,
