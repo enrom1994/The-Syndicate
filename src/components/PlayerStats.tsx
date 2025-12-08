@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { Crown, Users, Shield, TrendingUp } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Crown, Users, Shield, TrendingUp, DollarSign } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import { EnergyBar } from './SeasonBanner';
 import { GameIcon } from './GameIcon';
 import { useEnergyRegen } from '@/hooks/useEnergyRegen';
@@ -20,18 +20,18 @@ const StatCard = ({ icon, label, value, change, delay = 0 }: StatCardProps) => (
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.5, delay }}
-    className="noir-card p-4 flex items-center gap-3"
+    className="noir-card p-2.5 flex items-center gap-2"
   >
-    <div className="w-10 h-10 rounded-sm bg-primary/10 flex items-center justify-center shrink-0">
+    <div className="w-7 h-7 rounded-sm bg-primary/10 flex items-center justify-center shrink-0">
       {icon}
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-xs text-muted-foreground uppercase tracking-wide truncate">{label}</p>
-      <p className="font-cinzel font-bold text-lg text-foreground">{value}</p>
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">{label}</p>
+      <p className="font-cinzel font-bold text-sm text-foreground">{value}</p>
     </div>
     {change && (
-      <span className="text-xs text-green-500 flex items-center gap-0.5">
-        <TrendingUp className="w-3 h-3" />
+      <span className="text-[10px] text-green-500 flex items-center gap-0.5">
+        <TrendingUp className="w-2.5 h-2.5" />
         {change}
       </span>
     )}
@@ -61,7 +61,7 @@ const getRankTitle = (level: number): string => {
 export const PlayerStats = () => {
   const navigate = useNavigate();
   const { player } = useAuth();
-  const { crew: hiredCrew } = useGameStore();
+  const { crew: hiredCrew, businesses } = useGameStore();
 
   // Energy system with auto-regen - use player's actual energy
   const { energy, formattedTime } = useEnergyRegen(
@@ -84,42 +84,62 @@ export const PlayerStats = () => {
   const xpNeeded = level * 1000; // Simple formula: level * 1000 XP per level
   const xpProgress = Math.min((experience / xpNeeded) * 100, 100);
 
+  // Calculate Net Worth (cash + bank + business values)
+  const cash = player?.cash ?? 0;
+  const bank = player?.banked_cash ?? 0;
+  const businessValue = businesses.reduce((sum, b) => sum + (b.income_per_hour * 24), 0); // Daily income as value
+  const netWorth = cash + bank + businessValue;
+
   return (
-    <section className="py-6 px-4">
+    <section className="py-4 px-4">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="flex items-center justify-between mb-4"
+        className="flex items-center justify-between mb-3"
       >
-        <h2 className="font-cinzel text-lg font-semibold text-foreground">Your Empire</h2>
-        <span className="stat-badge text-primary">Rank #{player?.respect ? Math.max(1, 1000 - player.respect) : '---'}</span>
+        <h2 className="font-cinzel text-base font-semibold text-foreground">Your Empire</h2>
+        <Link to="/ranks" className="stat-badge text-primary hover:bg-primary/20 transition-colors cursor-pointer">
+          Rank #{player?.respect ? Math.max(1, 1000 - player.respect) : '---'}
+        </Link>
       </motion.div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         <StatCard
-          icon={<Crown className="w-5 h-5 text-primary" />}
-          label="Rank"
-          value={getRankTitle(level)}
+          icon={<DollarSign className="w-4 h-4 text-green-500" />}
+          label="Net Worth"
+          value={formatCash(netWorth)}
           delay={0.1}
         />
         <StatCard
-          icon={<GameIcon type="cash" className="w-6 h-6" />}
+          icon={<Crown className="w-4 h-4 text-primary" />}
+          label="Rank"
+          value={getRankTitle(level)}
+          delay={0.15}
+        />
+        <StatCard
+          icon={<GameIcon type="cash" className="w-4 h-4" />}
           label="Cash"
           value={formatCash(player?.cash ?? 0)}
           delay={0.2}
         />
         <StatCard
-          icon={<Users className="w-5 h-5 text-primary" />}
+          icon={<Users className="w-4 h-4 text-primary" />}
           label="Crew"
           value={totalCrewCount}
+          delay={0.25}
+        />
+        <StatCard
+          icon={<Shield className="w-4 h-4 text-primary" />}
+          label="Defense"
+          value={totalDefense}
           delay={0.3}
         />
         <StatCard
-          icon={<Shield className="w-5 h-5 text-primary" />}
-          label="Defense"
-          value={totalDefense}
-          delay={0.4}
+          icon={<GameIcon type="diamond" className="w-4 h-4" />}
+          label="Diamonds"
+          value={player?.diamonds ?? 0}
+          delay={0.35}
         />
       </div>
 

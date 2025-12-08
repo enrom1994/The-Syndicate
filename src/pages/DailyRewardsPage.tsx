@@ -165,12 +165,14 @@ const DailyRewardsPage = () => {
                 await supabase.rpc('increment_cash', {
                     player_id_input: player.id,
                     amount: reward.reward_amount,
+                    source: 'daily_reward',
                 });
                 rewardCash(reward.reward_amount);
             } else if (reward.reward_type === 'diamonds') {
                 await supabase.rpc('increment_diamonds', {
                     player_id_input: player.id,
                     amount: reward.reward_amount,
+                    source: 'daily_reward',
                 });
                 rewardDiamonds(reward.reward_amount);
             } else if (reward.reward_type === 'energy') {

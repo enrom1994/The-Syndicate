@@ -1,10 +1,12 @@
 import { motion } from 'framer-motion';
-import { Coins, Sword, TrendingUp, Building2, Users, Gift, Clock, ChevronRight } from 'lucide-react';
+import { Coins, Sword, TrendingUp, Building2, Users, Gift, Clock, ChevronRight, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { useNotifications } from '@/hooks/useNotifications';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
-type ActivityType = 'income' | 'attack' | 'upgrade' | 'business' | 'family' | 'reward';
+type ActivityType = 'income' | 'attack' | 'job' | 'business' | 'family' | 'reward';
 
 interface Activity {
     id: string;
@@ -17,7 +19,7 @@ interface Activity {
 const activityIcons: Record<ActivityType, React.ReactNode> = {
     income: <Coins className="w-4 h-4 text-green-400" />,
     attack: <Sword className="w-4 h-4 text-red-400" />,
-    upgrade: <TrendingUp className="w-4 h-4 text-blue-400" />,
+    job: <Briefcase className="w-4 h-4 text-blue-400" />,
     business: <Building2 className="w-4 h-4 text-primary" />,
     family: <Users className="w-4 h-4 text-purple-400" />,
     reward: <Gift className="w-4 h-4 text-yellow-400" />,
@@ -51,18 +53,68 @@ const ActivityItem = ({ activity, index }: ActivityItemProps) => (
     </motion.div>
 );
 
+// Helper to format relative time
+const formatTimeAgo = (date: Date): string => {
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+};
+
+// Map transaction type to activity type
+const mapTransactionType = (txType: string): ActivityType => {
+    if (txType.includes('job')) return 'job';
+    if (txType.includes('attack') || txType.includes('pvp')) return 'attack';
+    if (txType.includes('business')) return 'business';
+    if (txType.includes('reward') || txType.includes('daily')) return 'reward';
+    return 'income';
+};
+
 export const RecentActivity = () => {
     const navigate = useNavigate();
-    const { notifications, isLoading } = useNotifications();
+    const { player } = useAuth();
+    const [activities, setActivities] = useState<Activity[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Map notifications to activity format
-    const activities: Activity[] = notifications.slice(0, 5).map(n => ({
-        id: String(n.id), // Convert number ID to string
-        type: n.type as ActivityType, // Assuming type matches or you need a mapper
-        message: n.title,
-        details: n.message,
-        timeAgo: new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) // Simple formatting
-    }));
+    useEffect(() => {
+        if (!player?.id) return;
+
+        const fetchActivity = async () => {
+            setIsLoading(true);
+            try {
+                // Fetch recent transactions
+                const { data: transactions, error } = await supabase
+                    .from('transactions')
+                    .select('*')
+                    .eq('player_id', player.id)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (error) throw error;
+
+                const mapped: Activity[] = (transactions || []).map(tx => ({
+                    id: tx.id,
+                    type: mapTransactionType(tx.transaction_type),
+                    message: tx.description || tx.transaction_type.replace(/_/g, ' '),
+                    details: tx.currency === 'cash' ? `+$${tx.amount.toLocaleString()}` : `+${tx.amount} ${tx.currency}`,
+                    timeAgo: formatTimeAgo(new Date(tx.created_at)),
+                }));
+
+                setActivities(mapped);
+            } catch (error) {
+                console.error('Error fetching activity:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchActivity();
+    }, [player?.id]);
 
     return (
         <motion.section
