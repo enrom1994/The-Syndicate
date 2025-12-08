@@ -1,10 +1,20 @@
 import { motion } from 'framer-motion';
-import { ShoppingBag, Store, Loader2 } from 'lucide-react';
+import { ShoppingBag, Store, Loader2, Minus, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore, ItemDefinition } from '@/hooks/useGameStore';
@@ -63,6 +73,7 @@ const MarketPage = () => {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [pendingItem, setPendingItem] = useState<ItemDefinition | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [quantity, setQuantity] = useState(1);
 
     useEffect(() => {
         loadDefinitions();
@@ -70,19 +81,24 @@ const MarketPage = () => {
 
     const handleBuyClick = (item: ItemDefinition) => {
         setPendingItem(item);
+        setQuantity(1); // Reset quantity when opening dialog
         setConfirmOpen(true);
     };
+
+    const incrementQuantity = () => setQuantity(q => Math.min(q + 1, 99));
+    const decrementQuantity = () => setQuantity(q => Math.max(q - 1, 1));
+    const totalPrice = pendingItem ? pendingItem.buy_price * quantity : 0;
 
     const confirmPurchase = async () => {
         if (!pendingItem) return;
 
         setIsProcessing(true);
         try {
-            const success = await buyItem(pendingItem.id, 1);
+            const success = await buyItem(pendingItem.id, quantity);
             if (success) {
                 toast({
                     title: 'Purchase Successful!',
-                    description: `${pendingItem.name} has been added to your inventory.`,
+                    description: `${quantity}x ${pendingItem.name} added to your inventory.`,
                 });
                 setConfirmOpen(false);
             } else {
@@ -239,14 +255,56 @@ const MarketPage = () => {
                 </motion.div>
             </div>
 
-            <ConfirmDialog
-                open={confirmOpen}
-                onOpenChange={setConfirmOpen}
-                title="Confirm Purchase"
-                description={`Buy ${pendingItem?.name} for $${pendingItem?.buy_price.toLocaleString()}?`}
-                onConfirm={confirmPurchase}
-                confirmText={isProcessing ? "Buying..." : "Buy"}
-            />
+            <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                <AlertDialogContent className="noir-card border-border/50 max-w-xs">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-cinzel text-foreground">Confirm Purchase</AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            {pendingItem?.name}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    {/* Quantity Selector */}
+                    <div className="flex items-center justify-center gap-4 py-4">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10 rounded-full"
+                            onClick={decrementQuantity}
+                            disabled={quantity <= 1}
+                        >
+                            <Minus className="w-4 h-4" />
+                        </Button>
+                        <span className="font-cinzel text-2xl font-bold w-12 text-center">{quantity}</span>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10 rounded-full"
+                            onClick={incrementQuantity}
+                            disabled={quantity >= 99}
+                        >
+                            <Plus className="w-4 h-4" />
+                        </Button>
+                    </div>
+
+                    {/* Total Price */}
+                    <div className="text-center pb-2">
+                        <p className="text-xs text-muted-foreground">Total Price</p>
+                        <p className="font-cinzel text-xl font-bold text-primary">${totalPrice.toLocaleString()}</p>
+                    </div>
+
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="font-inter">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmPurchase}
+                            className="btn-gold"
+                            disabled={isProcessing}
+                        >
+                            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : `Buy ${quantity}x`}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </MainLayout >
     );
 };
