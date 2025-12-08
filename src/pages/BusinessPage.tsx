@@ -1,13 +1,15 @@
 import { motion } from 'framer-motion';
-import { Briefcase, TrendingUp, DollarSign, Clock, ArrowUp, Loader2 } from 'lucide-react';
+import { Briefcase, TrendingUp, DollarSign, Clock, ArrowUp, Loader2, Factory, Users, Package, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, OwnedBusiness, BusinessDefinition } from '@/hooks/useGameStore';
 import { rewardCash } from '@/components/RewardAnimation';
+import { supabase } from '@/lib/supabase';
 
 interface BusinessCardProps {
     name: string;
@@ -173,6 +175,68 @@ const BusinessPage = () => {
         cost: number;
     } | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [activeTab, setActiveTab] = useState('manage');
+    const [recipes, setRecipes] = useState<any[]>([]);
+    const [isLoadingRecipes, setIsLoadingRecipes] = useState(false);
+    const [producingRecipeId, setProducingRecipeId] = useState<string | null>(null);
+
+    // Load production recipes
+    useEffect(() => {
+        if (player?.id && activeTab === 'produce') {
+            loadRecipes();
+        }
+    }, [player?.id, activeTab]);
+
+    const loadRecipes = async () => {
+        if (!player?.id) return;
+        setIsLoadingRecipes(true);
+        try {
+            const { data, error } = await supabase.rpc('get_production_recipes', {
+                target_player_id: player.id
+            });
+            if (error) throw error;
+            setRecipes(data || []);
+        } catch (error) {
+            console.error('Error loading recipes:', error);
+        } finally {
+            setIsLoadingRecipes(false);
+        }
+    };
+
+    const handleProduce = async (recipeId: string) => {
+        if (!player?.id) return;
+        setProducingRecipeId(recipeId);
+        try {
+            const { data, error } = await supabase.rpc('produce_contraband', {
+                producer_id: player.id,
+                target_recipe_id: recipeId
+            });
+            if (error) throw error;
+
+            if (data?.success) {
+                toast({
+                    title: 'Production Complete!',
+                    description: data.message,
+                });
+                await loadRecipes(); // Refresh cooldowns
+            } else {
+                toast({
+                    title: 'Production Failed',
+                    description: data?.message || 'Unable to produce.',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Production error:', error);
+            toast({
+                title: 'Error',
+                description: 'An unexpected error occurred.',
+                variant: 'destructive',
+            });
+        } finally {
+            setProducingRecipeId(null);
+        }
+    };
 
     // Map owned businesses to their IDs for quick lookup
     const ownedBusinessMap = new Map<string, OwnedBusiness>(
@@ -340,38 +404,135 @@ const BusinessPage = () => {
                     </div>
                 </motion.div>
 
-                {isLoadingBusinesses ? (
-                    <div className="flex items-center justify-center py-12">
-                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        {allBusinesses.length === 0 ? (
-                            <p className="text-center text-muted-foreground py-8">No businesses available</p>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 bg-muted/30 rounded-sm mb-4">
+                        <TabsTrigger value="manage" className="font-cinzel text-xs">Manage</TabsTrigger>
+                        <TabsTrigger value="produce" className="font-cinzel text-xs">
+                            <Factory className="w-3 h-3 mr-1" /> Produce
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="manage" className="mt-0">
+
+                        {isLoadingBusinesses ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                            </div>
                         ) : (
-                            allBusinesses.map((business, index) => (
-                                <BusinessCard
-                                    key={business.id}
-                                    name={business.name}
-                                    description={business.description || ''}
-                                    image={business.image_url || `/images/businesses/${business.name.toLowerCase().replace(/\s+/g, '')}.png`}
-                                    level={business.level}
-                                    maxLevel={business.max_level}
-                                    income={business.income_per_hour}
-                                    upgradeCost={business.upgrade_cost}
-                                    cooldown={formatCooldown(business.collect_cooldown_minutes)}
-                                    owned={business.owned}
-                                    canCollect={business.canCollect}
-                                    delay={0.1 * index}
-                                    isProcessing={isProcessing && pendingAction?.businessId === business.id}
-                                    onBuy={() => handleAction('buy', business.name, business.id, business.base_purchase_cost)}
-                                    onUpgrade={() => handleAction('upgrade', business.name, business.id, business.upgrade_cost, business.playerBusinessId)}
-                                    onCollect={() => handleAction('collect', business.name, business.id, 0, business.playerBusinessId)}
-                                />
-                            ))
+                            <div className="space-y-3">
+                                {allBusinesses.length === 0 ? (
+                                    <p className="text-center text-muted-foreground py-8">No businesses available</p>
+                                ) : (
+                                    allBusinesses.map((business, index) => (
+                                        <BusinessCard
+                                            key={business.id}
+                                            name={business.name}
+                                            description={business.description || ''}
+                                            image={business.image_url || `/images/businesses/${business.name.toLowerCase().replace(/\s+/g, '')}.png`}
+                                            level={business.level}
+                                            maxLevel={business.max_level}
+                                            income={business.income_per_hour}
+                                            upgradeCost={business.upgrade_cost}
+                                            cooldown={formatCooldown(business.collect_cooldown_minutes)}
+                                            owned={business.owned}
+                                            canCollect={business.canCollect}
+                                            delay={0.1 * index}
+                                            isProcessing={isProcessing && pendingAction?.businessId === business.id}
+                                            onBuy={() => handleAction('buy', business.name, business.id, business.base_purchase_cost)}
+                                            onUpgrade={() => handleAction('upgrade', business.name, business.id, business.upgrade_cost, business.playerBusinessId)}
+                                            onCollect={() => handleAction('collect', business.name, business.id, 0, business.playerBusinessId)}
+                                        />
+                                    ))
+                                )}
+                            </div>
                         )}
-                    </div>
-                )}
+                    </TabsContent>
+
+                    <TabsContent value="produce" className="mt-0">
+                        {isLoadingRecipes ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                            </div>
+                        ) : recipes.length === 0 ? (
+                            <div className="noir-card p-8 text-center">
+                                <AlertCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">No production recipes available.</p>
+                                <p className="text-xs text-muted-foreground mt-1">Own businesses to unlock production.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {recipes.map((recipe, index) => (
+                                    <motion.div
+                                        key={recipe.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.5, delay: 0.1 * index }}
+                                        className={`noir-card p-4 ${!recipe.owns_business ? 'opacity-50' : ''}`}
+                                    >
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div>
+                                                <h3 className="font-cinzel font-semibold text-sm text-foreground">{recipe.business_name}</h3>
+                                                <p className="text-xs text-muted-foreground">Produces: {recipe.output_item_name}</p>
+                                            </div>
+                                            {recipe.owns_business && (
+                                                <span className="text-xs text-primary">Lv. {recipe.business_level}</span>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-2 mb-3">
+                                            <div className="bg-muted/20 rounded-sm p-2 text-center">
+                                                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                                                    <Users className="w-3 h-3" />
+                                                    <span>Crew Cost</span>
+                                                </div>
+                                                <p className={`font-cinzel font-bold text-sm ${recipe.crew_owned >= recipe.crew_required ? 'text-green-400' : 'text-red-400'}`}>
+                                                    {recipe.crew_owned}/{recipe.crew_required}
+                                                </p>
+                                                <p className="text-[10px] text-muted-foreground">{recipe.crew_name}</p>
+                                            </div>
+                                            <div className="bg-muted/20 rounded-sm p-2 text-center">
+                                                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                                                    <Package className="w-3 h-3" />
+                                                    <span>Output</span>
+                                                </div>
+                                                <p className="font-cinzel font-bold text-sm text-primary">{recipe.output_quantity}x</p>
+                                                <p className="text-[10px] text-muted-foreground">+Lv bonus</p>
+                                            </div>
+                                            <div className="bg-muted/20 rounded-sm p-2 text-center">
+                                                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
+                                                    <Clock className="w-3 h-3" />
+                                                    <span>Cooldown</span>
+                                                </div>
+                                                <p className="font-cinzel font-bold text-sm text-foreground">{recipe.cooldown_hours}h</p>
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            className="w-full btn-gold text-xs"
+                                            disabled={
+                                                !recipe.can_produce ||
+                                                producingRecipeId === recipe.id
+                                            }
+                                            onClick={() => handleProduce(recipe.id)}
+                                        >
+                                            {producingRecipeId === recipe.id ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : !recipe.owns_business ? (
+                                                'Need Business'
+                                            ) : recipe.crew_owned < recipe.crew_required ? (
+                                                `Need ${recipe.crew_required - recipe.crew_owned} more ${recipe.crew_name}`
+                                            ) : recipe.last_produced_at && !recipe.can_produce ? (
+                                                'On Cooldown'
+                                            ) : (
+                                                <><Factory className="w-4 h-4 mr-1" /> Produce</>
+                                            )}
+                                        </Button>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
+                    </TabsContent>
+                </Tabs>
             </div>
 
             <ConfirmDialog
