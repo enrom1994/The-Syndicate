@@ -78,6 +78,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 .single();
 
             if (fetchError) {
+                console.error('Error refetching player:', fetchError);
+                return;
+            }
+
+            if (data) {
+                setPlayer(data);
+                // Also sync to GameStore
+                useGameStore.getState().setPlayerStats({
+                    cash: data.cash,
+                    diamonds: data.diamonds,
+                    energy: data.energy,
+                    maxEnergy: data.max_energy,
+                    stamina: data.stamina,
+                    maxStamina: data.max_stamina,
+                    level: data.level,
+                    respect: data.respect
+                });
             }
 
             setError(null);
@@ -220,10 +237,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // Subscribe to auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('[Auth] Event:', event, 'Session:', !!session);
             if (event === 'SIGNED_IN' && session) {
                 await refetchPlayer();
             } else if (event === 'SIGNED_OUT') {
                 setPlayer(null);
+            } else if (event === 'TOKEN_REFRESHED' && session) {
+                // Token was refreshed - refetch player to ensure data is current
+                await refetchPlayer();
             }
         });
 

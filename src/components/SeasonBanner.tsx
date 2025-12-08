@@ -75,21 +75,21 @@ export const EnergyBar = ({ energy, maxEnergy, regenTime = '2m 30s' }: EnergyBar
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
-            className="mt-3 noir-card p-4"
+            className="mt-2 noir-card p-2.5"
         >
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-primary" />
-                    <span className="text-xs text-muted-foreground uppercase tracking-wide">Energy</span>
+            <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Energy</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <span className="font-inter font-medium text-sm text-primary">{energy}/{maxEnergy}</span>
+                <div className="flex items-center gap-1.5">
+                    <span className="font-inter font-medium text-xs text-primary">{energy}/{maxEnergy}</span>
                     {energy < maxEnergy && (
-                        <span className="text-xs text-muted-foreground">+1 in {regenTime}</span>
+                        <span className="text-[10px] text-muted-foreground">+1 in {regenTime}</span>
                     )}
                 </div>
             </div>
-            <div className="h-2 rounded-full bg-muted overflow-hidden">
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                 <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${energyPercent}%` }}

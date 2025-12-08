@@ -148,13 +148,13 @@ export const PlayerStats = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.5 }}
-        className="mt-3 noir-card p-4"
+        className="mt-2 noir-card p-2.5"
       >
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs text-muted-foreground uppercase tracking-wide">Respect</span>
-          <span className="font-inter font-medium text-sm text-primary">{(player?.respect ?? 0).toLocaleString()}</span>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Respect</span>
+          <span className="font-inter font-medium text-xs text-primary">{(player?.respect ?? 0).toLocaleString()}</span>
         </div>
-        <div className="h-2 rounded-full bg-muted overflow-hidden">
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${Math.min((player?.respect ?? 0) / 100, 100)}%` }}
@@ -172,18 +172,18 @@ export const PlayerStats = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.6 }}
-        className="mt-3 noir-card p-4"
+        className="mt-2 noir-card p-2.5"
       >
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground uppercase tracking-wide">Level Progress</span>
-            <span className="text-xs font-bold text-primary bg-primary/20 px-1.5 py-0.5 rounded">Lv.{level}</span>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Level Progress</span>
+            <span className="text-[10px] font-bold text-primary bg-primary/20 px-1 py-0.5 rounded">Lv.{level}</span>
           </div>
-          <span className="font-inter font-medium text-xs text-muted-foreground">
+          <span className="font-inter font-medium text-[10px] text-muted-foreground">
             {experience.toLocaleString()} / {xpNeeded.toLocaleString()} XP
           </span>
         </div>
-        <div className="h-2 rounded-full bg-muted overflow-hidden">
+        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${xpProgress}%` }}
@@ -191,7 +191,7 @@ export const PlayerStats = () => {
             className="h-full bg-gradient-to-r from-primary via-yellow-500 to-primary rounded-full"
           />
         </div>
-        <p className="text-[10px] text-muted-foreground mt-1.5">
+        <p className="text-[9px] text-muted-foreground mt-1">
           {(xpNeeded - experience).toLocaleString()} XP to Level {level + 1}
         </p>
       </motion.div>
