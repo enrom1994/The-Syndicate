@@ -87,6 +87,7 @@ const MarketPage = () => {
 
     const incrementQuantity = () => setQuantity(q => Math.min(q + 1, 99));
     const decrementQuantity = () => setQuantity(q => Math.max(q - 1, 1));
+    const setQuickQuantity = (amount: number) => setQuantity(Math.min(amount, 99));
     const totalPrice = pendingItem ? pendingItem.buy_price * quantity : 0;
 
     const confirmPurchase = async () => {
@@ -264,8 +265,23 @@ const MarketPage = () => {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
 
+                    {/* Quick Select Buttons */}
+                    <div className="flex justify-center gap-2 py-2">
+                        {[1, 5, 10, 50].map(n => (
+                            <Button
+                                key={n}
+                                variant={quantity === n ? "default" : "outline"}
+                                size="sm"
+                                className="text-xs px-3"
+                                onClick={() => setQuickQuantity(n)}
+                            >
+                                x{n}
+                            </Button>
+                        ))}
+                    </div>
+
                     {/* Quantity Selector */}
-                    <div className="flex items-center justify-center gap-4 py-4">
+                    <div className="flex items-center justify-center gap-4 py-2">
                         <Button
                             variant="outline"
                             size="icon"

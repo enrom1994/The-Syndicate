@@ -1,10 +1,19 @@
 import { motion } from 'framer-motion';
-import { Users, Shield, Sword, DollarSign, Star, Plus, Loader2 } from 'lucide-react';
+import { Users, Shield, Sword, DollarSign, Star, Plus, Loader2, Minus } from 'lucide-react';
 import { useState } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, CrewDefinition, HiredCrew } from '@/hooks/useGameStore';
@@ -136,8 +145,9 @@ const HirePage = () => {
 
     const [activeTab, setActiveTab] = useState('all');
     const [confirmOpen, setConfirmOpen] = useState(false);
-    const [pendingHire, setPendingHire] = useState<{ id: string; name: string; cost: number } | null>(null);
+    const [pendingHire, setPendingHire] = useState<{ id: string; name: string; cost: number; max: number } | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [quantity, setQuantity] = useState(1);
 
     // Map owned crew to their IDs for quick lookup
     const ownedCrewMap = new Map<string, HiredCrew>(
@@ -157,10 +167,16 @@ const HirePage = () => {
         ? allCrew
         : allCrew.filter(c => c.type.toLowerCase() === activeTab);
 
-    const handleHireClick = (id: string, name: string, cost: number) => {
-        setPendingHire({ id, name, cost });
+    const handleHireClick = (id: string, name: string, cost: number, available: number) => {
+        setPendingHire({ id, name, cost, max: available });
+        setQuantity(1);
         setConfirmOpen(true);
     };
+
+    const incrementQuantity = () => setQuantity(q => Math.min(q + 1, pendingHire?.max || 99));
+    const decrementQuantity = () => setQuantity(q => Math.max(q - 1, 1));
+    const setQuickQuantity = (amount: number) => setQuantity(Math.min(amount, pendingHire?.max || 99));
+    const totalCost = pendingHire ? pendingHire.cost * quantity : 0;
 
     const confirmHire = async () => {
         if (!pendingHire) return;
@@ -169,11 +185,11 @@ const HirePage = () => {
         setConfirmOpen(false);
 
         try {
-            const success = await hireCrew(pendingHire.id);
+            const success = await hireCrew(pendingHire.id, quantity);
             if (success) {
                 toast({
-                    title: 'Crew Member Hired!',
-                    description: `${pendingHire.name} has joined your crew.`,
+                    title: 'Crew Hired!',
+                    description: `${quantity}x ${pendingHire.name} joined your crew.`,
                 });
                 await refetchPlayer();
             } else {
@@ -294,7 +310,7 @@ const HirePage = () => {
                                     owned={member.owned}
                                     isProcessing={isProcessing && pendingHire?.id === member.id}
                                     delay={0.05 * index}
-                                    onHire={() => handleHireClick(member.id, member.name, member.hire_cost)}
+                                    onHire={() => handleHireClick(member.id, member.name, member.hire_cost, member.max_available - member.owned)}
                                 />
                             ))
                         )}
@@ -302,14 +318,80 @@ const HirePage = () => {
                 </Tabs>
             </div>
 
-            <ConfirmDialog
-                open={confirmOpen}
-                onOpenChange={setConfirmOpen}
-                title="Hire Crew Member?"
-                description={`Hire ${pendingHire?.name} for $${pendingHire?.cost.toLocaleString()}? They will add to your attack/defense stats but require hourly upkeep.`}
-                onConfirm={confirmHire}
-                confirmText="Hire"
-            />
+            <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                <AlertDialogContent className="noir-card border-border/50 max-w-xs">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-cinzel text-foreground">Hire {pendingHire?.name}</AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Max available: {pendingHire?.max}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    {/* Quick Select Buttons */}
+                    <div className="flex justify-center gap-2 py-2">
+                        {[1, 5, 10].map(n => (
+                            <Button
+                                key={n}
+                                variant={quantity === n ? "default" : "outline"}
+                                size="sm"
+                                className="text-xs px-3"
+                                onClick={() => setQuickQuantity(n)}
+                                disabled={n > (pendingHire?.max || 0)}
+                            >
+                                x{n}
+                            </Button>
+                        ))}
+                        <Button
+                            variant={quantity === pendingHire?.max ? "default" : "outline"}
+                            size="sm"
+                            className="text-xs px-3"
+                            onClick={() => setQuickQuantity(pendingHire?.max || 1)}
+                        >
+                            Max
+                        </Button>
+                    </div>
+
+                    {/* Quantity Selector */}
+                    <div className="flex items-center justify-center gap-4 py-2">
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10 rounded-full"
+                            onClick={decrementQuantity}
+                            disabled={quantity <= 1}
+                        >
+                            <Minus className="w-4 h-4" />
+                        </Button>
+                        <span className="font-cinzel text-2xl font-bold w-12 text-center">{quantity}</span>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10 rounded-full"
+                            onClick={incrementQuantity}
+                            disabled={quantity >= (pendingHire?.max || 99)}
+                        >
+                            <Plus className="w-4 h-4" />
+                        </Button>
+                    </div>
+
+                    {/* Total Cost */}
+                    <div className="text-center pb-2">
+                        <p className="text-xs text-muted-foreground">Total Cost</p>
+                        <p className="font-cinzel text-xl font-bold text-primary">${totalCost.toLocaleString()}</p>
+                    </div>
+
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="font-inter">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmHire}
+                            className="btn-gold"
+                            disabled={isProcessing || quantity < 1}
+                        >
+                            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : `Hire ${quantity}x`}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </MainLayout>
     );
 };
