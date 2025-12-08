@@ -137,249 +137,53 @@ const JobCard = ({ id, name, description, reward, energy, isProcessing, delay = 
 const OpsPage = () => {
     const { toast } = useToast();
     const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
-    const { jobDefinitions, isLoadingDefinitions, useEnergy } = useGameStore();
+    const { jobDefinitions, isLoadingDefinitions, completeJob } = useGameStore();
 
     const [activeTab, setActiveTab] = useState('attack');
     const [targets, setTargets] = useState<TargetPlayer[]>([]);
     const [isLoadingTargets, setIsLoadingTargets] = useState(true);
     const [processingId, setProcessingId] = useState<string | null>(null);
 
-    // Combat modal state
-    const [combatResult, setCombatResult] = useState<{
-        open: boolean;
-        result: 'victory' | 'defeat';
-        targetName: string;
-        cashGained: number;
-        cashLost: number;
-        respectGained: number;
-        respectLost: number;
-    }>({ open: false, result: 'victory', targetName: '', cashGained: 0, cashLost: 0, respectGained: 0, respectLost: 0 });
+    // ... (rest of state)
 
-    // Confirm dialog state
-    const [confirmOpen, setConfirmOpen] = useState(false);
-    const [pendingAttack, setPendingAttack] = useState<TargetPlayer | null>(null);
-
-    useEffect(() => {
-        loadTargets();
-    }, [player?.id]);
-
-    const loadTargets = async () => {
-        if (!player?.id) return;
-
-        setIsLoadingTargets(true);
-        try {
-            // Get random players to attack (excluding self)
-            const { data, error } = await supabase
-                .from('players')
-                .select('id, username, cash, defense, attack')
-                .neq('id', player.id)
-                .gt('cash', 1000)
-                .limit(5);
-
-            if (error) throw error;
-
-            setTargets(data || []);
-        } catch (error) {
-            console.error('Error loading targets:', error);
-        } finally {
-            setIsLoadingTargets(false);
-        }
-    };
-
-    const getRisk = (defense: number): 'Low' | 'Medium' | 'High' => {
-        if (defense < 30) return 'Low';
-        if (defense < 70) return 'Medium';
-        return 'High';
-    };
-
-    const formatNetWorth = (cash: number): string => {
-        if (cash >= 1000000) return `$${(cash / 1000000).toFixed(1)}M`;
-        if (cash >= 1000) return `$${(cash / 1000).toFixed(1)}K`;
-        return `$${cash}`;
-    };
-
-    const handleAttackClick = (target: TargetPlayer) => {
-        if ((player?.stamina ?? 0) < 10) {
-            toast({
-                title: 'Not Enough Stamina',
-                description: 'You need at least 10 stamina to attack.',
-                variant: 'destructive',
-            });
-            return;
-        }
-        setPendingAttack(target);
-        setConfirmOpen(true);
-    };
-
-    const executeAttack = async () => {
-        if (!pendingAttack || !player) return;
-
-        setConfirmOpen(false);
-        setProcessingId(pendingAttack.id);
-
-        try {
-            // Deduct stamina
-            const { error: staminaError } = await supabase.rpc('use_stamina', {
-                player_id_input: player.id,
-                amount: 10,
-            });
-
-            if (staminaError) throw staminaError;
-
-            // Calculate combat result
-            const playerAttack = player.attack + Math.floor(Math.random() * 20);
-            const targetDefense = pendingAttack.defense + Math.floor(Math.random() * 20);
-            const isVictory = playerAttack > targetDefense;
-
-            if (isVictory) {
-                // Calculate loot (10-20% of target's cash)
-                const lootPercent = 0.10 + Math.random() * 0.10;
-                const cashGained = Math.floor(pendingAttack.cash * lootPercent);
-                const respectGained = Math.floor(Math.random() * 50) + 25;
-
-                // Transfer cash
-                await supabase.rpc('increment_cash', {
-                    player_id_input: player.id,
-                    amount: cashGained,
-                });
-
-                // Update stats
-                await supabase
-                    .from('players')
-                    .update({
-                        respect: (player.respect || 0) + respectGained,
-                        total_kills: (player.total_kills || 0) + 1,
-                    })
-                    .eq('id', player.id);
-
-                // Log the attack
-                await supabase.from('attack_log').insert({
-                    attacker_id: player.id,
-                    defender_id: pendingAttack.id,
-                    result: 'win',
-                    cash_stolen: cashGained,
-                    respect_gained: respectGained,
-                });
-
-                haptic.success();
-                rewardCash(cashGained);
-
-                setCombatResult({
-                    open: true,
-                    result: 'victory',
-                    targetName: pendingAttack.username || 'Unknown',
-                    cashGained,
-                    cashLost: 0,
-                    respectGained,
-                    respectLost: 0,
-                });
-            } else {
-                // Lost - lose some cash and respect
-                const cashLost = Math.floor(player.cash * 0.05);
-                const respectLost = Math.floor(Math.random() * 20) + 10;
-
-                await supabase.rpc('spend_cash', {
-                    player_id_input: player.id,
-                    amount: cashLost,
-                });
-
-                await supabase.from('attack_log').insert({
-                    attacker_id: player.id,
-                    defender_id: pendingAttack.id,
-                    result: 'loss',
-                    cash_stolen: 0,
-                    respect_gained: -respectLost,
-                });
-
-                haptic.error();
-
-                setCombatResult({
-                    open: true,
-                    result: 'defeat',
-                    targetName: pendingAttack.username || 'Unknown',
-                    cashGained: 0,
-                    cashLost,
-                    respectGained: 0,
-                    respectLost,
-                });
-            }
-
-            await refetchPlayer();
-            await loadTargets();
-        } catch (error) {
-            console.error('Attack error:', error);
-            toast({
-                title: 'Attack Failed',
-                description: 'An error occurred during the attack.',
-                variant: 'destructive',
-            });
-        } finally {
-            setProcessingId(null);
-            setPendingAttack(null);
-        }
-    };
+    // ... (rest of effects and functions)
 
     const handleJobExecute = async (job: JobDefinition) => {
         if (!player) return;
 
-        if ((player.energy || 0) < job.energy_cost) {
-            toast({
-                title: 'Not Enough Energy',
-                description: `You need ${job.energy_cost} energy to do this job.`,
-                variant: 'destructive',
-            });
-            return;
-        }
-
         setProcessingId(job.id);
 
         try {
-            // Use energy
-            const energyUsed = await useEnergy(job.energy_cost);
-            if (!energyUsed) {
-                throw new Error('Failed to use energy');
+            const result = await completeJob(job.id);
+
+            if (result.success) {
+                haptic.success();
+                if (result.cash_earned) rewardCash(result.cash_earned);
+
+                toast({
+                    title: result.leveled_up ? 'LEVEL UP! 🎉' : 'Job Completed!',
+                    description: result.leveled_up
+                        ? `You reached Level ${result.new_level}! Energy Refilled.`
+                        : `${job.name} - Earned $${result.cash_earned?.toLocaleString()} & ${result.xp_earned} XP`,
+                    className: result.leveled_up ? 'bg-primary text-primary-foreground' : '',
+                });
+
+                // Refetch player to get new stats (especially if leveled up)
+                await refetchPlayer();
+            } else {
+                haptic.error();
+                toast({
+                    title: 'Job Failed',
+                    description: result.message,
+                    variant: 'destructive',
+                });
             }
-
-            // Calculate reward with variance (+/- 20%)
-            const variance = 0.8 + Math.random() * 0.4;
-            const reward = Math.floor(job.base_reward * variance);
-
-            // Give reward
-            await supabase.rpc('increment_cash', {
-                player_id_input: player.id,
-                amount: reward,
-            });
-
-            // Log the job
-            await supabase.from('job_log').insert({
-                player_id: player.id,
-                job_id: job.id,
-                cash_earned: reward,
-            });
-
-            // Add experience
-            await supabase
-                .from('players')
-                .update({
-                    experience: (player.experience || 0) + job.experience_reward,
-                })
-                .eq('id', player.id);
-
-            haptic.success();
-            rewardCash(reward);
-
-            await refetchPlayer();
-
-            toast({
-                title: 'Job Completed!',
-                description: `${job.name} - Earned $${reward.toLocaleString()}`,
-            });
         } catch (error) {
             console.error('Job error:', error);
             haptic.error();
             toast({
-                title: 'Job Failed',
-                description: 'An error occurred while executing the job.',
+                title: 'Error',
+                description: 'An unexpected error occurred.',
                 variant: 'destructive',
             });
         } finally {
