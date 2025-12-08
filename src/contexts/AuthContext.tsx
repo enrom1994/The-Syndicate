@@ -71,19 +71,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const refetchPlayer = useCallback(async () => {
         console.log('[Auth] refetchPlayer called');
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            console.log('[Auth] getUser result:', user?.id ? 'User found' : 'No user');
+            let userId: string | null = null;
 
-            if (!user) {
-                console.log('[Auth] No user in refetchPlayer - NOT resetting player state');
-                // Don't reset player here - let the auth state change handle it
-                return;
+            // First try to get user from auth
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (user?.id) {
+                console.log('[Auth] getUser result: User found');
+                userId = user.id;
+            } else {
+                // Fallback: use existing player ID if we have one
+                // This handles cases where session expired but we still have player data
+                const currentPlayerId = player?.id || useGameStore.getState().playerId;
+                if (currentPlayerId) {
+                    console.log('[Auth] No auth user, falling back to stored player ID:', currentPlayerId);
+                    userId = currentPlayerId;
+                } else {
+                    console.log('[Auth] No user in refetchPlayer and no stored player ID');
+                    return;
+                }
             }
 
             const { data, error: fetchError } = await supabase
                 .from('players')
                 .select('*')
-                .eq('id', user.id)
+                .eq('id', userId)
                 .single();
 
             if (fetchError) {
@@ -92,8 +104,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
 
             if (data) {
-                console.log('[Auth] Player data fetched, cash:', data.cash);
-                setPlayer(data);
+                console.log('[Auth] Player data fetched, cash:', data.cash, 'diamonds:', data.diamonds);
+                setPlayer(data as Player);
                 setSessionValid(true);
                 // Also sync to GameStore
                 useGameStore.getState().setPlayerStats({
