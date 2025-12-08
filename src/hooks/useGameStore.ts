@@ -46,6 +46,7 @@ export interface PlayerAchievement {
     id: string;
     achievement_id: string;
     name: string;
+    title: string; // For UI compatibility
     description: string;
     category: string;
     progress: number;
@@ -408,7 +409,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
     },
 
-    // Load achievements with progress
+    // Load achievements with progress using RPC
     loadAchievements: async () => {
         const { playerId } = get();
         if (!playerId) return;
@@ -416,34 +417,32 @@ export const useGameStore = create<GameState>((set, get) => ({
         set({ isLoadingAchievements: true });
 
         try {
-            // Get all achievement definitions with player progress
-            const { data: defs } = await supabase
-                .from('achievement_definitions')
-                .select('*');
-
-            const { data: progress } = await supabase
-                .from('player_achievements')
-                .select('*')
-                .eq('player_id', playerId);
-
-            const progressMap = new Map((progress || []).map((p: any) => [p.achievement_id, p]));
-
-            const achievements: PlayerAchievement[] = (defs || []).map((def: any) => {
-                const p = progressMap.get(def.id) || {};
-                return {
-                    id: p.id || def.id,
-                    achievement_id: def.id,
-                    name: def.name,
-                    description: def.description,
-                    category: def.category,
-                    progress: p.progress || 0,
-                    target: def.target_value,
-                    reward_type: def.reward_type,
-                    reward_amount: def.reward_amount,
-                    is_unlocked: p.is_unlocked || false,
-                    is_claimed: p.is_claimed || false,
-                };
+            // Initialize achievements for player if missing
+            await supabase.rpc('init_player_achievements', {
+                target_player_id: playerId
             });
+
+            // Get achievements with progress using new RPC
+            const { data, error } = await supabase.rpc('get_player_achievements', {
+                target_player_id: playerId
+            });
+
+            if (error) throw error;
+
+            const achievements: PlayerAchievement[] = (data || []).map((a: any) => ({
+                id: a.id,
+                achievement_id: a.id,
+                name: a.name,
+                title: a.name, // For UI compatibility
+                description: a.description,
+                category: a.category,
+                progress: a.progress || 0,
+                target: a.target_value,
+                reward_type: a.reward_type,
+                reward_amount: a.reward_amount,
+                is_unlocked: a.is_unlocked || false,
+                is_claimed: a.is_claimed || false,
+            }));
 
             set({ achievements });
         } catch (error) {
@@ -844,37 +843,30 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
     },
 
-    // Achievement actions
-    claimAchievement: async (playerAchievementId) => {
-        const { playerId, achievements, loadAchievements } = get();
+    // Achievement actions using RPC
+    claimAchievement: async (achievementId) => {
+        const { playerId, loadAchievements } = get();
         if (!playerId) return false;
 
-        const achievement = achievements.find(a => a.id === playerAchievementId);
-        if (!achievement || !achievement.is_unlocked || achievement.is_claimed) return false;
+        try {
+            const { data, error } = await supabase.rpc('claim_achievement', {
+                claimer_id: playerId,
+                target_achievement_id: achievementId,
+            });
 
-        // Credit reward
-        if (achievement.reward_type === 'cash') {
-            await supabase.rpc('increment_cash', {
-                player_id_input: playerId,
-                amount: achievement.reward_amount,
-                source: 'achievement',
-            });
-        } else {
-            await supabase.rpc('increment_diamonds', {
-                player_id_input: playerId,
-                amount: achievement.reward_amount,
-                source: 'achievement',
-            });
+            if (error) throw error;
+
+            if (data?.success) {
+                await loadAchievements();
+                return true;
+            } else {
+                console.error('Claim achievement failed:', data?.message);
+                return false;
+            }
+        } catch (error) {
+            console.error('Failed to claim achievement:', error);
+            return false;
         }
-
-        // Mark as claimed
-        await supabase
-            .from('player_achievements')
-            .update({ is_claimed: true, claimed_at: new Date().toISOString() })
-            .eq('id', playerAchievementId);
-
-        await loadAchievements();
-        return true;
     },
 
     // Task actions
