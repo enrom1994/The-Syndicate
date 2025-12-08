@@ -101,7 +101,7 @@ const boosterTypes = [
     { id: '2x_income', name: '2x Income', description: 'Double business income', icon: <TrendingUp className="w-5 h-5 text-green-400" />, price: 50, duration_minutes: 1440 },
     { id: '2x_attack', name: '2x Attack', description: 'Double attack power', icon: <Zap className="w-5 h-5 text-red-400" />, price: 30, duration_minutes: 720 },
     { id: 'shield', name: 'Shield', description: 'Immune to attacks', icon: <Shield className="w-5 h-5 text-blue-400" />, price: 100, duration_minutes: 360 },
-    { id: 'vip', name: 'VIP Pass', description: 'All bonuses active', icon: <Crown className="w-5 h-5 text-primary" />, price: 200, duration_minutes: 1440 },
+    { id: 'vip_pass', name: 'VIP Pass', description: 'All bonuses active', icon: <Crown className="w-5 h-5 text-primary" />, price: 200, duration_minutes: 1440 },
 ];
 
 const formatDuration = (minutes: number): string => {
@@ -175,38 +175,30 @@ const ShopPage = () => {
         setProcessingId(pendingPurchase.boosterId || pendingPurchase.name);
 
         try {
-            if (pendingPurchase.type === 'booster' && pendingPurchase.diamondCost && pendingPurchase.boosterId) {
-                // Spend diamonds
-                const { data: spendResult, error: spendError } = await supabase.rpc('spend_diamonds', {
+            if (pendingPurchase.type === 'booster' && pendingPurchase.boosterId) {
+                // Use the activate_booster RPC which handles diamond deduction and insertion
+                const { data, error } = await supabase.rpc('activate_booster', {
                     player_id_input: player.id,
-                    amount: pendingPurchase.diamondCost,
+                    booster_type_input: pendingPurchase.boosterId,
                 });
 
-                if (spendError || !spendResult) {
-                    throw new Error('Failed to spend diamonds');
+                if (error) {
+                    throw error;
                 }
 
-                // Find booster details
+                if (!data?.success) {
+                    throw new Error(data?.message || 'Failed to activate booster');
+                }
+
+                // Find booster details for toast message
                 const booster = boosterTypes.find(b => b.id === pendingPurchase.boosterId);
-                if (!booster) throw new Error('Booster not found');
-
-                // Add booster to player
-                const expiresAt = new Date();
-                expiresAt.setMinutes(expiresAt.getMinutes() + booster.duration_minutes);
-
-                await supabase.from('player_boosters').insert({
-                    player_id: player.id,
-                    booster_type: booster.id,
-                    expires_at: expiresAt.toISOString(),
-                    multiplier: booster.id === 'vip' ? 2.0 : (booster.id.includes('2x') ? 2.0 : 1.0),
-                });
 
                 haptic.success();
                 await refetchPlayer();
 
                 toast({
                     title: 'Booster Activated!',
-                    description: `${pendingPurchase.name} is now active for ${formatDuration(booster.duration_minutes)}.`,
+                    description: `${pendingPurchase.name} is now active for ${formatDuration(booster?.duration_minutes || 60)}.`,
                 });
             } else if (pendingPurchase.type === 'diamonds') {
                 // TON payment would be handled here

@@ -290,7 +290,7 @@ const HirePage = () => {
                                     defenseBonus={member.defense_bonus}
                                     cost={member.hire_cost}
                                     upkeep={member.upkeep_per_hour}
-                                    available={member.max_available}
+                                    available={member.max_available - member.owned}
                                     owned={member.owned}
                                     isProcessing={isProcessing && pendingHire?.id === member.id}
                                     delay={0.05 * index}
