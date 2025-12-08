@@ -1,8 +1,8 @@
 import { TonConnectUIProvider } from '@tonconnect/ui-react';
 import { ReactNode } from 'react';
 
-// Manifest for the mini app
-const manifestUrl = 'https://raw.githubusercontent.com/ton-community/tutorials/main/03-wallet/test/public/tonconnect-manifest.json';
+// Manifest for the mini app - hosted on Vercel
+const manifestUrl = 'https://the-syndicate-rho.vercel.app/tonconnect_manifest.json';
 
 interface TonConnectProviderProps {
   children: ReactNode;
