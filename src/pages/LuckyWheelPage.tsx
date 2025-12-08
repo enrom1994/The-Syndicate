@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { haptic } from '@/lib/haptics';
 import { SkeletonPage } from '@/components/Skeleton';
+import { rewardCash, rewardDiamonds, rewardEnergy } from '@/components/RewardAnimation';
 
 interface Prize {
     id: string;
@@ -124,6 +125,14 @@ const LuckyWheelPage = () => {
                 });
 
                 if (data.prize_type !== 'nothing') {
+                    // Show reward animation based on prize type
+                    if (data.prize_type === 'cash') {
+                        rewardCash(data.amount);
+                    } else if (data.prize_type === 'diamonds') {
+                        rewardDiamonds(data.amount);
+                    } else if (data.prize_type === 'energy' || data.prize_type === 'stamina') {
+                        rewardEnergy(data.amount);
+                    }
                     toast({
                         title: `🎉 You Won!`,
                         description: `${data.prize_name}`,

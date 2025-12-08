@@ -7,6 +7,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, OwnedBusiness, BusinessDefinition } from '@/hooks/useGameStore';
+import { rewardCash } from '@/components/RewardAnimation';
 
 interface BusinessCardProps {
     name: string;
@@ -213,6 +214,7 @@ const BusinessPage = () => {
         try {
             const income = await collectIncome(playerBusinessId);
             if (income > 0) {
+                rewardCash(income); // Show reward animation
                 toast({
                     title: 'Income Collected!',
                     description: `You collected $${income.toLocaleString()} from your business.`,
