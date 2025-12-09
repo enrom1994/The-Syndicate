@@ -44,7 +44,31 @@
 
 - **Weapons:** Attack bonuses, cash purchase
 - **Equipment:** Defense bonuses, cash purchase
-- **Contraband:** Removed from market (only via other means)
+- **Contraband:** Not sold here (only via Auction House)
+
+---
+
+## Auction House (P2P)
+
+### How It Works
+- **Listing Fee:** 10💎 per listing
+- **Currency:** Seller chooses Cash or Diamonds
+- **Duration:** 24h default, customizable
+- **Contraband Only:** Only contraband items can be auctioned
+
+### Mechanics
+| Action | Description |
+|--------|-------------|
+| **List Item** | Pay 10💎, item removed from inventory |
+| **Place Bid** | Funds escrowed, previous bidder refunded |
+| **Buy Now** | Instant purchase at fixed price |
+| **Cancel** | Only if no bids, item returned |
+| **Expired** | Winner pays, no bids = item returned |
+
+### Economy Impact
+- Creates player-to-player Cash/Diamond flow
+- Diamond sink (10💎 per listing)
+- Contraband value determined by market
 
 ---
 
@@ -70,8 +94,9 @@ Current 1 TON ≈ $5-6 USD. Sanity check needed on:
 - 0.1 TON for 1 hour protection (too cheap?)
 - 5 TON for permanent auto-collect (fair value?)
 
-### 5. Missing Shop Feature: Sell Items
-Players can buy items but **cannot sell back**. This limits cash recovery options.
+### 5. Cannot Sell Weapons/Equipment
+Players can sell **contraband** via Auction House, but **cannot sell weapons/equipment back**.
+- This limits options for players who over-bought or want different gear
 
 ---
 
