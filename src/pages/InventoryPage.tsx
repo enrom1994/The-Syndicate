@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Package, Sword, Shield, Users, FlaskConical, Check, X, Loader2 } from 'lucide-react';
+import { Package, Sword, Shield, Users, FlaskConical, Check, X, Loader2, Lock, Unlock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,13 +16,16 @@ interface InventoryItemProps {
     stat?: string;
     rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
     category: 'weapon' | 'equipment' | 'contraband';
-    iconUrl: string | null;  // Changed from React.ReactNode to string
+    iconUrl: string | null;
     equipped?: boolean;
+    location: 'inventory' | 'equipped' | 'safe';
     isProcessing?: boolean;
     delay?: number;
     onEquip?: () => void;
     onUnequip?: () => void;
     onSell?: () => void;
+    onMoveToSafe?: () => void;
+    onMoveFromSafe?: () => void;
 }
 
 const rarityColors = {
@@ -40,8 +43,8 @@ const rarityBadgeColors = {
 };
 
 const InventoryItemComponent = ({
-    id, name, quantity, stat, rarity, category, iconUrl, equipped, isProcessing, delay = 0,
-    onEquip, onUnequip, onSell
+    id, name, quantity, stat, rarity, category, iconUrl, equipped, location, isProcessing, delay = 0,
+    onEquip, onUnequip, onSell, onMoveToSafe, onMoveFromSafe
 }: InventoryItemProps) => {
     // Fallback icon based on category
     const FallbackIcon = category === 'weapon' ? Sword : category === 'equipment' ? Shield : FlaskConical;
@@ -77,6 +80,11 @@ const InventoryItemComponent = ({
                                 EQUIPPED
                             </span>
                         )}
+                        {location === 'safe' && (
+                            <span className="px-1.5 py-0.5 text-[10px] bg-green-500/20 text-green-500 rounded-sm flex items-center gap-0.5">
+                                <Lock className="w-2 h-2" /> SAFE
+                            </span>
+                        )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                         <span className={`px-1.5 py-0.5 text-[10px] rounded-sm ${rarityBadgeColors[rarity]}`}>
@@ -96,6 +104,21 @@ const InventoryItemComponent = ({
                     >
                         {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Sell'}
                     </Button>
+                ) : location === 'safe' ? (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2 text-xs"
+                        onClick={onMoveFromSafe}
+                        disabled={isProcessing}
+                    >
+                        {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : (
+                            <>
+                                <Unlock className="w-3 h-3 mr-1" />
+                                Remove
+                            </>
+                        )}
+                    </Button>
                 ) : equipped ? (
                     <Button
                         variant="outline"
@@ -112,18 +135,30 @@ const InventoryItemComponent = ({
                         )}
                     </Button>
                 ) : (
-                    <Button
-                        className="btn-gold h-8 px-2 text-xs"
-                        onClick={onEquip}
-                        disabled={isProcessing}
-                    >
-                        {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : (
-                            <>
-                                <Check className="w-3 h-3 mr-1" />
-                                Equip
-                            </>
-                        )}
-                    </Button>
+                    <div className="flex gap-1">
+                        <Button
+                            className="btn-gold h-8 px-2 text-xs"
+                            onClick={onEquip}
+                            disabled={isProcessing}
+                        >
+                            {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : (
+                                <>
+                                    <Check className="w-3 h-3 mr-1" />
+                                    Equip
+                                </>
+                            )}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-1.5 text-xs"
+                            onClick={onMoveToSafe}
+                            disabled={isProcessing}
+                            title="Move to Safe"
+                        >
+                            <Lock className="w-3 h-3" />
+                        </Button>
+                    </div>
                 )}
             </div>
         </motion.div>
@@ -173,6 +208,8 @@ const InventoryPage = () => {
         equipItem,
         unequipItem,
         sellItem,
+        moveToSafe,
+        moveFromSafe,
         getEquipmentLimits
     } = useGameStore();
 
@@ -296,6 +333,48 @@ const InventoryPage = () => {
         }
     };
 
+    const handleMoveToSafe = async (item: InventoryItemType) => {
+        setProcessingItemId(item.id);
+        try {
+            const success = await moveToSafe(item.id);
+            if (success) {
+                toast({
+                    title: 'Item Secured!',
+                    description: `${item.name} moved to safe. Protected from theft!`,
+                });
+            } else {
+                toast({
+                    title: 'Error',
+                    description: 'Failed to move item to safe. You may need to purchase vault slots.',
+                    variant: 'destructive',
+                });
+            }
+        } finally {
+            setProcessingItemId(null);
+        }
+    };
+
+    const handleMoveFromSafe = async (item: InventoryItemType) => {
+        setProcessingItemId(item.id);
+        try {
+            const success = await moveFromSafe(item.id);
+            if (success) {
+                toast({
+                    title: 'Item Retrieved',
+                    description: `${item.name} moved to inventory.`,
+                });
+            } else {
+                toast({
+                    title: 'Cooldown Active',
+                    description: 'Item is still in cooldown. Wait before removing from safe.',
+                    variant: 'destructive',
+                });
+            }
+        } finally {
+            setProcessingItemId(null);
+        }
+    };
+
     // Calculate stat bonuses from equipped items
     const equippedItems = inventory.filter(i => i.is_equipped);
     const totalAttackBonus = equippedItems.reduce((sum, i) => sum + i.attack_bonus, 0) +
@@ -409,10 +488,13 @@ const InventoryPage = () => {
                                             category={item.category}
                                             iconUrl={item.icon}
                                             equipped={item.is_equipped}
+                                            location={item.location}
                                             isProcessing={processingItemId === item.id}
                                             delay={0.05 * index}
                                             onEquip={() => handleEquip(item)}
                                             onUnequip={() => handleUnequip(item)}
+                                            onMoveToSafe={() => handleMoveToSafe(item)}
+                                            onMoveFromSafe={() => handleMoveFromSafe(item)}
                                         />
                                     ))
                                 )}
@@ -433,10 +515,13 @@ const InventoryPage = () => {
                                             category={item.category}
                                             iconUrl={item.icon}
                                             equipped={item.is_equipped}
+                                            location={item.location}
                                             isProcessing={processingItemId === item.id}
                                             delay={0.05 * index}
                                             onEquip={() => handleEquip(item)}
                                             onUnequip={() => handleUnequip(item)}
+                                            onMoveToSafe={() => handleMoveToSafe(item)}
+                                            onMoveFromSafe={() => handleMoveFromSafe(item)}
                                         />
                                     ))
                                 )}
@@ -456,6 +541,7 @@ const InventoryPage = () => {
                                             rarity={item.rarity}
                                             category={item.category}
                                             iconUrl={item.icon}
+                                            location={item.location}
                                             isProcessing={processingItemId === item.id}
                                             delay={0.05 * index}
                                             onSell={() => handleSell(item)}

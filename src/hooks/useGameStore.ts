@@ -10,11 +10,19 @@ export interface InventoryItem {
     category: 'weapon' | 'equipment' | 'contraband';
     quantity: number;
     is_equipped: boolean;
+    location: 'inventory' | 'equipped' | 'safe';
+    safe_until?: string;
     rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
     attack_bonus: number;
     defense_bonus: number;
     income_bonus: number;
     sell_price: number;
+}
+
+export interface SafeInfo {
+    total_slots: number;
+    used_slots: number;
+    available_slots: number;
 }
 
 export interface OwnedBusiness {
@@ -193,6 +201,11 @@ interface GameState {
     unequipItem: (inventoryId: string) => Promise<boolean>;
     sellItem: (inventoryId: string, quantity?: number) => Promise<boolean>;
 
+    // Safe storage actions
+    getSafeInfo: () => Promise<SafeInfo | null>;
+    moveToSafe: (inventoryId: string) => Promise<boolean>;
+    moveFromSafe: (inventoryId: string) => Promise<boolean>;
+
     // Equipment limits based on crew
     getEquipmentLimits: () => { weaponSlots: number; equipmentSlots: number; equippedWeapons: number; equippedEquipment: number };
 
@@ -296,6 +309,8 @@ export const useGameStore = create<GameState>((set, get) => ({
           item_id,
           quantity,
           is_equipped,
+          location,
+          safe_until,
           item_definitions (
             name,
             category,
@@ -319,6 +334,8 @@ export const useGameStore = create<GameState>((set, get) => ({
                 category: item.item_definitions?.category || 'weapon',
                 quantity: item.quantity,
                 is_equipped: item.is_equipped,
+                location: item.location || 'inventory',
+                safe_until: item.safe_until,
                 rarity: item.item_definitions?.rarity || 'common',
                 attack_bonus: item.item_definitions?.attack_bonus || 0,
                 defense_bonus: item.item_definitions?.defense_bonus || 0,
@@ -829,6 +846,73 @@ export const useGameStore = create<GameState>((set, get) => ({
 
         await loadInventory();
         return true;
+    },
+
+    // Safe storage actions
+    getSafeInfo: async () => {
+        const { playerId } = get();
+        if (!playerId) return null;
+
+        const { data, error } = await supabase.rpc('get_safe_info', {
+            player_id_input: playerId,
+        });
+
+        if (error) {
+            console.error('Failed to get safe info:', error);
+            return null;
+        }
+
+        return data as SafeInfo;
+    },
+
+    moveToSafe: async (inventoryId) => {
+        const { playerId, loadInventory } = get();
+        if (!playerId) return false;
+
+        const { data, error } = await supabase.rpc('move_item_to_safe', {
+            player_id_input: playerId,
+            inventory_id_input: inventoryId,
+        });
+
+        if (error) {
+            console.error('Failed to move item to safe:', error);
+            return false;
+        }
+
+        const result = data as { success: boolean; message: string };
+
+        if (result.success) {
+            await loadInventory();
+            return true;
+        } else {
+            console.error('Move to safe failed:', result.message);
+            return false;
+        }
+    },
+
+    moveFromSafe: async (inventoryId) => {
+        const { playerId, loadInventory } = get();
+        if (!playerId) return false;
+
+        const { data, error } = await supabase.rpc('move_item_from_safe', {
+            player_id_input: playerId,
+            inventory_id_input: inventoryId,
+        });
+
+        if (error) {
+            console.error('Failed to move item from safe:', error);
+            return false;
+        }
+
+        const result = data as { success: boolean; message: string };
+
+        if (result.success) {
+            await loadInventory();
+            return true;
+        } else {
+            console.error('Move from safe failed:', result.message);
+            return false;
+        }
     },
 
     // Crew actions
