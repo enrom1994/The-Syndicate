@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS public.booster_telemetry (
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_booster_telemetry_player ON public.booster_telemetry(player_id);
 CREATE INDEX IF NOT EXISTS idx_booster_telemetry_type ON public.booster_telemetry(booster_type);
-CREATE INDEX IF NOT EXISTS idx_booster_telemetry_active ON public.booster_telemetry(expires_at) WHERE expires_at > NOW();
+CREATE INDEX IF NOT EXISTS idx_booster_telemetry_expires ON public.booster_telemetry(expires_at);
 
 -- RLS
 ALTER TABLE public.booster_telemetry ENABLE ROW LEVEL SECURITY;
