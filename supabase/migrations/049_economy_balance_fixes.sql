@@ -199,6 +199,11 @@ BEGIN
     -- Deduct stamina
     UPDATE public.players SET stamina = stamina - attack_type.stamina_cost WHERE id = attacker_id_input;
 
+    -- LOG BOOSTER USAGE FOR TELEMETRY (if booster is active)
+    IF attacker_has_2x_attack THEN
+        PERFORM log_booster_usage(attacker_id_input, '2x_attack');
+    END IF;
+
     -- Roll for victory
     roll := floor(random() * 100) + 1;
     attacker_wins := roll <= win_chance;

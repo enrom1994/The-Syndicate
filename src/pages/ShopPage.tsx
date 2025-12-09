@@ -139,9 +139,9 @@ const ShopPage = () => {
     ];
 
     const protectionPacks = [
-        { id: 'basic', name: 'Basic Protection', price: '0.1 TON', description: 'Immune from PvP for 1 hour', duration: '1 hour', durationMinutes: 60 },
-        { id: 'standard', name: 'Standard Protection', price: '0.4 TON', description: 'Immune + Stealth mode', duration: '6 hours', durationMinutes: 360 },
-        { id: 'premium', name: 'Premium Protection', price: '1 TON', description: 'All protections + Attack boost', duration: '24 hours', durationMinutes: 1440 },
+        { id: 'basic', name: 'Basic Protection', price: '0.05 TON', description: 'Immune from PvP for 1 hour', duration: '1 hour', durationMinutes: 60 },
+        { id: 'standard', name: 'Standard Protection', price: '0.35 TON', description: 'Immune + Stealth mode', duration: '6 hours', durationMinutes: 360 },
+        { id: 'premium', name: 'Premium Protection', price: '1.5 TON', description: 'All protections + Attack boost', duration: '24 hours', durationMinutes: 1440 },
     ];
 
     const handleBuyDiamonds = (name: string, price: string, tonAmount: number, diamonds: number) => {
