@@ -36,6 +36,13 @@ export interface AssignmentLimits {
     unarmored_crew: number;
 }
 
+export interface SafePackage {
+    id: string;
+    name: string;
+    slots: number;
+    price_ton: number;
+}
+
 export interface OwnedBusiness {
     id: string;
     business_id: string;
@@ -213,6 +220,8 @@ interface GameState {
 
     // Safe storage actions
     getSafeInfo: () => Promise<SafeInfo | null>;
+    getSafePackages: () => Promise<SafePackage[]>;
+    purchaseSafeSlots: (packageId: string) => Promise<{ success: boolean; message: string }>;
     moveToSafe: (inventoryId: string) => Promise<boolean>;
     moveFromSafe: (inventoryId: string) => Promise<boolean>;
 
@@ -885,6 +894,35 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
 
         return data as SafeInfo;
+    },
+
+    getSafePackages: async () => {
+        const { data, error } = await supabase.rpc('get_safe_packages');
+
+        if (error) {
+            console.error('Failed to get safe packages:', error);
+            return [];
+        }
+
+        return (data || []) as SafePackage[];
+    },
+
+    purchaseSafeSlots: async (packageId) => {
+        const { playerId } = get();
+        if (!playerId) return { success: false, message: 'Not logged in' };
+
+        const { data, error } = await supabase.rpc('purchase_safe_slots', {
+            player_id_input: playerId,
+            package_id_input: packageId,
+        });
+
+        if (error) {
+            console.error('Failed to purchase safe slots:', error);
+            return { success: false, message: error.message };
+        }
+
+        const result = data as { success: boolean; message: string };
+        return result;
     },
 
     moveToSafe: async (inventoryId) => {

@@ -18,12 +18,12 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { GameIcon } from '@/components/GameIcon';
 import { useAuth } from '@/contexts/AuthContext';
-import { useGameStore, InventoryItem } from '@/hooks/useGameStore';
+import { useGameStore, InventoryItem, SafePackage } from '@/hooks/useGameStore';
 
 const BankPage = () => {
     const { toast } = useToast();
     const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
-    const { deposit, withdraw, getSafeInfo, inventory, moveFromSafe, loadInventory } = useGameStore();
+    const { deposit, withdraw, getSafeInfo, getSafePackages, purchaseSafeSlots, inventory, moveFromSafe, loadInventory } = useGameStore();
     const [safeInfo, setSafeInfo] = useState<{ total_slots: number; used_slots: number; available_slots: number } | null>(null);
 
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -36,6 +36,11 @@ const BankPage = () => {
     const [selectedSafeItem, setSelectedSafeItem] = useState<InventoryItem | null>(null);
     const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
     const [isRemoving, setIsRemoving] = useState(false);
+
+    // Safe packages purchase dialog
+    const [packagesDialogOpen, setPackagesDialogOpen] = useState(false);
+    const [packages, setPackages] = useState<SafePackage[]>([]);
+    const [isPurchasing, setIsPurchasing] = useState(false);
 
     // Get data from player state (with defaults for loading state)
     const walletCash = player?.cash ?? 0;
@@ -180,6 +185,50 @@ const BankPage = () => {
     const openRemoveDialog = (item: InventoryItem) => {
         setSelectedSafeItem(item);
         setRemoveDialogOpen(true);
+    };
+
+    const openPackagesDialog = async () => {
+        const data = await getSafePackages();
+        setPackages(data);
+        setPackagesDialogOpen(true);
+    };
+
+    const handlePurchasePackage = async (pkg: SafePackage) => {
+        setIsPurchasing(true);
+        try {
+            const result = await purchaseSafeSlots(pkg.id);
+            if (result.success) {
+                toast({
+                    title: 'Vault Upgraded!',
+                    description: `You now have ${pkg.slots} more safe slots.`,
+                });
+                // Refresh safe info
+                const info = await getSafeInfo();
+                if (info) {
+                    setSafeInfo({
+                        total_slots: info.total_slots,
+                        used_slots: itemsInSafe.length,
+                        available_slots: info.total_slots - itemsInSafe.length
+                    });
+                }
+                setPackagesDialogOpen(false);
+            } else {
+                toast({
+                    title: 'Purchase Failed',
+                    description: result.message || 'Could not complete purchase.',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Purchase error:', error);
+            toast({
+                title: 'Error',
+                description: 'An unexpected error occurred.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsPurchasing(false);
+        }
     };
 
     const setMaxDeposit = () => setDepositAmount(walletCash.toString());
@@ -449,13 +498,26 @@ const BankPage = () => {
 
                     {/* Info text */}
                     <div className="mt-4 pt-3 border-t border-border/30">
-                        <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center justify-between text-xs mb-2">
                             <span className="text-muted-foreground">Items Protected</span>
                             <span className="font-cinzel font-bold text-green-400 flex items-center gap-1">
                                 <Package className="w-3 h-3" />
                                 {totalSafeItems.toLocaleString()}
                             </span>
                         </div>
+                        <div className="flex items-center justify-between text-xs mb-3">
+                            <span className="text-muted-foreground">Total Slots</span>
+                            <span className="font-cinzel font-bold text-primary">
+                                {safeInfo?.total_slots || 1}
+                            </span>
+                        </div>
+                        <Button
+                            className="w-full btn-gold"
+                            onClick={openPackagesDialog}
+                        >
+                            <Shield className="w-4 h-4 mr-2" />
+                            Upgrade Vault
+                        </Button>
                     </div>
                 </motion.div>
             </div>
@@ -517,6 +579,64 @@ const BankPage = () => {
                         >
                             {isRemoving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Remove from Safe'}
                         </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Safe Packages Purchase Dialog */}
+            <AlertDialog open={packagesDialogOpen} onOpenChange={setPackagesDialogOpen}>
+                <AlertDialogContent className="noir-card border-border/50 max-w-sm">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-cinzel text-foreground flex items-center gap-2">
+                            <Shield className="w-5 h-5 text-primary" />
+                            Upgrade Vault
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Purchase additional safe storage slots to protect more items from theft.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <div className="py-4 space-y-3">
+                        {packages.length === 0 ? (
+                            <div className="flex items-center justify-center py-6">
+                                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                            </div>
+                        ) : (
+                            packages.map((pkg) => (
+                                <motion.button
+                                    key={pkg.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    onClick={() => handlePurchasePackage(pkg)}
+                                    disabled={isPurchasing}
+                                    className={`w-full p-3 rounded-lg border transition-all text-left ${pkg.id === 'gold' || pkg.id === 'platinum'
+                                            ? 'border-primary/50 bg-primary/10 hover:bg-primary/20'
+                                            : 'border-border/50 bg-muted/20 hover:bg-muted/40'
+                                        } ${isPurchasing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h4 className="font-cinzel font-bold text-sm text-foreground">{pkg.name}</h4>
+                                            <p className="text-xs text-muted-foreground">
+                                                +{pkg.slots} safe slots
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-cinzel font-bold text-primary flex items-center gap-1">
+                                                <img src="/images/icons/ton.png" alt="TON" className="w-4 h-4"
+                                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                />
+                                                {pkg.price_ton} TON
+                                            </p>
+                                        </div>
+                                    </div>
+                                </motion.button>
+                            ))
+                        )}
+                    </div>
+
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isPurchasing}>Cancel</AlertDialogCancel>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
