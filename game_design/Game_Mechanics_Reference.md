@@ -39,8 +39,8 @@
 |------|---------|---------|
 | Strength | 10 | Base attack power |
 | Defense | 10 | Damage reduction |
-| Agility | 10 | Future: evasion |
-| Intelligence | 10 | Future: special abilities |
+
+> **Note:** Agility and Intelligence stats exist in the database but are not currently active in gameplay.
 
 ### Tracking Stats
 - `total_attacks` - PvP attacks initiated
@@ -95,15 +95,7 @@ XP Needed for Next Level = 100 × (Current Level)^1.5
 - Energy refilled to max
 - Stamina refilled to max
 
-### Rank Titles by Level (ProfilePage)
-| Level | Title |
-|-------|-------|
-| 1-9 | Associate |
-| 10-19 | Made Man |
-| 20-29 | Capo |
-| 30-39 | Boss |
-| 40-49 | Don |
-| 50+ | Godfather |
+> See [Section 15: Rank Titles](#15-rank-titles) for the unified rank system.
 
 ---
 
@@ -233,6 +225,15 @@ crew_definitions:
 - Total Attack = Base Strength + Σ(crew_attack_bonus × quantity) + Equipped Weapon Bonuses
 - Total Defense = Base Defense + Σ(crew_defense_bonus × quantity) + Equipped Equipment Bonuses
 
+### Crew Death (PvP)
+When crew members are killed in PvP (via Drive-By attacks):
+- **Crew is permanently gone** - cannot be recovered
+- **Assigned weapons/equipment are LOST** with the crew
+- Upkeep cost decreases accordingly
+- Maximum 5 crew killed per attack (or 25% of defender's crew)
+
+> ⚠️ **Note:** Crew upkeep deduction is not yet implemented. See implementation plan.
+
 ---
 
 ## 8. Item & Inventory System
@@ -312,12 +313,14 @@ crew_definitions:
 - Creator becomes **Boss**
 
 ### Family Roles (Hierarchy)
-1. **Boss** - Full control, can promote/demote/kick anyone
-2. **Underboss** - Can promote/demote/kick (except Boss & other Underboss)
-3. **Consigliere** - Advisory role
-4. **Caporegime** - Mid-tier leadership
-5. **Soldier** - Standard member
-6. **Street Runner** - New member (default join role)
+1. **Don** - Full control, can promote/demote/kick anyone
+2. **Consigliere** - Can promote/demote/kick (except Don & other Consigliere)
+3. **Advisor** - Advisory role
+4. **Lieutenant** - Mid-tier leadership
+5. **Associate** - Standard member
+6. **Recruit** - New member (default join role)
+
+> **Note:** Family roles are distinct from Player Ranks to avoid confusion.
 
 ### Role Permissions
 | Action | Boss | Underboss | Others |
@@ -438,6 +441,8 @@ player_boosters:
   - expires_at: TIMESTAMPTZ
   - activated_at: TIMESTAMPTZ
 ```
+
+> ⚠️ **Implementation Status:** Boosters table exists but integration into RPCs (e.g., business collection, PvP attacks) is not yet complete.
 
 ---
 
