@@ -12,7 +12,7 @@ import { OfflineSummaryModal } from '@/components/OfflineSummaryModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { Crown, Timer } from 'lucide-react';
+import { Crown, Timer, Shield } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface OfflineEarnings {
@@ -29,6 +29,12 @@ interface VipStatus {
   hoursRemaining: number;
 }
 
+interface ProtectionStatus {
+  isActive: boolean;
+  hoursRemaining: number;
+  minutesRemaining: number;
+}
+
 const Index = () => {
   const { isComplete: onboardingComplete, complete: completeOnboarding } = useOnboarding();
   const { player } = useAuth();
@@ -43,6 +49,25 @@ const Index = () => {
   const [showOfflineSummary, setShowOfflineSummary] = useState(false);
   const [offlineEarnings, setOfflineEarnings] = useState<OfflineEarnings | null>(null);
   const [vipStatus, setVipStatus] = useState<VipStatus>({ isActive: false, daysRemaining: 0, hoursRemaining: 0 });
+  const [protectionStatus, setProtectionStatus] = useState<ProtectionStatus>({ isActive: false, hoursRemaining: 0, minutesRemaining: 0 });
+
+  // Calculate protection status from player data
+  useEffect(() => {
+    if (player?.protection_expires_at) {
+      const expiresAt = new Date(player.protection_expires_at);
+      const now = new Date();
+      const diffMs = expiresAt.getTime() - now.getTime();
+      if (diffMs > 0) {
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        setProtectionStatus({ isActive: true, hoursRemaining: hours, minutesRemaining: minutes });
+      } else {
+        setProtectionStatus({ isActive: false, hoursRemaining: 0, minutesRemaining: 0 });
+      }
+    } else {
+      setProtectionStatus({ isActive: false, hoursRemaining: 0, minutesRemaining: 0 });
+    }
+  }, [player?.protection_expires_at]);
 
   // Fetch VIP status
   useEffect(() => {
@@ -205,6 +230,27 @@ const Index = () => {
                         <span className="text-xs font-cinzel text-amber-300">VIP</span>
                         <Timer className="w-3 h-3 text-amber-400/70" />
                         <span className="text-xs text-amber-200">{vipStatus.daysRemaining}d {vipStatus.hoursRemaining}h</span>
+                      </motion.div>
+                    </Link>
+                  )}
+
+                  {/* Protection Shield Badge */}
+                  {protectionStatus.isActive && (
+                    <Link to="/shop">
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/40 rounded-full"
+                      >
+                        <Shield className="w-3.5 h-3.5 text-cyan-400" />
+                        <span className="text-xs font-cinzel text-cyan-300">PROTECTED</span>
+                        <Timer className="w-3 h-3 text-cyan-400/70" />
+                        <span className="text-xs text-cyan-200">
+                          {protectionStatus.hoursRemaining > 0
+                            ? `${protectionStatus.hoursRemaining}h ${protectionStatus.minutesRemaining}m`
+                            : `${protectionStatus.minutesRemaining}m`}
+                        </span>
                       </motion.div>
                     </Link>
                   )}

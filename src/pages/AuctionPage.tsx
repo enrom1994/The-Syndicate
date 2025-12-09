@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Gavel, Clock, Plus, DollarSign, Diamond, Loader2, Package } from 'lucide-react';
+import { Gavel, Clock, Plus, DollarSign, Diamond, Loader2, Package, Flame, TrendingUp } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -47,6 +47,15 @@ interface ContrabandItem {
     quantity: number;
 }
 
+interface RecentSale {
+    item_name: string;
+    quantity: number;
+    sale_price: number;
+    currency: 'cash' | 'diamonds';
+    sold_at: string;
+    seller_name: string;
+}
+
 const AuctionPage = () => {
     const { toast } = useToast();
     const { player, refetchPlayer } = useAuth();
@@ -70,6 +79,9 @@ const AuctionPage = () => {
     const [bidListing, setBidListing] = useState<AuctionListing | null>(null);
     const [bidAmount, setBidAmount] = useState('');
 
+    // Recent sales
+    const [recentSales, setRecentSales] = useState<RecentSale[]>([]);
+
     // Get contraband from inventory
     const contraband = inventory.filter(i => i.category === 'contraband');
 
@@ -91,8 +103,18 @@ const AuctionPage = () => {
 
     useEffect(() => {
         fetchListings();
+        fetchRecentSales();
         loadInventory();
     }, [player?.id]);
+
+    const fetchRecentSales = async () => {
+        try {
+            const { data } = await supabase.rpc('get_recent_sales', { limit_count: 5 });
+            if (data) setRecentSales(data);
+        } catch (e) {
+            console.error('Failed to fetch recent sales:', e);
+        }
+    };
 
     const handleCreateListing = async () => {
         if (!selectedItem || !startingBid || !buyNowPrice) return;
@@ -249,9 +271,10 @@ const AuctionPage = () => {
                     </div>
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 bg-muted/30 rounded-sm mb-4">
+                        <TabsList className="grid w-full grid-cols-4 bg-muted/30 rounded-sm mb-4">
                             <TabsTrigger value="browse" className="font-cinzel text-xs">Browse</TabsTrigger>
-                            <TabsTrigger value="my-listings" className="font-cinzel text-xs">My Listings</TabsTrigger>
+                            <TabsTrigger value="recent" className="font-cinzel text-xs">Sales</TabsTrigger>
+                            <TabsTrigger value="my-listings" className="font-cinzel text-xs">My List</TabsTrigger>
                             <TabsTrigger value="my-bids" className="font-cinzel text-xs">My Bids</TabsTrigger>
                         </TabsList>
 
@@ -331,6 +354,46 @@ const AuctionPage = () => {
                                             >
                                                 Buy Now
                                             </Button>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            )}
+                        </TabsContent>
+
+                        {/* Recent Sales Tab */}
+                        <TabsContent value="recent" className="space-y-3 mt-0">
+                            <div className="flex items-center gap-2 mb-2">
+                                <TrendingUp className="w-4 h-4 text-primary" />
+                                <span className="text-xs text-muted-foreground">Recent market activity</span>
+                            </div>
+                            {recentSales.length === 0 ? (
+                                <p className="text-center text-muted-foreground text-xs py-8">No recent sales</p>
+                            ) : (
+                                recentSales.map((sale, idx) => (
+                                    <motion.div
+                                        key={idx}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: idx * 0.05 }}
+                                        className="noir-card p-3 flex items-center justify-between"
+                                    >
+                                        <div>
+                                            <p className="font-cinzel text-sm text-foreground">
+                                                {sale.quantity}x {sale.item_name}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                Sold by {sale.seller_name || 'Unknown'}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-bold text-sm flex items-center gap-1 justify-end">
+                                                {sale.currency === 'diamonds' ? (
+                                                    <Diamond className="w-3 h-3 text-blue-400" />
+                                                ) : (
+                                                    <DollarSign className="w-3 h-3 text-green-400" />
+                                                )}
+                                                {sale.sale_price?.toLocaleString()}
+                                            </p>
                                         </div>
                                     </motion.div>
                                 ))
