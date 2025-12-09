@@ -9,7 +9,8 @@ export interface InventoryItem {
     icon: string | null;
     category: 'weapon' | 'equipment' | 'contraband';
     quantity: number;
-    is_equipped: boolean;
+    assigned_quantity: number; // How many are assigned to arm crew
+    is_equipped: boolean; // Legacy - will be removed
     location: 'inventory' | 'equipped' | 'safe';
     safe_until?: string;
     rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
@@ -23,6 +24,16 @@ export interface SafeInfo {
     total_slots: number;
     used_slots: number;
     available_slots: number;
+}
+
+export interface AssignmentLimits {
+    total_crew: number;
+    assigned_weapons: number;
+    assigned_equipment: number;
+    available_weapon_slots: number;
+    available_equipment_slots: number;
+    unarmed_crew: number;
+    unarmored_crew: number;
 }
 
 export interface OwnedBusiness {
@@ -197,8 +208,7 @@ interface GameState {
 
     // Inventory actions
     buyItem: (itemId: string, quantity?: number) => Promise<boolean>;
-    equipItem: (inventoryId: string) => Promise<boolean>;
-    unequipItem: (inventoryId: string) => Promise<boolean>;
+    assignEquipment: (inventoryId: string, quantity: number) => Promise<{ success: boolean; message: string }>;
     sellItem: (inventoryId: string, quantity?: number) => Promise<boolean>;
 
     // Safe storage actions
@@ -206,7 +216,8 @@ interface GameState {
     moveToSafe: (inventoryId: string) => Promise<boolean>;
     moveFromSafe: (inventoryId: string) => Promise<boolean>;
 
-    // Equipment limits based on crew
+    // Assignment limits based on crew
+    getAssignmentLimits: () => Promise<AssignmentLimits | null>;
     getEquipmentLimits: () => { weaponSlots: number; equipmentSlots: number; equippedWeapons: number; equippedEquipment: number };
 
     // Crew actions
@@ -308,6 +319,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           id,
           item_id,
           quantity,
+          assigned_quantity,
           is_equipped,
           location,
           safe_until,
@@ -333,6 +345,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                 icon: item.item_definitions?.icon || null,
                 category: item.item_definitions?.category || 'weapon',
                 quantity: item.quantity,
+                assigned_quantity: item.assigned_quantity || 0,
                 is_equipped: item.is_equipped,
                 location: item.location || 'inventory',
                 safe_until: item.safe_until,
@@ -784,39 +797,48 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
     },
 
-    equipItem: async (inventoryId) => {
-        const { loadInventory } = get();
+    // Assign equipment quantity to arm crew (new assignment system)
+    assignEquipment: async (inventoryId, quantity) => {
+        const { playerId, loadInventory } = get();
+        if (!playerId) return { success: false, message: 'Not logged in' };
 
-        const { error } = await supabase
-            .from('player_inventory')
-            .update({ is_equipped: true, location: 'equipped' })
-            .eq('id', inventoryId);
-
-        if (error) {
-            console.error('Failed to equip item:', error);
-            return false;
-        }
-
-        await loadInventory();
-        return true;
-    },
-
-    unequipItem: async (inventoryId) => {
-        const { loadInventory } = get();
-
-        const { error } = await supabase
-            .from('player_inventory')
-            .update({ is_equipped: false, location: 'inventory' })
-            .eq('id', inventoryId);
+        const { data, error } = await supabase.rpc('assign_equipment', {
+            player_id_input: playerId,
+            inventory_id_input: inventoryId,
+            assign_count: quantity,
+        });
 
         if (error) {
-            console.error('Failed to unequip item:', error);
-            return false;
+            console.error('Failed to assign equipment:', error);
+            return { success: false, message: error.message };
         }
 
-        await loadInventory();
-        return true;
+        const result = data as { success: boolean; message: string };
+
+        if (result.success) {
+            await loadInventory();
+        }
+
+        return result;
     },
+
+    // Get assignment limits from backend
+    getAssignmentLimits: async () => {
+        const { playerId } = get();
+        if (!playerId) return null;
+
+        const { data, error } = await supabase.rpc('get_assignment_limits', {
+            player_id_input: playerId,
+        });
+
+        if (error) {
+            console.error('Failed to get assignment limits:', error);
+            return null;
+        }
+
+        return data as AssignmentLimits;
+    },
+
 
     sellItem: async (inventoryId, quantity = 1) => {
         const { playerId, inventory, loadInventory } = get();
