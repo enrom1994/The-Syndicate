@@ -1,6 +1,7 @@
-import { motion } from 'framer-motion';
-import { Gift, Calendar, Star, CheckCircle2, Lock, ChevronRight, Flame, Crown, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Gift, Calendar, Star, CheckCircle2, Lock, ChevronRight, Flame, Crown, Loader2, AlertTriangle, Timer, Zap } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useTonConnectUI } from '@tonconnect/ui-react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -8,7 +9,8 @@ import { GameIcon } from '@/components/GameIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
-import { rewardCash, rewardDiamonds } from '@/components/RewardAnimation';
+import { rewardCash, rewardDiamonds, rewardEnergy } from '@/components/RewardAnimation';
+import { TON_RECEIVING_ADDRESS, toNanoTon } from '@/lib/ton-config';
 
 interface DayReward {
     day: number;
@@ -17,58 +19,67 @@ interface DayReward {
     reward_display: string;
 }
 
-interface DayRewardProps {
-    day: number;
-    reward: string;
-    rewardType: 'cash' | 'diamonds' | 'energy' | 'item';
-    claimed: boolean;
-    current: boolean;
-    locked: boolean;
-    isProcessing?: boolean;
-    onClaim?: () => void;
+interface DailyStatus {
+    current_streak: number;
+    current_day: number;
+    can_claim: boolean;
+    hours_until_next: number;
+    streak_restorable: boolean;
+    lost_streak: number;
+    hours_to_restore: number;
+    next_milestone: {
+        days: number;
+        reward_type: string;
+        reward_amount: number;
+        description: string;
+    } | null;
 }
 
 const rewardIcons = {
-    cash: <GameIcon type="cash" className="w-8 h-8" />,
-    diamonds: <GameIcon type="diamond" className="w-12 h-12" />,
-    energy: <Gift className="w-6 h-6 text-yellow-400" />,
+    cash: <GameIcon type="cash" className="w-6 h-6" />,
+    diamonds: <GameIcon type="diamond" className="w-6 h-6" />,
+    energy: <img src="/images/icons/energy.png" alt="Energy" className="w-6 h-6" />,
     item: <Crown className="w-6 h-6 text-purple-400" />,
 };
 
-const DayRewardComponent = ({ day, reward, rewardType, claimed, current, locked, isProcessing, onClaim }: DayRewardProps) => (
+interface DayCardProps {
+    day: number;
+    reward: DayReward;
+    status: 'claimed' | 'current' | 'locked';
+    isProcessing: boolean;
+    onClaim: () => void;
+}
+
+const DayCard = ({ day, reward, status, isProcessing, onClaim }: DayCardProps) => (
     <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3, delay: day * 0.05 }}
-        className={`shrink-0 w-20 noir-card p-3 text-center relative
-            ${current ? 'ring-2 ring-primary bg-primary/10' : ''} 
-            ${claimed ? 'opacity-50' : ''}
-            ${locked ? 'opacity-40' : ''}`}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: day * 0.05 }}
+        className={`noir-card p-3 text-center relative
+            ${status === 'current' ? 'ring-2 ring-primary bg-primary/10' : ''}
+            ${status === 'claimed' ? 'opacity-60' : ''}
+            ${status === 'locked' ? 'opacity-40' : ''}`}
     >
-        {/* Day label */}
-        <div className={`text-[10px] font-bold mb-2 ${current ? 'text-primary' : 'text-muted-foreground'}`}>
+        <div className={`text-[10px] font-bold mb-2 ${status === 'current' ? 'text-primary' : 'text-muted-foreground'}`}>
             DAY {day}
         </div>
 
-        {/* Icon */}
-        <div className={`w-12 h-12 mx-auto mb-2 rounded-full flex items-center justify-center
-            ${claimed ? 'bg-green-500/20' : locked ? 'bg-muted/30' : 'bg-muted/50'}`}>
-            {claimed ? (
-                <CheckCircle2 className="w-6 h-6 text-green-400" />
-            ) : locked ? (
-                <Lock className="w-5 h-5 text-muted-foreground" />
+        <div className={`w-10 h-10 mx-auto mb-2 rounded-full flex items-center justify-center
+            ${status === 'claimed' ? 'bg-green-500/20' : status === 'locked' ? 'bg-muted/30' : 'bg-muted/50'}`}>
+            {status === 'claimed' ? (
+                <CheckCircle2 className="w-5 h-5 text-green-400" />
+            ) : status === 'locked' ? (
+                <Lock className="w-4 h-4 text-muted-foreground" />
             ) : (
-                rewardIcons[rewardType]
+                rewardIcons[reward.reward_type]
             )}
         </div>
 
-        {/* Reward text */}
-        <p className={`font-cinzel text-xs font-bold ${claimed ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
-            {reward}
+        <p className={`font-cinzel text-xs font-bold ${status === 'claimed' ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+            {reward.reward_display}
         </p>
 
-        {/* Claim button for current day */}
-        {current && !claimed && (
+        {status === 'current' && (
             <Button
                 className="btn-gold text-[10px] px-2 py-1 h-6 mt-2 w-full"
                 onClick={onClaim}
@@ -78,8 +89,7 @@ const DayRewardComponent = ({ day, reward, rewardType, claimed, current, locked,
             </Button>
         )}
 
-        {/* Claimed badge */}
-        {claimed && (
+        {status === 'claimed' && (
             <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
                 <CheckCircle2 className="w-3 h-3 text-white" />
             </div>
@@ -90,45 +100,56 @@ const DayRewardComponent = ({ day, reward, rewardType, claimed, current, locked,
 const DailyRewardsPage = () => {
     const { toast } = useToast();
     const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
+    const [tonConnectUI] = useTonConnectUI();
 
     const [isProcessing, setIsProcessing] = useState(false);
-    const [dailyRewardDefinitions, setDailyRewardDefinitions] = useState<DayReward[]>([]);
+    const [isRestoring, setIsRestoring] = useState(false);
+    const [dailyRewards, setDailyRewards] = useState<DayReward[]>([]);
+    const [status, setStatus] = useState<DailyStatus | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-
-    // Get streak from player data
-    const currentStreak = player?.daily_streak ?? 1;
-    const lastClaimDate = player?.last_daily_claim ? new Date(player.last_daily_claim) : null;
-    const today = new Date();
-    const canClaimToday = !lastClaimDate ||
-        lastClaimDate.toDateString() !== today.toDateString();
+    const [showStreakSaver, setShowStreakSaver] = useState(false);
 
     useEffect(() => {
-        loadDailyRewards();
-    }, []);
+        if (player?.id) {
+            loadData();
+        }
+    }, [player?.id]);
 
-    const loadDailyRewards = async () => {
+    const loadData = async () => {
         try {
-            const { data, error } = await supabase
+            // Load reward definitions
+            const { data: rewards } = await supabase
                 .from('daily_reward_definitions')
                 .select('*')
                 .order('day_number', { ascending: true });
 
-            if (error) throw error;
+            if (rewards) {
+                setDailyRewards(rewards.map(d => ({
+                    day: d.day_number,
+                    reward_type: d.reward_type as 'cash' | 'diamonds' | 'energy' | 'item',
+                    reward_amount: d.reward_amount,
+                    reward_display: d.reward_type === 'cash'
+                        ? `$${(d.reward_amount / 1000).toFixed(0)}K`
+                        : d.reward_type === 'diamonds'
+                            ? `${d.reward_amount} 💎`
+                            : d.reward_type === 'energy'
+                                ? `${d.reward_amount} ⚡`
+                                : 'Mystery',
+                })));
+            }
 
-            const rewards = data?.map(d => ({
-                day: d.day_number,
-                reward_type: d.reward_type as 'cash' | 'diamonds' | 'energy' | 'item',
-                reward_amount: d.reward_amount,
-                reward_display: d.reward_type === 'cash'
-                    ? `$${(d.reward_amount / 1000).toFixed(0)}K`
-                    : d.reward_type === 'diamonds'
-                        ? `${d.reward_amount} 💎`
-                        : d.reward_type === 'energy'
-                            ? `${d.reward_amount} ⚡`
-                            : 'Mystery Reward',
-            })) || [];
+            // Load status
+            const { data: statusData } = await supabase.rpc('get_daily_reward_status', {
+                target_player_id: player!.id
+            });
 
-            setDailyRewardDefinitions(rewards);
+            if (statusData) {
+                setStatus(statusData as DailyStatus);
+                // Show streak saver popup if applicable
+                if (statusData.streak_restorable && statusData.lost_streak > 3) {
+                    setShowStreakSaver(true);
+                }
+            }
         } catch (error) {
             console.error('Error loading daily rewards:', error);
         } finally {
@@ -136,65 +157,60 @@ const DailyRewardsPage = () => {
         }
     };
 
-    const handleClaimDaily = async () => {
-        if (!player || !canClaimToday) return;
+    const handleClaim = async () => {
+        if (!player || !status?.can_claim) return;
 
         setIsProcessing(true);
-
         try {
-            const currentDay = (currentStreak % 7) || 7;
-            const reward = dailyRewardDefinitions.find(r => r.day === currentDay);
-
-            if (!reward) {
-                throw new Error('Reward not found');
-            }
-
-            // Update player's streak and last claim date
-            const { error } = await supabase
-                .from('players')
-                .update({
-                    daily_streak: currentStreak + 1,
-                    last_daily_claim: new Date().toISOString(),
-                })
-                .eq('id', player.id);
+            const { data, error } = await supabase.rpc('claim_daily_reward', {
+                target_player_id: player.id
+            });
 
             if (error) throw error;
 
-            // Give the reward
-            if (reward.reward_type === 'cash') {
-                await supabase.rpc('increment_cash', {
-                    player_id_input: player.id,
-                    amount: reward.reward_amount,
-                    source: 'daily_reward',
+            if (data?.success) {
+                haptic.success();
+
+                // Show reward animation
+                if (data.reward_type === 'cash') {
+                    rewardCash(data.reward_amount);
+                } else if (data.reward_type === 'diamonds') {
+                    rewardDiamonds(data.reward_amount);
+                } else if (data.reward_type === 'energy') {
+                    rewardEnergy(data.reward_amount);
+                }
+
+                // Show milestone bonus if any
+                if (data.milestone_bonus) {
+                    setTimeout(() => {
+                        toast({
+                            title: `🎉 ${data.milestone_bonus.description}!`,
+                            description: `Streak milestone: +${data.milestone_bonus.amount} ${data.milestone_bonus.type}`,
+                        });
+                        if (data.milestone_bonus.type === 'diamonds') {
+                            rewardDiamonds(data.milestone_bonus.amount);
+                        } else if (data.milestone_bonus.type === 'cash') {
+                            rewardCash(data.milestone_bonus.amount);
+                        }
+                    }, 1500);
+                }
+
+                toast({
+                    title: 'Reward Claimed!',
+                    description: `Day ${data.day}: ${dailyRewards.find(r => r.day === data.day)?.reward_display}`,
                 });
-                rewardCash(reward.reward_amount);
-            } else if (reward.reward_type === 'diamonds') {
-                await supabase.rpc('increment_diamonds', {
-                    player_id_input: player.id,
-                    amount: reward.reward_amount,
-                    source: 'daily_reward',
-                });
-                rewardDiamonds(reward.reward_amount);
-            } else if (reward.reward_type === 'energy') {
-                await supabase
-                    .from('players')
-                    .update({ energy: Math.min(player.energy + reward.reward_amount, player.max_energy) })
-                    .eq('id', player.id);
+
+                await refetchPlayer();
+                await loadData();
+            } else {
+                throw new Error(data?.message || 'Failed to claim');
             }
-
-            haptic.success();
-            await refetchPlayer();
-
-            toast({
-                title: 'Reward Claimed!',
-                description: `You received ${reward.reward_display}!`,
-            });
-        } catch (error) {
-            console.error('Error claiming daily reward:', error);
+        } catch (error: any) {
+            console.error('Claim error:', error);
             haptic.error();
             toast({
                 title: 'Error',
-                description: 'Failed to claim reward. Please try again.',
+                description: error.message || 'Failed to claim reward',
                 variant: 'destructive',
             });
         } finally {
@@ -202,21 +218,63 @@ const DailyRewardsPage = () => {
         }
     };
 
-    // Generate display data for the week
-    const weeklyRewards = dailyRewardDefinitions.slice(0, 6).map((reward) => ({
-        day: reward.day,
-        reward: reward.reward_display,
-        rewardType: reward.reward_type,
-        claimed: reward.day < (currentStreak % 7 || 7) || !canClaimToday && reward.day === (currentStreak % 7 || 7),
-    }));
+    const handleRestoreStreak = async () => {
+        if (!player || !status?.streak_restorable) return;
 
-    // Day 7 bonus
-    const weeklyBonus = dailyRewardDefinitions.find(r => r.day === 7) || {
-        day: 7,
-        reward_display: 'Rare Item',
-        reward_type: 'item' as const,
+        // Check wallet
+        if (!tonConnectUI.wallet) {
+            tonConnectUI.openModal();
+            return;
+        }
+
+        setIsRestoring(true);
+        try {
+            // Send TON payment
+            const transaction = {
+                validUntil: Math.floor(Date.now() / 1000) + 600,
+                messages: [{
+                    address: TON_RECEIVING_ADDRESS,
+                    amount: toNanoTon(0.5).toString(),
+                }]
+            };
+
+            await tonConnectUI.sendTransaction(transaction);
+
+            // Restore streak
+            const { data, error } = await supabase.rpc('restore_streak', {
+                target_player_id: player.id
+            });
+
+            if (error) throw error;
+
+            if (data?.success) {
+                haptic.success();
+                toast({
+                    title: '🔥 Streak Restored!',
+                    description: `Your ${data.restored_streak} day streak is back!`,
+                });
+                setShowStreakSaver(false);
+                await refetchPlayer();
+                await loadData();
+            }
+        } catch (error) {
+            console.error('Restore error:', error);
+            toast({
+                title: 'Transaction Cancelled',
+                description: 'Streak was not restored.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsRestoring(false);
+        }
     };
-    const hasClaimed7 = currentStreak >= 7 && !canClaimToday;
+
+    const getStatus = (day: number): 'claimed' | 'current' | 'locked' => {
+        if (!status) return 'locked';
+        if (day < status.current_day) return 'claimed';
+        if (day === status.current_day && status.can_claim) return 'current';
+        return 'locked';
+    };
 
     if (isAuthLoading || isLoading) {
         return (
@@ -230,7 +288,6 @@ const DailyRewardsPage = () => {
 
     return (
         <MainLayout>
-            {/* Background Image */}
             <div
                 className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-20"
                 style={{ backgroundImage: 'url(/images/backgrounds/home.png)' }}
@@ -241,125 +298,147 @@ const DailyRewardsPage = () => {
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5 }}
                     className="flex items-center gap-3 mb-6"
                 >
-                    <img src="/images/icons/daily.png" alt="Daily Rewards" className="w-12 h-12 object-contain" />
+                    <img src="/images/icons/daily.png" alt="Daily" className="w-12 h-12 object-contain" />
                     <div className="flex-1">
                         <h1 className="font-cinzel text-xl font-bold text-foreground">Daily Rewards</h1>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Flame className="w-3 h-3 text-orange-400" />
-                            {currentStreak} day streak
-                        </p>
-                    </div>
-                </motion.div>
-
-                {/* Weekly Login - Streak Progress */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
-                    className="mb-4"
-                >
-                    <div className="flex items-center justify-between mb-3">
-                        <h2 className="font-cinzel text-sm font-semibold text-foreground">Weekly Login</h2>
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            Scroll <ChevronRight className="w-3 h-3" />
-                        </span>
-                    </div>
-
-                    {/* Horizontal Scrollable Days */}
-                    <div className="overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-                        <div className="flex gap-2" style={{ minWidth: 'max-content' }}>
-                            {weeklyRewards.map((reward) => (
-                                <DayRewardComponent
-                                    key={reward.day}
-                                    day={reward.day}
-                                    reward={reward.reward}
-                                    rewardType={reward.rewardType}
-                                    claimed={reward.claimed}
-                                    current={reward.day === ((currentStreak % 7) || 7) && canClaimToday}
-                                    locked={reward.day > ((currentStreak % 7) || 7)}
-                                    isProcessing={isProcessing}
-                                    onClaim={handleClaimDaily}
-                                />
-                            ))}
+                        <div className="flex items-center gap-2">
+                            <Flame className="w-4 h-4 text-orange-400" />
+                            <span className="text-sm font-bold text-orange-400">{status?.current_streak || 0} day streak</span>
                         </div>
                     </div>
                 </motion.div>
 
-                {/* Day 7 - Featured Weekly Bonus */}
+                {/* Streak Saver Alert */}
+                <AnimatePresence>
+                    {showStreakSaver && status?.streak_restorable && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg"
+                        >
+                            <div className="flex items-start gap-3">
+                                <AlertTriangle className="w-6 h-6 text-red-400 shrink-0" />
+                                <div className="flex-1">
+                                    <h3 className="font-cinzel font-bold text-red-400 mb-1">
+                                        Streak Lost! 😢
+                                    </h3>
+                                    <p className="text-xs text-red-200/80 mb-2">
+                                        You missed a day and lost your <strong>{status.lost_streak} day streak</strong>!
+                                    </p>
+                                    <div className="flex items-center gap-2 text-xs text-red-200/60 mb-3">
+                                        <Timer className="w-3 h-3" />
+                                        <span>Restore available for {Math.floor(status.hours_to_restore)}h {Math.floor((status.hours_to_restore % 1) * 60)}m</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            className="btn-gold flex-1"
+                                            onClick={handleRestoreStreak}
+                                            disabled={isRestoring}
+                                        >
+                                            {isRestoring ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <GameIcon type="ton" className="w-4 h-4 mr-1" />
+                                                    0.5 TON - Restore
+                                                </>
+                                            )}
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => setShowStreakSaver(false)}
+                                            className="text-xs"
+                                        >
+                                            Skip
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Days Grid */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     className="mb-6"
                 >
-                    <div className={`noir-card p-4 relative overflow-hidden ${(currentStreak % 7 || 7) === 7 && canClaimToday ? 'ring-2 ring-primary' : ''}`}>
-                        {/* Background glow */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-primary/10 to-purple-500/10" />
-
-                        <div className="relative flex items-center gap-4">
-                            <div className={`w-16 h-16 rounded-lg flex items-center justify-center shrink-0
-                                ${(currentStreak % 7 || 7) === 7 ? 'bg-gradient-gold' : 'bg-muted/30'}`}>
-                                {(currentStreak % 7 || 7) === 7 ? (
-                                    <Crown className="w-8 h-8 text-primary-foreground" />
-                                ) : (
-                                    <Lock className="w-6 h-6 text-muted-foreground" />
-                                )}
-                            </div>
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-[10px] font-bold text-primary bg-primary/20 px-2 py-0.5 rounded">
-                                        DAY 7 BONUS
-                                    </span>
-                                    {hasClaimed7 && (
-                                        <CheckCircle2 className="w-4 h-4 text-green-400" />
-                                    )}
-                                </div>
-                                <h3 className="font-cinzel font-bold text-lg text-foreground">
-                                    {weeklyBonus.reward_display}
-                                </h3>
-                                <p className="text-xs text-muted-foreground">
-                                    {(currentStreak % 7 || 7) === 7 && canClaimToday
-                                        ? 'Weekly bonus unlocked!'
-                                        : `${7 - (currentStreak % 7 || 7)} more day${7 - (currentStreak % 7 || 7) > 1 ? 's' : ''} to unlock`}
-                                </p>
-                            </div>
-                            {(currentStreak % 7 || 7) === 7 && canClaimToday && !hasClaimed7 && (
-                                <Button
-                                    className="btn-gold shrink-0"
-                                    onClick={handleClaimDaily}
-                                    disabled={isProcessing}
-                                >
-                                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Claim'}
-                                </Button>
-                            )}
-                        </div>
-
-                        {/* Progress bar */}
-                        <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
-                            <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${(Math.min((currentStreak % 7) || 7, 7) / 7) * 100}%` }}
-                                transition={{ duration: 0.8, delay: 0.3 }}
-                                className="h-full rounded-full bg-gradient-gold"
+                    <h2 className="font-cinzel text-sm font-semibold text-foreground mb-3">7-Day Cycle</h2>
+                    <div className="grid grid-cols-4 gap-2">
+                        {dailyRewards.slice(0, 7).map((reward) => (
+                            <DayCard
+                                key={reward.day}
+                                day={reward.day}
+                                reward={reward}
+                                status={getStatus(reward.day)}
+                                isProcessing={isProcessing}
+                                onClaim={handleClaim}
                             />
-                        </div>
+                        ))}
+                        {/* Day 7 special card takes full width on second row */}
                     </div>
                 </motion.div>
 
-                {/* Info */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                    className="noir-card p-4 text-center"
-                >
-                    <p className="text-xs text-muted-foreground">
-                        Login every day to keep your streak going and earn bigger rewards!
-                    </p>
-                </motion.div>
+                {/* Next Milestone */}
+                {status?.next_milestone && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="mb-4"
+                    >
+                        <div className="noir-card p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-full bg-gradient-gold flex items-center justify-center">
+                                    <Star className="w-6 h-6 text-primary-foreground" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-[10px] text-primary uppercase tracking-wider">Next Milestone</p>
+                                    <h3 className="font-cinzel font-bold text-foreground">
+                                        Day {status.next_milestone.days}
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground">
+                                        {status.next_milestone.description}: +{status.next_milestone.reward_amount} {status.next_milestone.reward_type}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-lg font-bold text-primary">
+                                        {status.next_milestone.days - status.current_streak}
+                                    </p>
+                                    <p className="text-[10px] text-muted-foreground">days left</p>
+                                </div>
+                            </div>
+
+                            {/* Progress bar */}
+                            <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(status.current_streak / status.next_milestone.days) * 100}%` }}
+                                    className="h-full bg-gradient-gold rounded-full"
+                                />
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* Timer until next claim */}
+                {!status?.can_claim && status?.hours_until_next && status.hours_until_next > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="noir-card p-4 text-center"
+                    >
+                        <Timer className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-xs text-muted-foreground">Next reward available in</p>
+                        <p className="font-cinzel text-lg font-bold text-foreground">
+                            {Math.floor(status.hours_until_next)}h {Math.floor((status.hours_until_next % 1) * 60)}m
+                        </p>
+                    </motion.div>
+                )}
             </div>
         </MainLayout>
     );
