@@ -1,35 +1,26 @@
 import { motion } from 'framer-motion';
-import { Package, Sword, Shield, Users, FlaskConical, Check, X, Loader2, Lock, Unlock, Gavel } from 'lucide-react';
+import { Package, Sword, Shield, Users, FlaskConical, Loader2, Lock, Unlock, Gavel, Plus, Minus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { Slider } from '@/components/ui/slider';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useGameStore, InventoryItem as InventoryItemType, HiredCrew } from '@/hooks/useGameStore';
+import { useGameStore, InventoryItem as InventoryItemType, HiredCrew, AssignmentLimits } from '@/hooks/useGameStore';
 
-interface InventoryItemProps {
-    id: string;
-    name: string;
-    quantity: number;
-    stat?: string;
-    rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
-    category: 'weapon' | 'equipment' | 'contraband';
-    iconUrl: string | null;
-    equipped?: boolean;
-    location: 'inventory' | 'equipped' | 'safe';
-    isProcessing?: boolean;
-    canEquip?: boolean; // Whether equipping is allowed (false if another item is equipped)
-    delay?: number;
-    onEquip?: () => void;
-    onUnequip?: () => void;
-    onSell?: () => void;
-    onMoveToSafe?: () => void;
-    onMoveFromSafe?: () => void;
-}
-
+// Rarity colors
 const rarityColors = {
     common: 'border-muted-foreground/30',
     uncommon: 'border-green-500/50',
@@ -44,69 +35,87 @@ const rarityBadgeColors = {
     legendary: 'bg-primary/20 text-primary',
 };
 
+// Inventory Item Component - New design with assignment display
+interface InventoryItemProps {
+    item: InventoryItemType;
+    isProcessing: boolean;
+    onAssign: () => void;
+    onMoveToSafe: () => void;
+    onMoveFromSafe: () => void;
+    onSell?: () => void;
+    delay?: number;
+}
+
 const InventoryItemComponent = ({
-    id, name, quantity, stat, rarity, category, iconUrl, equipped, location, isProcessing, canEquip = true, delay = 0,
-    onEquip, onUnequip, onSell, onMoveToSafe, onMoveFromSafe
+    item, isProcessing, onAssign, onMoveToSafe, onMoveFromSafe, onSell, delay = 0
 }: InventoryItemProps) => {
-    // Fallback icon based on category
-    const FallbackIcon = category === 'weapon' ? Sword : category === 'equipment' ? Shield : FlaskConical;
+    const FallbackIcon = item.category === 'weapon' ? Sword : item.category === 'equipment' ? Shield : FlaskConical;
+    const hasAssigned = item.assigned_quantity > 0;
+
+    const formatStat = (): string => {
+        if (item.attack_bonus > 0) return `+${item.attack_bonus} ATK`;
+        if (item.defense_bonus > 0) return `+${item.defense_bonus} DEF`;
+        if (item.income_bonus > 0) return `+${item.income_bonus}% Income`;
+        return '';
+    };
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay }}
-            className={`noir-card p-3 border-l-2 ${rarityColors[rarity]} ${equipped ? 'ring-1 ring-primary' : ''}`}
+            className={`noir-card p-3 border-l-2 ${rarityColors[item.rarity]} ${hasAssigned ? 'ring-1 ring-primary/50' : ''}`}
         >
             <div className="flex items-center gap-3">
+                {/* Icon */}
                 <div className="w-10 h-10 rounded-sm bg-muted/50 flex items-center justify-center shrink-0 overflow-hidden">
-                    {iconUrl ? (
+                    {item.icon ? (
                         <img
-                            src={iconUrl}
-                            alt={name}
+                            src={item.icon}
+                            alt={item.name}
                             className="w-full h-full object-contain p-1"
-                            onError={(e) => {
-                                // On error, hide image and show fallback icon
-                                e.currentTarget.style.display = 'none';
-                            }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                     ) : (
                         <FallbackIcon className="w-5 h-5 text-muted-foreground" />
                     )}
                 </div>
+
+                {/* Name & Stats */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                        <h3 className="font-cinzel font-semibold text-sm text-foreground truncate">{name}</h3>
-                        {equipped && (
-                            <span className="px-1.5 py-0.5 text-[10px] bg-primary/20 text-primary rounded-sm">
-                                EQUIPPED
-                            </span>
-                        )}
-                        {location === 'safe' && (
+                        <h3 className="font-cinzel font-semibold text-sm text-foreground truncate">{item.name}</h3>
+                        {item.location === 'safe' && (
                             <span className="px-1.5 py-0.5 text-[10px] bg-green-500/20 text-green-500 rounded-sm flex items-center gap-0.5">
                                 <Lock className="w-2 h-2" /> SAFE
                             </span>
                         )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`px-1.5 py-0.5 text-[10px] rounded-sm ${rarityBadgeColors[rarity]}`}>
-                            {rarity.toUpperCase()}
+                        <span className={`px-1.5 py-0.5 text-[10px] rounded-sm ${rarityBadgeColors[item.rarity]}`}>
+                            {item.rarity.toUpperCase()}
                         </span>
-                        {stat && <span className="text-xs text-primary">{stat}</span>}
+                        <span className="text-xs text-primary">{formatStat()}</span>
                     </div>
                 </div>
+
+                {/* Quantity & Assignment */}
                 <div className="text-right mr-2">
-                    <p className="font-cinzel font-bold text-sm text-foreground">x{quantity}</p>
+                    <p className="font-cinzel font-bold text-sm text-foreground">x{item.quantity}</p>
+                    {item.category !== 'contraband' && (
+                        <p className={`text-[10px] ${hasAssigned ? 'text-primary' : 'text-muted-foreground'}`}>
+                            {item.assigned_quantity}/{item.quantity} armed
+                        </p>
+                    )}
                 </div>
-                {category === 'contraband' ? (
-                    <Button
-                        className="btn-gold h-8 px-2 text-xs"
-                        onClick={onSell}
-                    >
+
+                {/* Action Buttons */}
+                {item.category === 'contraband' ? (
+                    <Button className="btn-gold h-8 px-2 text-xs" onClick={onSell}>
                         <Gavel className="w-3 h-3 mr-1" />
                         Auction
                     </Button>
-                ) : location === 'safe' ? (
+                ) : item.location === 'safe' ? (
                     <Button
                         variant="outline"
                         size="sm"
@@ -121,43 +130,22 @@ const InventoryItemComponent = ({
                             </>
                         )}
                     </Button>
-                ) : equipped ? (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 px-2 text-xs"
-                        onClick={onUnequip}
-                        disabled={isProcessing}
-                    >
-                        {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : (
-                            <>
-                                <X className="w-3 h-3 mr-1" />
-                                Remove
-                            </>
-                        )}
-                    </Button>
                 ) : (
                     <div className="flex gap-1">
                         <Button
                             className="btn-gold h-8 px-2 text-xs"
-                            onClick={onEquip}
-                            disabled={isProcessing || !canEquip}
-                            title={!canEquip ? 'Unequip current item first' : undefined}
+                            onClick={onAssign}
+                            disabled={isProcessing}
                         >
-                            {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : (
-                                <>
-                                    <Check className="w-3 h-3 mr-1" />
-                                    Equip
-                                </>
-                            )}
+                            {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Assign'}
                         </Button>
                         <Button
                             variant="outline"
                             size="sm"
                             className="h-8 px-1.5 text-xs"
                             onClick={onMoveToSafe}
-                            disabled={isProcessing}
-                            title="Move to Safe"
+                            disabled={isProcessing || item.assigned_quantity > 0}
+                            title={item.assigned_quantity > 0 ? 'Unassign first' : 'Move to Safe'}
                         >
                             <Lock className="w-3 h-3" />
                         </Button>
@@ -168,6 +156,7 @@ const InventoryItemComponent = ({
     );
 };
 
+// Crew Member Component
 interface CrewMemberProps {
     name: string;
     type: string;
@@ -200,6 +189,7 @@ const CrewMember = ({ name, type, quantity, attackBonus, defenseBonus, delay = 0
     </motion.div>
 );
 
+
 const InventoryPage = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
@@ -209,118 +199,95 @@ const InventoryPage = () => {
         crew: hiredCrew,
         isLoadingInventory,
         loadInventory,
-        equipItem,
-        unequipItem,
+        assignEquipment,
         sellItem,
         moveToSafe,
         moveFromSafe,
-        getEquipmentLimits
+        getAssignmentLimits,
     } = useGameStore();
 
     const [activeTab, setActiveTab] = useState('weapons');
     const [processingItemId, setProcessingItemId] = useState<string | null>(null);
+
+    // Assignment dialog state
+    const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<InventoryItemType | null>(null);
+    const [assignQuantity, setAssignQuantity] = useState(0);
+    const [limits, setLimits] = useState<AssignmentLimits | null>(null);
+    const [isAssigning, setIsAssigning] = useState(false);
+
+    // Load assignment limits on mount
+    useEffect(() => {
+        const loadLimits = async () => {
+            const data = await getAssignmentLimits();
+            if (data) setLimits(data);
+        };
+        loadLimits();
+    }, [getAssignmentLimits, inventory]);
 
     // Filter inventory by category
     const weapons = inventory.filter(i => i.category === 'weapon');
     const equipment = inventory.filter(i => i.category === 'equipment');
     const contraband = inventory.filter(i => i.category === 'contraband');
 
-    // Check if there's already an equipped item (must unequip first)
-    const hasEquippedWeapon = weapons.some(i => i.is_equipped);
-    const hasEquippedEquipment = equipment.some(i => i.is_equipped);
+    // Calculate totals
+    const totalCrew = hiredCrew.reduce((sum, c) => sum + c.quantity, 0);
+    const totalAssignedWeapons = weapons.reduce((sum, w) => sum + w.assigned_quantity, 0);
+    const totalAssignedEquipment = equipment.reduce((sum, e) => sum + e.assigned_quantity, 0);
 
-    const formatStat = (item: InventoryItemType): string => {
-        if (item.attack_bonus > 0) return `+${item.attack_bonus} Attack`;
-        if (item.defense_bonus > 0) return `+${item.defense_bonus} Defense`;
-        if (item.income_bonus > 0) return `+${item.income_bonus}% Income`;
-        if (item.sell_price > 0 && item.category === 'contraband') return `Sells for $${item.sell_price.toLocaleString()}`;
-        return '';
+    // Calculate attack/defense bonuses from assigned items + crew
+    const assignedAttackBonus = weapons.reduce((sum, w) => sum + (w.attack_bonus * w.assigned_quantity), 0) +
+        hiredCrew.reduce((sum, c) => sum + (c.attack_bonus * c.quantity), 0);
+    const assignedDefenseBonus = equipment.reduce((sum, e) => sum + (e.defense_bonus * e.assigned_quantity), 0) +
+        hiredCrew.reduce((sum, c) => sum + (c.defense_bonus * c.quantity), 0);
+
+    const totalItems = inventory.reduce((sum, i) => sum + i.quantity, 0);
+
+    // Open assignment dialog
+    const openAssignDialog = (item: InventoryItemType) => {
+        setSelectedItem(item);
+        setAssignQuantity(item.assigned_quantity);
+        setAssignDialogOpen(true);
     };
 
-    const getIcon = (category: string) => {
-        switch (category) {
-            case 'weapon':
-                return <Sword className="w-5 h-5 text-muted-foreground" />;
-            case 'equipment':
-                return <Shield className="w-5 h-5 text-muted-foreground" />;
-            case 'contraband':
-                return <FlaskConical className="w-5 h-5 text-muted-foreground" />;
-            default:
-                return <Package className="w-5 h-5 text-muted-foreground" />;
-        }
-    };
+    // Handle assignment
+    const handleAssign = async () => {
+        if (!selectedItem) return;
 
-    const handleEquip = async (item: InventoryItemType) => {
-        // Check equipment limits based on crew
-        const { weaponSlots, equipmentSlots, equippedWeapons, equippedEquipment } = getEquipmentLimits();
-
-        if (item.category === 'weapon' && equippedWeapons >= weaponSlots) {
-            toast({
-                title: 'No Weapon Slots',
-                description: weaponSlots === 0
-                    ? 'Hire Hitmen or Enforcers to equip weapons.'
-                    : `You can only equip ${weaponSlots} weapons. Unequip one first or hire more crew.`,
-                variant: 'destructive',
-            });
-            return;
-        }
-
-        if (item.category === 'equipment' && equippedEquipment >= equipmentSlots) {
-            toast({
-                title: 'No Equipment Slots',
-                description: equipmentSlots === 0
-                    ? 'Hire Bodyguards to equip defensive gear.'
-                    : `You can only equip ${equipmentSlots} items. Unequip one first or hire more Bodyguards.`,
-                variant: 'destructive',
-            });
-            return;
-        }
-
-        setProcessingItemId(item.id);
+        setIsAssigning(true);
         try {
-            const success = await equipItem(item.id);
-            if (success) {
-                await refetchPlayer(); // Refresh player stats
+            const result = await assignEquipment(selectedItem.id, assignQuantity);
+            if (result.success) {
                 toast({
-                    title: 'Item Equipped!',
-                    description: `${item.name} is now equipped.`,
+                    title: 'Equipment Updated',
+                    description: result.message,
                 });
+                await refetchPlayer();
+                // Refresh limits
+                const newLimits = await getAssignmentLimits();
+                if (newLimits) setLimits(newLimits);
             } else {
                 toast({
-                    title: 'Error',
-                    description: 'Failed to equip item.',
+                    title: 'Failed',
+                    description: result.message,
                     variant: 'destructive',
                 });
             }
+        } catch (error) {
+            console.error('Assignment error:', error);
+            toast({
+                title: 'Error',
+                description: 'An unexpected error occurred.',
+                variant: 'destructive',
+            });
         } finally {
-            setProcessingItemId(null);
-        }
-    };
-
-    const handleUnequip = async (item: InventoryItemType) => {
-        setProcessingItemId(item.id);
-        try {
-            const success = await unequipItem(item.id);
-            if (success) {
-                await refetchPlayer(); // Refresh player stats
-                toast({
-                    title: 'Item Removed',
-                    description: `${item.name} has been unequipped.`,
-                });
-            } else {
-                toast({
-                    title: 'Error',
-                    description: 'Failed to unequip item.',
-                    variant: 'destructive',
-                });
-            }
-        } finally {
-            setProcessingItemId(null);
+            setIsAssigning(false);
+            setAssignDialogOpen(false);
+            setSelectedItem(null);
         }
     };
 
     const handleSell = (item: InventoryItemType) => {
-        // Navigate to auction house to sell contraband
         navigate('/auction');
     };
 
@@ -336,7 +303,7 @@ const InventoryPage = () => {
             } else {
                 toast({
                     title: 'Error',
-                    description: 'Failed to move item to safe. You may need to purchase vault slots.',
+                    description: 'Failed to move item to safe.',
                     variant: 'destructive',
                 });
             }
@@ -366,14 +333,17 @@ const InventoryPage = () => {
         }
     };
 
-    // Calculate stat bonuses from equipped items
-    const equippedItems = inventory.filter(i => i.is_equipped);
-    const totalAttackBonus = equippedItems.reduce((sum, i) => sum + i.attack_bonus, 0) +
-        hiredCrew.reduce((sum, c) => sum + (c.attack_bonus * c.quantity), 0);
-    const totalDefenseBonus = equippedItems.reduce((sum, i) => sum + i.defense_bonus, 0) +
-        hiredCrew.reduce((sum, c) => sum + (c.defense_bonus * c.quantity), 0);
+    // Calculate max assignable for dialog
+    const getMaxAssignable = (): number => {
+        if (!selectedItem || !limits) return 0;
 
-    const totalItems = inventory.reduce((sum, i) => sum + i.quantity, 0);
+        const currentlyAssigned = selectedItem.category === 'weapon'
+            ? totalAssignedWeapons - selectedItem.assigned_quantity
+            : totalAssignedEquipment - selectedItem.assigned_quantity;
+
+        const slotsRemaining = totalCrew - currentlyAssigned;
+        return Math.min(selectedItem.quantity, Math.max(0, slotsRemaining));
+    };
 
     // Loading state
     if (isAuthLoading) {
@@ -408,40 +378,64 @@ const InventoryPage = () => {
                     </div>
                 </motion.div>
 
-                {/* Equipped Stats Summary */}
+                {/* Combat Stats Summary */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.5, delay: 0.1 }}
                     className="noir-card p-4 mb-6"
                 >
-                    <h3 className="font-cinzel text-xs text-muted-foreground mb-2">EQUIPPED BONUSES</h3>
+                    <h3 className="font-cinzel text-xs text-muted-foreground mb-2">COMBAT STATS</h3>
                     <div className="grid grid-cols-2 gap-3 mb-3">
                         <div className="flex items-center gap-2">
                             <Sword className="w-4 h-4 text-red-400" />
                             <span className="text-xs text-muted-foreground">Attack:</span>
-                            <span className="font-cinzel font-bold text-sm text-red-400">+{totalAttackBonus}</span>
+                            <span className="font-cinzel font-bold text-sm text-red-400">+{assignedAttackBonus.toLocaleString()}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Shield className="w-4 h-4 text-blue-400" />
                             <span className="text-xs text-muted-foreground">Defense:</span>
-                            <span className="font-cinzel font-bold text-sm text-blue-400">+{totalDefenseBonus}</span>
+                            <span className="font-cinzel font-bold text-sm text-blue-400">+{assignedDefenseBonus.toLocaleString()}</span>
                         </div>
                     </div>
-                    {/* Slot usage */}
-                    {(() => {
-                        const { weaponSlots, equipmentSlots, equippedWeapons, equippedEquipment } = getEquipmentLimits();
-                        return (
-                            <div className="flex gap-4 text-xs text-muted-foreground border-t border-muted/20 pt-2">
-                                <span>Weapons: <span className={equippedWeapons >= weaponSlots ? 'text-red-400' : 'text-primary'}>{equippedWeapons}/{weaponSlots || 0}</span></span>
-                                <span>Equipment: <span className={equippedEquipment >= equipmentSlots ? 'text-red-400' : 'text-primary'}>{equippedEquipment}/{equipmentSlots || 0}</span></span>
-                            </div>
-                        );
-                    })()}
+
+                    {/* Armed Crew Status */}
+                    <div className="border-t border-muted/20 pt-2">
+                        <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="text-muted-foreground">Armed Crew (Weapons)</span>
+                            <span className={totalAssignedWeapons < totalCrew ? 'text-yellow-400' : 'text-green-400'}>
+                                {totalAssignedWeapons}/{totalCrew}
+                            </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-muted/30 rounded-full overflow-hidden mb-2">
+                            <div
+                                className="h-full bg-red-400 transition-all"
+                                style={{ width: `${totalCrew > 0 ? (totalAssignedWeapons / totalCrew) * 100 : 0}%` }}
+                            />
+                        </div>
+                        <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="text-muted-foreground">Armored Crew (Equipment)</span>
+                            <span className={totalAssignedEquipment < totalCrew ? 'text-yellow-400' : 'text-green-400'}>
+                                {totalAssignedEquipment}/{totalCrew}
+                            </span>
+                        </div>
+                        <div className="w-full h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-blue-400 transition-all"
+                                style={{ width: `${totalCrew > 0 ? (totalAssignedEquipment / totalCrew) * 100 : 0}%` }}
+                            />
+                        </div>
+                        {(totalAssignedWeapons < totalCrew || totalAssignedEquipment < totalCrew) && (
+                            <p className="text-[10px] text-yellow-400 mt-2">
+                                ⚠️ {Math.max(totalCrew - totalAssignedWeapons, totalCrew - totalAssignedEquipment)} crew members are unarmed/unarmored
+                            </p>
+                        )}
+                    </div>
                 </motion.div>
 
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-4 bg-muted/30 rounded-sm mb-4">
+                {/* Inventory Tabs */}
+                <Tabs defaultValue="weapons" value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="w-full grid grid-cols-4 mb-4">
                         <TabsTrigger value="weapons" className="font-cinzel text-[10px]">
                             Weapons
                         </TabsTrigger>
@@ -469,20 +463,10 @@ const InventoryPage = () => {
                                     weapons.map((item, index) => (
                                         <InventoryItemComponent
                                             key={item.id}
-                                            id={item.id}
-                                            name={item.name}
-                                            quantity={item.quantity}
-                                            stat={formatStat(item)}
-                                            rarity={item.rarity}
-                                            category={item.category}
-                                            iconUrl={item.icon}
-                                            equipped={item.is_equipped}
-                                            location={item.location}
+                                            item={item}
                                             isProcessing={processingItemId === item.id}
-                                            canEquip={!hasEquippedWeapon || item.is_equipped}
                                             delay={0.05 * index}
-                                            onEquip={() => handleEquip(item)}
-                                            onUnequip={() => handleUnequip(item)}
+                                            onAssign={() => openAssignDialog(item)}
                                             onMoveToSafe={() => handleMoveToSafe(item)}
                                             onMoveFromSafe={() => handleMoveFromSafe(item)}
                                         />
@@ -497,20 +481,10 @@ const InventoryPage = () => {
                                     equipment.map((item, index) => (
                                         <InventoryItemComponent
                                             key={item.id}
-                                            id={item.id}
-                                            name={item.name}
-                                            quantity={item.quantity}
-                                            stat={formatStat(item)}
-                                            rarity={item.rarity}
-                                            category={item.category}
-                                            iconUrl={item.icon}
-                                            equipped={item.is_equipped}
-                                            location={item.location}
+                                            item={item}
                                             isProcessing={processingItemId === item.id}
-                                            canEquip={!hasEquippedEquipment || item.is_equipped}
                                             delay={0.05 * index}
-                                            onEquip={() => handleEquip(item)}
-                                            onUnequip={() => handleUnequip(item)}
+                                            onAssign={() => openAssignDialog(item)}
                                             onMoveToSafe={() => handleMoveToSafe(item)}
                                             onMoveFromSafe={() => handleMoveFromSafe(item)}
                                         />
@@ -525,16 +499,12 @@ const InventoryPage = () => {
                                     contraband.map((item, index) => (
                                         <InventoryItemComponent
                                             key={item.id}
-                                            id={item.id}
-                                            name={item.name}
-                                            quantity={item.quantity}
-                                            stat={formatStat(item)}
-                                            rarity={item.rarity}
-                                            category={item.category}
-                                            iconUrl={item.icon}
-                                            location={item.location}
+                                            item={item}
                                             isProcessing={processingItemId === item.id}
                                             delay={0.05 * index}
+                                            onAssign={() => { }}
+                                            onMoveToSafe={() => handleMoveToSafe(item)}
+                                            onMoveFromSafe={() => handleMoveFromSafe(item)}
                                             onSell={() => handleSell(item)}
                                         />
                                     ))
@@ -543,7 +513,7 @@ const InventoryPage = () => {
 
                             <TabsContent value="crew" className="space-y-2 mt-0">
                                 {hiredCrew.length === 0 ? (
-                                    <p className="text-center text-muted-foreground text-sm py-8">No crew hired yet</p>
+                                    <p className="text-center text-muted-foreground text-sm py-8">No crew hired</p>
                                 ) : (
                                     hiredCrew.map((member, index) => (
                                         <CrewMember
@@ -551,8 +521,8 @@ const InventoryPage = () => {
                                             name={member.name}
                                             type={member.type}
                                             quantity={member.quantity}
-                                            attackBonus={member.attack_bonus}
-                                            defenseBonus={member.defense_bonus}
+                                            attackBonus={member.attack_bonus * member.quantity}
+                                            defenseBonus={member.defense_bonus * member.quantity}
                                             delay={0.05 * index}
                                         />
                                     ))
@@ -562,6 +532,132 @@ const InventoryPage = () => {
                     )}
                 </Tabs>
             </div>
+
+            {/* Assignment Dialog */}
+            <AlertDialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+                <AlertDialogContent className="noir-card border-border/50 max-w-sm">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-cinzel text-foreground">
+                            Assign {selectedItem?.name}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Arm your crew with this {selectedItem?.category}. Assigned items provide combat bonuses.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    {selectedItem && (
+                        <div className="py-4 space-y-4">
+                            {/* Current Stats */}
+                            <div className="bg-muted/20 p-3 rounded-lg space-y-2">
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-muted-foreground">Owned</span>
+                                    <span className="text-foreground font-bold">{selectedItem.quantity}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-muted-foreground">Currently Assigned</span>
+                                    <span className="text-primary font-bold">{selectedItem.assigned_quantity}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-muted-foreground">Total Crew</span>
+                                    <span className="text-foreground font-bold">{totalCrew}</span>
+                                </div>
+                                <div className="flex justify-between text-xs border-t border-muted/30 pt-2">
+                                    <span className="text-muted-foreground">Max Assignable</span>
+                                    <span className="text-green-400 font-bold">{getMaxAssignable()}</span>
+                                </div>
+                            </div>
+
+                            {/* Quantity Selector */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">Assign Quantity:</span>
+                                    <span className="font-cinzel font-bold text-lg text-primary">{assignQuantity}</span>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setAssignQuantity(Math.max(0, assignQuantity - 10))}
+                                        disabled={assignQuantity <= 0}
+                                    >
+                                        <Minus className="w-3 h-3" />
+                                    </Button>
+                                    <Slider
+                                        value={[assignQuantity]}
+                                        onValueChange={(v) => setAssignQuantity(v[0])}
+                                        max={getMaxAssignable()}
+                                        min={0}
+                                        step={1}
+                                        className="flex-1"
+                                    />
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setAssignQuantity(Math.min(getMaxAssignable(), assignQuantity + 10))}
+                                        disabled={assignQuantity >= getMaxAssignable()}
+                                    >
+                                        <Plus className="w-3 h-3" />
+                                    </Button>
+                                </div>
+
+                                {/* Quick buttons */}
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 text-xs"
+                                        onClick={() => setAssignQuantity(0)}
+                                    >
+                                        None
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 text-xs"
+                                        onClick={() => setAssignQuantity(Math.floor(getMaxAssignable() / 2))}
+                                    >
+                                        Half
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 text-xs"
+                                        onClick={() => setAssignQuantity(getMaxAssignable())}
+                                    >
+                                        Max
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Bonus Preview */}
+                            <div className="bg-primary/10 p-3 rounded-lg">
+                                <p className="text-xs text-muted-foreground mb-1">Combat Bonus from this item:</p>
+                                {selectedItem.category === 'weapon' ? (
+                                    <p className="font-cinzel font-bold text-red-400">
+                                        +{(selectedItem.attack_bonus * assignQuantity).toLocaleString()} Attack
+                                    </p>
+                                ) : (
+                                    <p className="font-cinzel font-bold text-blue-400">
+                                        +{(selectedItem.defense_bonus * assignQuantity).toLocaleString()} Defense
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isAssigning}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleAssign}
+                            className="btn-gold"
+                            disabled={isAssigning}
+                        >
+                            {isAssigning ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </MainLayout>
     );
 };
