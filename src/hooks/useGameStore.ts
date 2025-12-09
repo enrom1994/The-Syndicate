@@ -856,27 +856,27 @@ export const useGameStore = create<GameState>((set, get) => ({
         const item = inventory.find(i => i.id === inventoryId);
         if (!item) return false;
 
-        const sellAmount = item.sell_price * quantity;
-
-        // Credit the cash
-        await supabase.rpc('increment_cash', {
+        // Use the new sell_item RPC
+        const { data, error } = await supabase.rpc('sell_item', {
             player_id_input: playerId,
-            amount: sellAmount,
-            source: 'item_sale',
+            item_id_input: item.item_id,
+            quantity_input: quantity,
         });
 
-        // Update or delete inventory item
-        if (quantity >= item.quantity) {
-            await supabase.from('player_inventory').delete().eq('id', inventoryId);
-        } else {
-            await supabase
-                .from('player_inventory')
-                .update({ quantity: item.quantity - quantity })
-                .eq('id', inventoryId);
+        if (error) {
+            console.error('Failed to sell item:', error);
+            return false;
         }
 
-        await loadInventory();
-        return true;
+        const result = data as { success: boolean; message: string; cash_received?: number };
+
+        if (result.success) {
+            await loadInventory();
+            return true;
+        } else {
+            console.error('Sell item failed:', result.message);
+            return false;
+        }
     },
 
     // Safe storage actions

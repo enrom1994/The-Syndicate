@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Package, Sword, Shield, Users, FlaskConical, Loader2, Lock, Unlock, Gavel, Plus, Minus } from 'lucide-react';
+import { Package, Sword, Shield, Users, FlaskConical, Loader2, Lock, Unlock, Gavel, Plus, Minus, DollarSign } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/MainLayout';
@@ -149,6 +149,18 @@ const InventoryItemComponent = ({
                         >
                             <Lock className="w-3 h-3" />
                         </Button>
+                        {onSell && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-1.5 text-xs text-green-500 hover:text-green-400"
+                                onClick={onSell}
+                                disabled={isProcessing || item.assigned_quantity > 0}
+                                title={item.assigned_quantity > 0 ? 'Unassign first' : 'Sell for cash'}
+                            >
+                                <DollarSign className="w-3 h-3" />
+                            </Button>
+                        )}
                     </div>
                 )}
             </div>
@@ -200,7 +212,7 @@ const InventoryPage = () => {
         isLoadingInventory,
         loadInventory,
         assignEquipment,
-        sellItem,
+        sellItem: sellItem_action,
         moveToSafe,
         moveFromSafe,
         getAssignmentLimits,
@@ -215,6 +227,12 @@ const InventoryPage = () => {
     const [assignQuantity, setAssignQuantity] = useState(0);
     const [limits, setLimits] = useState<AssignmentLimits | null>(null);
     const [isAssigning, setIsAssigning] = useState(false);
+
+    // Sell dialog state
+    const [sellDialogOpen, setSellDialogOpen] = useState(false);
+    const [sellItem, setSellItem] = useState<InventoryItemType | null>(null);
+    const [sellQuantity, setSellQuantity] = useState(1);
+    const [isSelling, setIsSelling] = useState(false);
 
     // Load assignment limits on mount
     useEffect(() => {
@@ -287,8 +305,48 @@ const InventoryPage = () => {
         }
     };
 
-    const handleSell = (item: InventoryItemType) => {
+    const handleSellContraband = (item: InventoryItemType) => {
         navigate('/auction');
+    };
+
+    const openSellDialog = (item: InventoryItemType) => {
+        setSellItem(item);
+        setSellQuantity(1);
+        setSellDialogOpen(true);
+    };
+
+    const handleSellItem = async () => {
+        if (!sellItem) return;
+
+        setIsSelling(true);
+        try {
+            const success = await sellItem_action(sellItem.id, sellQuantity);
+            if (success) {
+                const sellPrice = sellItem.sell_price > 0 ? sellItem.sell_price : Math.floor((sellItem.attack_bonus + sellItem.defense_bonus) * 100);
+                toast({
+                    title: 'Item Sold!',
+                    description: `Sold ${sellQuantity}x ${sellItem.name} for $${(sellPrice * sellQuantity).toLocaleString()}`,
+                });
+                await refetchPlayer();
+            } else {
+                toast({
+                    title: 'Failed',
+                    description: 'Could not sell item',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Sell error:', error);
+            toast({
+                title: 'Error',
+                description: 'An unexpected error occurred.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsSelling(false);
+            setSellDialogOpen(false);
+            setSellItem(null);
+        }
     };
 
     const handleMoveToSafe = async (item: InventoryItemType) => {
@@ -469,6 +527,7 @@ const InventoryPage = () => {
                                             onAssign={() => openAssignDialog(item)}
                                             onMoveToSafe={() => handleMoveToSafe(item)}
                                             onMoveFromSafe={() => handleMoveFromSafe(item)}
+                                            onSell={() => openSellDialog(item)}
                                         />
                                     ))
                                 )}
@@ -487,6 +546,7 @@ const InventoryPage = () => {
                                             onAssign={() => openAssignDialog(item)}
                                             onMoveToSafe={() => handleMoveToSafe(item)}
                                             onMoveFromSafe={() => handleMoveFromSafe(item)}
+                                            onSell={() => openSellDialog(item)}
                                         />
                                     ))
                                 )}
@@ -505,7 +565,7 @@ const InventoryPage = () => {
                                             onAssign={() => { }}
                                             onMoveToSafe={() => handleMoveToSafe(item)}
                                             onMoveFromSafe={() => handleMoveFromSafe(item)}
-                                            onSell={() => handleSell(item)}
+                                            onSell={() => handleSellContraband(item)}
                                         />
                                     ))
                                 )}
@@ -654,6 +714,118 @@ const InventoryPage = () => {
                             disabled={isAssigning}
                         >
                             {isAssigning ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Confirm'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Sell Dialog */}
+            <AlertDialog open={sellDialogOpen} onOpenChange={setSellDialogOpen}>
+                <AlertDialogContent className="noir-card border-border/50 max-w-sm">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-cinzel text-foreground">
+                            Sell {sellItem?.name}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Sell this item for 50% of its purchase value.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    {sellItem && (
+                        <div className="py-4 space-y-4">
+                            <div className="bg-muted/20 p-3 rounded-lg space-y-2">
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-muted-foreground">Item</span>
+                                    <span className="text-foreground font-bold">{sellItem.name}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-muted-foreground">Owned</span>
+                                    <span className="text-foreground font-bold">{sellItem.quantity}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-muted-foreground">Sell Quantity</span>
+                                    <span className="text-primary font-bold">{sellQuantity}</span>
+                                </div>
+                                <div className="flex justify-between text-xs border-t border-muted/30 pt-2">
+                                    <span className="text-muted-foreground">You'll Receive</span>
+                                    <span className="text-green-400 font-bold">
+                                        ${((sellItem.sell_price > 0 ? sellItem.sell_price : Math.floor((sellItem.attack_bonus + sellItem.defense_bonus) * 100)) * sellQuantity).toLocaleString()}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Quantity Selector */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">Quantity:</span>
+                                    <span className="font-cinzel font-bold text-lg text-primary">{sellQuantity}</span>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setSellQuantity(Math.max(1, sellQuantity - 1))}
+                                        disabled={sellQuantity <= 1}
+                                    >
+                                        <Minus className="w-3 h-3" />
+                                    </Button>
+                                    <Slider
+                                        value={[sellQuantity]}
+                                        onValueChange={(v) => setSellQuantity(v[0])}
+                                        max={sellItem.quantity - sellItem.assigned_quantity}
+                                        min={1}
+                                        step={1}
+                                        className="flex-1"
+                                    />
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setSellQuantity(Math.min(sellItem.quantity - sellItem.assigned_quantity, sellQuantity + 1))}
+                                        disabled={sellQuantity >= sellItem.quantity - sellItem.assigned_quantity}
+                                    >
+                                        <Plus className="w-3 h-3" />
+                                    </Button>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 text-xs"
+                                        onClick={() => setSellQuantity(1)}
+                                    >
+                                        1
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 text-xs"
+                                        onClick={() => setSellQuantity(Math.floor((sellItem.quantity - sellItem.assigned_quantity) / 2) || 1)}
+                                    >
+                                        Half
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 text-xs"
+                                        onClick={() => setSellQuantity(sellItem.quantity - sellItem.assigned_quantity)}
+                                    >
+                                        All
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isSelling}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleSellItem}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            disabled={isSelling || !sellItem}
+                        >
+                            {isSelling ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sell'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
