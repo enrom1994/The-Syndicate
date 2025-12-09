@@ -22,7 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, JobDefinition } from '@/hooks/useGameStore';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
-import { rewardCash } from '@/components/RewardAnimation';
+import { rewardCash, rewardXp } from '@/components/RewardAnimation';
 
 // =====================================================
 // INTERFACES
@@ -289,21 +289,27 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute }: {
                 <h3 className="font-cinzel font-semibold text-sm text-foreground">{job.name}</h3>
                 <p className="text-xs text-muted-foreground">{job.description}</p>
             </div>
-            <div className="flex items-center gap-1 text-xs text-primary font-semibold">
+        </div>
+
+        {/* Rewards Display */}
+        <div className="flex items-center gap-4 mt-2 mb-3">
+            <div className="flex items-center gap-1 text-sm">
                 <GameIcon type="cash" className="w-4 h-4" />
-                ${job.cash_reward.toLocaleString()}
+                <span className="font-bold text-green-400">${job.cash_reward.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center gap-1 text-sm">
+                <img src="/images/icons/xp.png" alt="XP" className="w-4 h-4" />
+                <span className="font-bold text-cyan-400">+{job.experience_reward} XP</span>
             </div>
         </div>
 
-        <div className="flex items-center gap-3 mt-2">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Zap className="w-3 h-3 text-yellow-500" />
-                -{job.energy_cost} Energy
-            </div>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+            <Zap className="w-3 h-3 text-yellow-500" />
+            -{job.energy_cost} Energy
         </div>
 
         <Button
-            className="w-full mt-3 btn-gold text-xs"
+            className="w-full btn-gold text-xs"
             onClick={onExecute}
             disabled={isProcessing}
         >
@@ -528,7 +534,17 @@ const OpsPage = () => {
             const result = await completeJob(job.id);
             if (result.success) {
                 haptic.success();
-                if (result.cash_earned) rewardCash(result.cash_earned);
+
+                // Show cash animation
+                if (result.cash_earned) {
+                    rewardCash(result.cash_earned);
+                }
+
+                // Show XP animation (staggered)
+                if (result.xp_earned) {
+                    setTimeout(() => rewardXp(result.xp_earned!), 400);
+                }
+
                 toast({
                     title: result.leveled_up ? 'LEVEL UP! 🎉' : 'Job Completed!',
                     description: result.leveled_up
