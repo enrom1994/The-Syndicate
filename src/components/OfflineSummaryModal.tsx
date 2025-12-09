@@ -95,6 +95,11 @@ export const OfflineSummaryModal = ({ isOpen, onClose, earnings }: OfflineSummar
                                     {netEarnings >= 0 ? '+' : ''}{formatCash(netEarnings)}
                                 </span>
                             </div>
+                            {earnings.businessIncome > 0 && (
+                                <p className="text-xs text-amber-500/80 mt-2 text-center">
+                                    ⚠️ Visit your Businesses to collect earnings
+                                </p>
+                            )}
                         </div>
 
                         <Button className="w-full btn-gold" onClick={onClose}>
