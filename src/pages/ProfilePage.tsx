@@ -165,14 +165,15 @@ const ProfilePage = () => {
     const username = user?.username ? `@${user.username}` : '';
     const fullName = `${firstName} ${lastName}`.trim();
 
-    // Level badge
+    // Level badge (synced with RankBadge component)
     const getLevelTitle = (lvl: number) => {
-        if (lvl >= 50) return { title: 'Godfather', color: 'text-primary' };
-        if (lvl >= 40) return { title: 'Don', color: 'text-purple-400' };
-        if (lvl >= 30) return { title: 'Boss', color: 'text-blue-400' };
-        if (lvl >= 20) return { title: 'Capo', color: 'text-green-400' };
-        if (lvl >= 10) return { title: 'Made Man', color: 'text-yellow-400' };
-        return { title: 'Associate', color: 'text-muted-foreground' };
+        if (lvl >= 100) return { title: 'Godfather', color: 'text-purple-400' };
+        if (lvl >= 75) return { title: 'Boss', color: 'text-primary' };
+        if (lvl >= 50) return { title: 'Underboss', color: 'text-slate-300' };
+        if (lvl >= 30) return { title: 'Caporegime', color: 'text-blue-400' };
+        if (lvl >= 15) return { title: 'Soldier', color: 'text-slate-400' };
+        if (lvl >= 5) return { title: 'Enforcer', color: 'text-amber-600' };
+        return { title: 'Street Thug', color: 'text-zinc-400' };
     };
 
     const levelInfo = getLevelTitle(level);

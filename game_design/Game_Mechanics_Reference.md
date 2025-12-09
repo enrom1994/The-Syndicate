@@ -406,17 +406,7 @@ Net Worth = Cash + Banked Cash + Σ(business_base_cost × business_level)
 
 ## 15. Rank Titles
 
-### ProfilePage Ranks (by Level)
-| Level Range | Title |
-|-------------|-------|
-| 1-9 | Associate |
-| 10-19 | Made Man |
-| 20-29 | Capo |
-| 30-39 | Boss |
-| 40-49 | Don |
-| 50+ | Godfather |
-
-### RankBadge Component Ranks (by Level)
+### Unified Rank System (by Level)
 | Level Range | Rank |
 |-------------|------|
 | 1-4 | Street Thug |
@@ -427,7 +417,7 @@ Net Worth = Cash + Banked Cash + Σ(business_base_cost × business_level)
 | 75-99 | Boss |
 | 100+ | Godfather |
 
-> ⚠️ **Note:** There's a mismatch between ProfilePage and RankBadge title systems. Recommend unifying.
+> All rank displays (HomePage, ProfilePage, RankBadge) now use this unified system.
 
 ---
 

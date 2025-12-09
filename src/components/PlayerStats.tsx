@@ -71,14 +71,15 @@ const formatCash = (value: number): string => {
   return `$${value.toLocaleString()}`;
 };
 
-// Get rank title based on level (synced with ProfilePage)
+// Get rank title based on level (synced with RankBadge component)
 const getRankTitle = (level: number): string => {
-  if (level >= 50) return 'Godfather';
-  if (level >= 40) return 'Don';
-  if (level >= 30) return 'Boss';
-  if (level >= 20) return 'Capo';
-  if (level >= 10) return 'Made Man';
-  return 'Associate';
+  if (level >= 100) return 'Godfather';
+  if (level >= 75) return 'Boss';
+  if (level >= 50) return 'Underboss';
+  if (level >= 30) return 'Caporegime';
+  if (level >= 15) return 'Soldier';
+  if (level >= 5) return 'Enforcer';
+  return 'Street Thug';
 };
 
 export const PlayerStats = () => {
