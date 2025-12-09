@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Lock, ArrowDownToLine, ArrowUpFromLine, Shield, Clock, Wallet, Loader2, Package, LockKeyhole, Unlock } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useTonConnectUI } from '@tonconnect/ui-react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,10 +20,12 @@ import { useToast } from '@/hooks/use-toast';
 import { GameIcon } from '@/components/GameIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, InventoryItem, SafePackage } from '@/hooks/useGameStore';
+import { TON_RECEIVING_ADDRESS, toNanoTon } from '@/lib/ton-config';
 
 const BankPage = () => {
     const { toast } = useToast();
     const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
+    const [tonConnectUI] = useTonConnectUI();
     const { deposit, withdraw, getSafeInfo, getSafePackages, purchaseSafeSlots, inventory, moveFromSafe, loadInventory } = useGameStore();
     const [safeInfo, setSafeInfo] = useState<{ total_slots: number; used_slots: number; available_slots: number } | null>(null);
 
@@ -194,8 +197,28 @@ const BankPage = () => {
     };
 
     const handlePurchasePackage = async (pkg: SafePackage) => {
+        // Check if wallet is connected
+        if (!tonConnectUI.wallet) {
+            tonConnectUI.openModal();
+            return;
+        }
+
         setIsPurchasing(true);
         try {
+            // Send TON transaction for payment
+            const transaction = {
+                validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutes
+                messages: [
+                    {
+                        address: TON_RECEIVING_ADDRESS,
+                        amount: toNanoTon(pkg.price_ton).toString(),
+                    }
+                ]
+            };
+
+            await tonConnectUI.sendTransaction(transaction);
+
+            // After successful payment, record the purchase in database
             const result = await purchaseSafeSlots(pkg.id);
             if (result.success) {
                 toast({
@@ -222,8 +245,8 @@ const BankPage = () => {
         } catch (error) {
             console.error('Purchase error:', error);
             toast({
-                title: 'Error',
-                description: 'An unexpected error occurred.',
+                title: 'Transaction Cancelled',
+                description: 'The transaction was cancelled or failed.',
                 variant: 'destructive',
             });
         } finally {
@@ -610,8 +633,8 @@ const BankPage = () => {
                                     onClick={() => handlePurchasePackage(pkg)}
                                     disabled={isPurchasing}
                                     className={`w-full p-3 rounded-lg border transition-all text-left ${pkg.id === 'gold' || pkg.id === 'platinum'
-                                            ? 'border-primary/50 bg-primary/10 hover:bg-primary/20'
-                                            : 'border-border/50 bg-muted/20 hover:bg-muted/40'
+                                        ? 'border-primary/50 bg-primary/10 hover:bg-primary/20'
+                                        : 'border-border/50 bg-muted/20 hover:bg-muted/40'
                                         } ${isPurchasing ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
                                     <div className="flex items-center justify-between">
@@ -623,7 +646,7 @@ const BankPage = () => {
                                         </div>
                                         <div className="text-right">
                                             <p className="font-cinzel font-bold text-primary flex items-center gap-1">
-                                                <img src="/images/icons/ton.png" alt="TON" className="w-4 h-4"
+                                                <img src="/images/icons/ton_symbol.png" alt="TON" className="w-4 h-4"
                                                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                                                 />
                                                 {pkg.price_ton} TON
