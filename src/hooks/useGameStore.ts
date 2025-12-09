@@ -210,7 +210,7 @@ interface GameState {
     getEquipmentLimits: () => { weaponSlots: number; equipmentSlots: number; equippedWeapons: number; equippedEquipment: number };
 
     // Crew actions
-    hireCrew: (crewId: string, quantity?: number) => Promise<boolean>;
+    hireCrew: (crewId: string, quantity?: number) => Promise<{ success: boolean; message: string; quantity?: number }>;
 
     // Achievement actions
     claimAchievement: (playerAchievementId: string) => Promise<boolean>;
@@ -918,7 +918,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Crew actions
     hireCrew: async (crewId, quantity = 1) => {
         const { playerId, loadCrew } = get();
-        if (!playerId) return false;
+        if (!playerId) return { success: false, message: 'Not logged in' };
 
         const { data, error } = await supabase.rpc('hire_crew', {
             player_id_input: playerId,
@@ -928,18 +928,16 @@ export const useGameStore = create<GameState>((set, get) => ({
 
         if (error) {
             console.error('Failed to hire crew:', error);
-            return false;
+            return { success: false, message: error.message };
         }
 
         const result = data as { success: boolean; message: string; quantity?: number };
 
         if (result.success) {
             await loadCrew();
-            return true;
-        } else {
-            console.error('Hire crew failed:', result.message);
-            return false;
         }
+
+        return result;
     },
 
     // Achievement actions using RPC

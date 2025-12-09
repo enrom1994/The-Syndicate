@@ -13,7 +13,8 @@ import { useGameStore } from '@/hooks/useGameStore';
 const BankPage = () => {
     const { toast } = useToast();
     const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
-    const { deposit, withdraw } = useGameStore();
+    const { deposit, withdraw, getEquipmentLimits } = useGameStore();
+    const { weaponSlots, equipmentSlots, equippedWeapons, equippedEquipment } = getEquipmentLimits();
 
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [pendingAction, setPendingAction] = useState<{ type: 'deposit' | 'withdraw'; amount: number } | null>(null);
@@ -128,9 +129,11 @@ const BankPage = () => {
                     transition={{ duration: 0.5 }}
                     className="flex items-center gap-3 mb-6"
                 >
-                    <div className="w-10 h-10 rounded-sm bg-gradient-gold flex items-center justify-center">
-                        <Landmark className="w-5 h-5 text-primary-foreground" />
-                    </div>
+                    <img
+                        src="/images/icons/thevault.png"
+                        alt="The Vault"
+                        className="w-12 h-12 object-contain"
+                    />
                     <div>
                         <h1 className="font-cinzel text-xl font-bold text-foreground">The Vault</h1>
                         <p className="text-xs text-muted-foreground">Protect your cash from rival attacks</p>
@@ -256,6 +259,38 @@ const BankPage = () => {
                         <Button variant="destructive" className="text-xs" onClick={handleWithdraw} disabled={isProcessing || !withdrawAmount}>
                             {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Withdraw'}
                         </Button>
+                    </div>
+                </motion.div>
+
+                {/* Equipment Slots Display */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                    className="noir-card p-4 mt-6"
+                >
+                    <h3 className="font-cinzel font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-primary" />
+                        Equipment Capacity
+                    </h3>
+                    <p className="text-xs text-muted-foreground mb-3">
+                        Equip gear based on your hired crew. Hire more crew to unlock slots.
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-muted/30 rounded-sm p-3">
+                            <p className="text-xs text-muted-foreground mb-1">Weapons</p>
+                            <p className="font-cinzel font-bold text-lg text-red-400">
+                                {equippedWeapons}/{weaponSlots}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mt-1">Hitmen + Enforcers</p>
+                        </div>
+                        <div className="bg-muted/30 rounded-sm p-3">
+                            <p className="text-xs text-muted-foreground mb-1">Equipment</p>
+                            <p className="font-cinzel font-bold text-lg text-blue-400">
+                                {equippedEquipment}/{equipmentSlots}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mt-1">Bodyguards</p>
+                        </div>
                     </div>
                 </motion.div>
             </div>

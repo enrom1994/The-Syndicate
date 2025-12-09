@@ -185,17 +185,17 @@ const HirePage = () => {
         setConfirmOpen(false);
 
         try {
-            const success = await hireCrew(pendingHire.id, quantity);
-            if (success) {
+            const result = await hireCrew(pendingHire.id, quantity);
+            if (result.success) {
                 toast({
                     title: 'Crew Hired!',
-                    description: `${quantity}x ${pendingHire.name} joined your crew.`,
+                    description: result.message || `${quantity}x ${pendingHire.name} joined your crew.`,
                 });
                 await refetchPlayer();
             } else {
                 toast({
-                    title: 'Insufficient Funds',
-                    description: `You don't have enough cash to hire ${pendingHire.name}.`,
+                    title: 'Hire Failed',
+                    description: result.message || 'Unable to hire crew.',
                     variant: 'destructive',
                 });
             }
