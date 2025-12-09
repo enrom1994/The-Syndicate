@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { Package, Sword, Shield, Users, FlaskConical, Check, X, Loader2, Lock, Unlock } from 'lucide-react';
+import { Package, Sword, Shield, Users, FlaskConical, Check, X, Loader2, Lock, Unlock, Gavel } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -100,9 +101,9 @@ const InventoryItemComponent = ({
                     <Button
                         className="btn-gold h-8 px-2 text-xs"
                         onClick={onSell}
-                        disabled={isProcessing}
                     >
-                        {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Sell'}
+                        <Gavel className="w-3 h-3 mr-1" />
+                        Auction
                     </Button>
                 ) : location === 'safe' ? (
                     <Button
@@ -199,6 +200,7 @@ const CrewMember = ({ name, type, quantity, attackBonus, defenseBonus, delay = 0
 
 const InventoryPage = () => {
     const { toast } = useToast();
+    const navigate = useNavigate();
     const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
     const {
         inventory,
@@ -311,26 +313,9 @@ const InventoryPage = () => {
         }
     };
 
-    const handleSell = async (item: InventoryItemType) => {
-        setProcessingItemId(item.id);
-        try {
-            const success = await sellItem(item.id, 1);
-            if (success) {
-                toast({
-                    title: 'Item Sold!',
-                    description: `You earned $${item.sell_price.toLocaleString()} from selling ${item.name}.`,
-                });
-                await refetchPlayer();
-            } else {
-                toast({
-                    title: 'Error',
-                    description: 'Failed to sell item.',
-                    variant: 'destructive',
-                });
-            }
-        } finally {
-            setProcessingItemId(null);
-        }
+    const handleSell = (item: InventoryItemType) => {
+        // Navigate to auction house to sell contraband
+        navigate('/auction');
     };
 
     const handleMoveToSafe = async (item: InventoryItemType) => {

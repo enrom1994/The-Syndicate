@@ -789,7 +789,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
         const { error } = await supabase
             .from('player_inventory')
-            .update({ is_equipped: true })
+            .update({ is_equipped: true, location: 'equipped' })
             .eq('id', inventoryId);
 
         if (error) {
@@ -806,7 +806,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
         const { error } = await supabase
             .from('player_inventory')
-            .update({ is_equipped: false })
+            .update({ is_equipped: false, location: 'inventory' })
             .eq('id', inventoryId);
 
         if (error) {
