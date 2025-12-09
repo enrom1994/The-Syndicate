@@ -101,29 +101,26 @@ BEGIN
             -- Found our prize! Apply reward
             IF prize.prize_type = 'cash' THEN
                 UPDATE players SET cash = cash + prize.amount WHERE id = target_player_id;
+                INSERT INTO transactions (player_id, transaction_type, currency, amount, description)
+                VALUES (target_player_id, 'lucky_wheel', 'cash', prize.amount, 'Lucky Wheel: ' || prize.name);
             ELSIF prize.prize_type = 'diamonds' THEN
                 UPDATE players SET diamonds = diamonds + prize.amount WHERE id = target_player_id;
+                INSERT INTO transactions (player_id, transaction_type, currency, amount, description)
+                VALUES (target_player_id, 'lucky_wheel', 'diamonds', prize.amount, 'Lucky Wheel: ' || prize.name);
             ELSIF prize.prize_type = 'energy' THEN
                 UPDATE players SET energy = LEAST(max_energy, energy + prize.amount) WHERE id = target_player_id;
+                -- Energy not logged to transactions
             ELSIF prize.prize_type = 'stamina' THEN
                 UPDATE players SET stamina = LEAST(max_stamina, stamina + prize.amount) WHERE id = target_player_id;
+                -- Stamina not logged to transactions
             ELSIF prize.prize_type = 'respect' THEN
                 UPDATE players SET respect = respect + prize.amount WHERE id = target_player_id;
+                -- Respect not logged to transactions
             ELSIF prize.prize_type = 'xp' THEN
                 UPDATE players SET xp = xp + prize.amount WHERE id = target_player_id;
                 -- Check for level up
                 PERFORM check_level_up(target_player_id);
-            END IF;
-            
-            -- Log transaction (use 'other' for non-currency types)
-            IF prize.prize_type != 'nothing' THEN
-                IF prize.prize_type IN ('cash', 'diamonds') THEN
-                    INSERT INTO transactions (player_id, transaction_type, currency, amount, description)
-                    VALUES (target_player_id, 'lucky_wheel', prize.prize_type, prize.amount, 'Lucky Wheel: ' || prize.name);
-                ELSE
-                    INSERT INTO transactions (player_id, transaction_type, currency, amount, description)
-                    VALUES (target_player_id, 'lucky_wheel', 'other', prize.amount, 'Lucky Wheel: ' || prize.name);
-                END IF;
+                -- XP not logged to transactions
             END IF;
             
             RETURN jsonb_build_object(
