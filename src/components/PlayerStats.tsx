@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, Swords, Shield, Users, TrendingUp } from 'lucide-react';
+import { Swords, Shield, Users, TrendingUp } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { EnergyBar } from './SeasonBanner';
 import { GameIcon } from './GameIcon';
@@ -22,9 +22,9 @@ const StatCard = ({ icon, label, value, change, delay = 0 }: StatCardProps) => (
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.5, delay }}
-    className="noir-card p-2.5 flex items-center gap-2"
+    className="noir-card p-2.5 flex items-center gap-3"
   >
-    <div className="w-7 h-7 rounded-sm bg-primary/10 flex items-center justify-center shrink-0">
+    <div className="shrink-0 flex items-center justify-center">
       {icon}
     </div>
     <div className="flex-1 min-w-0">
@@ -206,25 +206,25 @@ export const PlayerStats = () => {
 
       <div className="grid grid-cols-2 gap-2">
         <StatCard
-          icon={<img src="/images/icons/cash.png" alt="Cash" className="w-8 h-8 object-contain" />}
+          icon={<img src="/images/icons/cash.png" alt="Cash" className="w-10 h-10 object-contain" />}
           label="Cash"
           value={formatCash(player?.cash ?? 0)}
           delay={0.25}
         />
         <StatCard
-          icon={<img src="/images/icons/diamond.png" alt="Diamonds" className="w-8 h-8 object-contain" />}
+          icon={<img src="/images/icons/diamond.png" alt="Diamonds" className="w-10 h-10 object-contain" />}
           label="Diamonds"
           value={player?.diamonds ?? 0}
           delay={0.3}
         />
         <StatCard
-          icon={<img src="/images/icons/moneybag.png" alt="Net Worth" className="w-6 h-6 object-contain" />}
+          icon={<img src="/images/icons/moneybag.png" alt="Net Worth" className="w-10 h-10 object-contain" />}
           label="Net Worth"
           value={formatCash(netWorth)}
           delay={0.35}
         />
         <StatCard
-          icon={<Crown className="w-4 h-4 text-primary" />}
+          icon={<img src="/images/icons/respect.png" alt="Rank" className="w-10 h-10 object-contain" />}
           label="Rank"
           value={getRankTitle(level)}
           delay={0.4}
