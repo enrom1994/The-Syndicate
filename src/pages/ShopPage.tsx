@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { Store, Zap, Shield, TrendingUp, Clock, Crown, Loader2, Bot } from 'lucide-react';
-import { useState } from 'react';
+import { Store, Zap, Shield, TrendingUp, Clock, Crown, Loader2, Bot, Timer } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -129,7 +129,31 @@ const ShopPage = () => {
         protectionMinutes?: number;
     } | null>(null);
     const [processingId, setProcessingId] = useState<string | null>(null);
-    const [hasAutoCollect, setHasAutoCollect] = useState(player?.auto_collect_businesses ?? false);
+    const [vipStatus, setVipStatus] = useState<{
+        isActive: boolean;
+        expiresAt: string | null;
+        daysRemaining: number;
+        hoursRemaining: number;
+    }>({ isActive: false, expiresAt: null, daysRemaining: 0, hoursRemaining: 0 });
+
+    // Fetch VIP status on mount and after purchases
+    useEffect(() => {
+        const fetchVipStatus = async () => {
+            if (!player?.id) return;
+            const { data, error } = await supabase.rpc('get_vip_status', {
+                target_player_id: player.id
+            });
+            if (!error && data) {
+                setVipStatus({
+                    isActive: data.is_active,
+                    expiresAt: data.expires_at,
+                    daysRemaining: data.days_remaining || 0,
+                    hoursRemaining: data.hours_remaining || 0,
+                });
+            }
+        };
+        fetchVipStatus();
+    }, [player?.id]);
 
     const diamondPackages = [
         { name: 'Small', price: '1 TON', tonAmount: 1, diamonds: 120 },
@@ -199,16 +223,10 @@ const ShopPage = () => {
             tonConnectUI.openModal();
             return;
         }
-        if (hasAutoCollect) {
-            toast({
-                title: 'Already Owned',
-                description: 'You already have Auto-Collector enabled!',
-            });
-            return;
-        }
+        // Allow purchase/extend (no more "already owned" block)
         setPendingPurchase({
             type: 'auto_collect' as any,
-            name: 'Business Auto-Collector',
+            name: vipStatus.isActive ? 'Extend VIP Pass (+7 days)' : 'VIP Pass (7-day Auto-Collector)',
             price: '5 TON',
             tonAmount: 5,
         });
@@ -329,12 +347,23 @@ const ShopPage = () => {
                 if (!data?.success) throw new Error(data?.message || 'Failed to activate');
 
                 haptic.success();
-                setHasAutoCollect(true);
+                // Refetch VIP status to update UI
+                const { data: vipData } = await supabase.rpc('get_vip_status', {
+                    target_player_id: player.id
+                });
+                if (vipData) {
+                    setVipStatus({
+                        isActive: vipData.is_active,
+                        expiresAt: vipData.expires_at,
+                        daysRemaining: vipData.days_remaining || 0,
+                        hoursRemaining: vipData.hours_remaining || 0,
+                    });
+                }
                 await refetchPlayer();
 
                 toast({
-                    title: 'Auto-Collector Activated! 🤖',
-                    description: 'Your businesses will now auto-collect income!',
+                    title: 'VIP Pass Activated! 👑',
+                    description: `Auto-collect is now active for ${vipData?.days_remaining || 7} days!`,
                 });
             }
         } catch (error) {
@@ -474,29 +503,36 @@ const ShopPage = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5 }}
-                            className={`noir-card p-4 ${hasAutoCollect ? 'opacity-60' : 'ring-2 ring-primary'}`}
+                            className={`noir-card p-4 ${vipStatus.isActive ? 'ring-2 ring-green-500' : 'ring-2 ring-primary'}`}
                         >
                             <div className="flex items-start gap-3">
-                                <div className="w-12 h-12 rounded-sm bg-gradient-to-br from-green-600 to-emerald-800 flex items-center justify-center shrink-0">
-                                    <Bot className="w-6 h-6 text-white" />
+                                <div className="w-12 h-12 rounded-sm bg-gradient-to-br from-amber-600 to-yellow-800 flex items-center justify-center shrink-0">
+                                    <Crown className="w-6 h-6 text-white" />
                                 </div>
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2">
-                                        <h3 className="font-cinzel font-bold text-sm text-foreground">Business Auto-Collector</h3>
-                                        <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded">PERMANENT</span>
+                                        <h3 className="font-cinzel font-bold text-sm text-foreground">VIP Pass</h3>
+                                        {vipStatus.isActive ? (
+                                            <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[10px] rounded flex items-center gap-1">
+                                                <Timer className="w-3 h-3" />
+                                                {vipStatus.daysRemaining}d {vipStatus.hoursRemaining}h left
+                                            </span>
+                                        ) : (
+                                            <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] rounded">7 DAYS</span>
+                                        )}
                                     </div>
                                     <p className="text-xs text-muted-foreground mt-1">
-                                        Automatically collects income from all your businesses every hour. Never miss out on earnings again!
+                                        Auto-collect income from all businesses every hour. Never miss earnings!
                                     </p>
                                     <ul className="mt-2 space-y-1">
                                         <li className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                            ✓ Auto-collect from all businesses
+                                            ✓ Hourly auto-collection from all businesses
                                         </li>
                                         <li className="text-[10px] text-muted-foreground flex items-center gap-1">
                                             ✓ Works 24/7, even offline
                                         </li>
                                         <li className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                            ✓ One-time purchase, forever yours
+                                            ✓ Stack duration with multiple purchases
                                         </li>
                                     </ul>
                                 </div>
@@ -504,20 +540,20 @@ const ShopPage = () => {
                             <Button
                                 className="w-full mt-4 btn-gold"
                                 onClick={handleBuyAutoCollect}
-                                disabled={hasAutoCollect || processingId === 'auto_collect'}
+                                disabled={processingId === 'auto_collect'}
                             >
-                                {hasAutoCollect ? (
-                                    '✓ Already Owned'
-                                ) : processingId === 'auto_collect' ? (
+                                {processingId === 'auto_collect' ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : vipStatus.isActive ? (
+                                    '5 TON - Extend +7 Days'
                                 ) : (
-                                    '5 TON - Buy Now'
+                                    '5 TON - Activate VIP'
                                 )}
                             </Button>
                         </motion.div>
 
                         <p className="text-xs text-muted-foreground text-center">
-                            Premium upgrades are permanent and never expire
+                            VIP duration stacks - buy again to extend your time!
                         </p>
                     </TabsContent>
                 </Tabs>
