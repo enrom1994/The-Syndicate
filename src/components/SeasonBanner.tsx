@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Calendar, Clock, Trophy, Zap } from 'lucide-react';
+import { Clock, Trophy } from 'lucide-react';
 import { GameIcon } from './GameIcon';
 
 interface SeasonBannerProps {
@@ -79,11 +79,11 @@ export const EnergyBar = ({ energy, maxEnergy, regenTime = '2m 30s' }: EnergyBar
         >
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-1.5">
-                    <Zap className="w-3.5 h-3.5 text-primary" />
+                    <img src="/images/icons/energy.png" alt="Energy" className="w-4 h-4 object-contain" />
                     <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Energy</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                    <span className="font-inter font-medium text-xs text-primary">{energy}/{maxEnergy}</span>
+                    <span className="font-inter font-medium text-xs text-orange-400">{energy}/{maxEnergy}</span>
                     {energy < maxEnergy && (
                         <span className="text-[10px] text-muted-foreground">+1 in {regenTime}</span>
                     )}
@@ -94,9 +94,10 @@ export const EnergyBar = ({ energy, maxEnergy, regenTime = '2m 30s' }: EnergyBar
                     initial={{ width: 0 }}
                     animate={{ width: `${energyPercent}%` }}
                     transition={{ duration: 1, delay: 0.8 }}
-                    className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full"
+                    className="h-full bg-gradient-to-r from-red-500 via-orange-500 to-orange-400 rounded-full"
                 />
             </div>
         </motion.div>
     );
 };
+

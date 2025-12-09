@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, Users, Shield, TrendingUp, DollarSign } from 'lucide-react';
+import { Crown, Swords, Shield, Users, TrendingUp } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { EnergyBar } from './SeasonBanner';
 import { GameIcon } from './GameIcon';
@@ -40,6 +40,29 @@ const StatCard = ({ icon, label, value, change, delay = 0 }: StatCardProps) => (
   </motion.div>
 );
 
+// Stat badge component (similar to rank number badge style)
+interface StatBadgeProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  delay?: number;
+}
+
+const StatBadge = ({ icon, label, value, delay = 0 }: StatBadgeProps) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.4, delay }}
+    className="stat-badge flex flex-col items-center justify-center py-2 px-3 bg-primary/10 rounded-md border border-primary/20"
+  >
+    <div className="w-5 h-5 mb-1 flex items-center justify-center">
+      {icon}
+    </div>
+    <span className="font-cinzel font-bold text-sm text-foreground">{value}</span>
+    <span className="text-[8px] text-muted-foreground uppercase tracking-wider">{label}</span>
+  </motion.div>
+);
+
 // Format large numbers in a readable way
 const formatCash = (value: number): string => {
   if (value >= 1000000000) return `$${(value / 1000000000).toFixed(1)}B`;
@@ -48,22 +71,20 @@ const formatCash = (value: number): string => {
   return `$${value.toLocaleString()}`;
 };
 
-// Get rank title based on level
+// Get rank title based on level (synced with ProfilePage)
 const getRankTitle = (level: number): string => {
-  if (level >= 50) return 'Don';
-  if (level >= 40) return 'Underboss';
-  if (level >= 30) return 'Consigliere';
-  if (level >= 25) return 'Caporegime';
-  if (level >= 15) return 'Soldier';
-  if (level >= 10) return 'Associate';
-  if (level >= 5) return 'Made Man';
-  return 'Street Runner';
+  if (level >= 50) return 'Godfather';
+  if (level >= 40) return 'Don';
+  if (level >= 30) return 'Boss';
+  if (level >= 20) return 'Capo';
+  if (level >= 10) return 'Made Man';
+  return 'Associate';
 };
 
 export const PlayerStats = () => {
   const navigate = useNavigate();
   const { player } = useAuth();
-  const { crew: hiredCrew, businesses } = useGameStore();
+  const { crew: hiredCrew, businesses, inventory } = useGameStore();
 
   // State for leaderboard rank
   const [playerRank, setPlayerRank] = useState<number | null>(null);
@@ -114,10 +135,21 @@ export const PlayerStats = () => {
   // Calculate total crew from hired crew
   const totalCrewCount = hiredCrew.reduce((sum, c) => sum + c.quantity, 0);
 
-  // Calculate defense from player stats + crew
+  // Calculate defense from player stats + crew + equipment
   const baseDefense = player?.defense ?? 10;
   const crewDefense = hiredCrew.reduce((sum, c) => sum + (c.defense_bonus * c.quantity), 0);
-  const totalDefense = baseDefense + crewDefense;
+  const equipmentDefense = inventory
+    .filter(i => i.category === 'equipment' && i.assigned_quantity > 0)
+    .reduce((sum, i) => sum + (i.defense_bonus * i.assigned_quantity), 0);
+  const totalDefense = baseDefense + crewDefense + equipmentDefense;
+
+  // Calculate attack from player stats + crew + weapons
+  const baseAttack = player?.strength ?? 10;
+  const crewAttack = hiredCrew.reduce((sum, c) => sum + (c.attack_bonus * c.quantity), 0);
+  const weaponAttack = inventory
+    .filter(i => i.category === 'weapon' && i.assigned_quantity > 0)
+    .reduce((sum, i) => sum + (i.attack_bonus * i.assigned_quantity), 0);
+  const totalAttack = baseAttack + crewAttack + weaponAttack;
 
   // Calculate XP progress
   const level = player?.level ?? 1;
@@ -145,42 +177,57 @@ export const PlayerStats = () => {
         </Link>
       </motion.div>
 
+      {/* Combat Stats Badges Row */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.05 }}
+        className="grid grid-cols-3 gap-2 mb-3"
+      >
+        <StatBadge
+          icon={<Swords className="w-4 h-4 text-red-400" />}
+          label="Attack"
+          value={totalAttack}
+          delay={0.1}
+        />
+        <StatBadge
+          icon={<Shield className="w-4 h-4 text-blue-400" />}
+          label="Defense"
+          value={totalDefense}
+          delay={0.15}
+        />
+        <StatBadge
+          icon={<Users className="w-4 h-4 text-primary" />}
+          label="Crew"
+          value={totalCrewCount}
+          delay={0.2}
+        />
+      </motion.div>
+
       <div className="grid grid-cols-2 gap-2">
         <StatCard
-          icon={<DollarSign className="w-4 h-4 text-green-500" />}
+          icon={<img src="/images/icons/cash.png" alt="Cash" className="w-8 h-8 object-contain" />}
+          label="Cash"
+          value={formatCash(player?.cash ?? 0)}
+          delay={0.25}
+        />
+        <StatCard
+          icon={<img src="/images/icons/diamond.png" alt="Diamonds" className="w-8 h-8 object-contain" />}
+          label="Diamonds"
+          value={player?.diamonds ?? 0}
+          delay={0.3}
+        />
+        <StatCard
+          icon={<img src="/images/icons/moneybag.png" alt="Net Worth" className="w-6 h-6 object-contain" />}
           label="Net Worth"
           value={formatCash(netWorth)}
-          delay={0.1}
+          delay={0.35}
         />
         <StatCard
           icon={<Crown className="w-4 h-4 text-primary" />}
           label="Rank"
           value={getRankTitle(level)}
-          delay={0.15}
-        />
-        <StatCard
-          icon={<GameIcon type="cash" className="w-4 h-4" />}
-          label="Cash"
-          value={formatCash(player?.cash ?? 0)}
-          delay={0.2}
-        />
-        <StatCard
-          icon={<Users className="w-4 h-4 text-primary" />}
-          label="Crew"
-          value={totalCrewCount}
-          delay={0.25}
-        />
-        <StatCard
-          icon={<Shield className="w-4 h-4 text-primary" />}
-          label="Defense"
-          value={totalDefense}
-          delay={0.3}
-        />
-        <StatCard
-          icon={<GameIcon type="diamond" className="w-4 h-4" />}
-          label="Diamonds"
-          value={player?.diamonds ?? 0}
-          delay={0.35}
+          delay={0.4}
         />
       </div>
 
@@ -192,7 +239,10 @@ export const PlayerStats = () => {
         className="mt-2 noir-card p-2.5"
       >
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Respect</span>
+          <div className="flex items-center gap-1.5">
+            <img src="/images/icons/respect.png" alt="Respect" className="w-4 h-4 object-contain" />
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Respect</span>
+          </div>
           <span className="font-inter font-medium text-xs text-primary">{(player?.respect ?? 0).toLocaleString()}</span>
         </div>
         <div className="h-1.5 rounded-full bg-muted overflow-hidden">
@@ -217,6 +267,7 @@ export const PlayerStats = () => {
       >
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-1.5">
+            <img src="/images/icons/xp.png" alt="XP" className="w-4 h-4 object-contain" />
             <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Level Progress</span>
             <span className="text-[10px] font-bold text-primary bg-primary/20 px-1 py-0.5 rounded">Lv.{level}</span>
           </div>

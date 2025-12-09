@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import heroBg from '@/assets/hero-bg.jpg';
 
 interface HeroProps {
   onEnter: () => void;
@@ -13,7 +12,7 @@ export const Hero = ({ onEnter }: HeroProps) => {
       {/* Background Image with Overlay */}
       <div className="absolute inset-0">
         <img
-          src={heroBg}
+          src="/images/backgrounds/welcome.png"
           alt="Speakeasy atmosphere"
           className="w-full h-full object-cover opacity-40"
         />
@@ -23,7 +22,7 @@ export const Hero = ({ onEnter }: HeroProps) => {
 
       {/* Art Deco Decorative Elements */}
       <div className="absolute top-20 left-1/2 -translate-x-1/2 w-px h-20 bg-gradient-to-b from-transparent via-primary/50 to-transparent" />
-      
+
       <div className="relative z-10 container px-6 text-center">
         <motion.div
           initial={{ opacity: 0 }}
@@ -58,7 +57,7 @@ export const Hero = ({ onEnter }: HeroProps) => {
           transition={{ duration: 0.8, delay: 0.5 }}
           className="font-inter text-muted-foreground text-base sm:text-lg max-w-md mx-auto mb-8 leading-relaxed"
         >
-          Enter the underground world of prohibition-era organized crime. 
+          Enter the underground world of prohibition-era organized crime.
           Build your empire. Lead your family. <span className="text-primary font-medium">Become The Boss.</span>
         </motion.p>
 
