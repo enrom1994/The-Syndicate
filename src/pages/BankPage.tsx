@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { Landmark, ArrowDownToLine, ArrowUpFromLine, Shield, Clock, Wallet, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { Lock, ArrowDownToLine, ArrowUpFromLine, Shield, Clock, Wallet, Loader2, Package } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,8 +13,8 @@ import { useGameStore } from '@/hooks/useGameStore';
 const BankPage = () => {
     const { toast } = useToast();
     const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
-    const { deposit, withdraw, getEquipmentLimits } = useGameStore();
-    const { weaponSlots, equipmentSlots, equippedWeapons, equippedEquipment } = getEquipmentLimits();
+    const { deposit, withdraw, getSafeInfo, inventory } = useGameStore();
+    const [safeInfo, setSafeInfo] = useState<{ total_slots: number; used_slots: number; available_slots: number } | null>(null);
 
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [pendingAction, setPendingAction] = useState<{ type: 'deposit' | 'withdraw'; amount: number } | null>(null);
@@ -27,6 +27,25 @@ const BankPage = () => {
     const bankedCash = player?.banked_cash ?? 0;
     const interestRate = 0.5; // 0.5% per day (could be stored in config table)
     const lastInterest = Math.floor(bankedCash * (interestRate / 100)); // Estimated daily interest
+
+    // Count items in safe
+    const itemsInSafe = inventory.filter(i => i.location === 'safe');
+    const totalSafeItems = itemsInSafe.reduce((sum, i) => sum + i.quantity, 0);
+
+    // Load safe info on mount
+    useEffect(() => {
+        const loadSafe = async () => {
+            const info = await getSafeInfo();
+            if (info) {
+                setSafeInfo({
+                    total_slots: info.total_slots,
+                    used_slots: itemsInSafe.length,
+                    available_slots: info.total_slots - itemsInSafe.length
+                });
+            }
+        };
+        loadSafe();
+    }, [getSafeInfo, itemsInSafe.length]);
 
     const handleDeposit = () => {
         const amount = parseInt(depositAmount) || 0;
@@ -262,7 +281,7 @@ const BankPage = () => {
                     </div>
                 </motion.div>
 
-                {/* Equipment Slots Display */}
+                {/* Safe Storage Slots */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -270,28 +289,35 @@ const BankPage = () => {
                     className="noir-card p-4 mt-6"
                 >
                     <h3 className="font-cinzel font-semibold text-sm text-foreground mb-3 flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-primary" />
-                        Equipment Capacity
+                        <Lock className="w-4 h-4 text-primary" />
+                        Safe Storage
                     </h3>
                     <p className="text-xs text-muted-foreground mb-3">
-                        Equip gear based on your hired crew. Hire more crew to unlock slots.
+                        Protect items from theft. Each slot holds up to 1,000 items.
                     </p>
                     <div className="grid grid-cols-2 gap-3">
                         <div className="bg-muted/30 rounded-sm p-3">
-                            <p className="text-xs text-muted-foreground mb-1">Weapons</p>
-                            <p className="font-cinzel font-bold text-lg text-red-400">
-                                {equippedWeapons}/{weaponSlots}
+                            <p className="text-xs text-muted-foreground mb-1">Slots Used</p>
+                            <p className="font-cinzel font-bold text-lg text-primary">
+                                {safeInfo?.used_slots ?? 0}/{safeInfo?.total_slots ?? 0}
                             </p>
-                            <p className="text-[10px] text-muted-foreground mt-1">Hitmen + Enforcers</p>
+                            <p className="text-[10px] text-muted-foreground mt-1">Purchase more with TON</p>
                         </div>
                         <div className="bg-muted/30 rounded-sm p-3">
-                            <p className="text-xs text-muted-foreground mb-1">Equipment</p>
-                            <p className="font-cinzel font-bold text-lg text-blue-400">
-                                {equippedEquipment}/{equipmentSlots}
+                            <p className="text-xs text-muted-foreground mb-1">Items Protected</p>
+                            <p className="font-cinzel font-bold text-lg text-green-400 flex items-center gap-1">
+                                <Package className="w-4 h-4" />
+                                {totalSafeItems.toLocaleString()}
                             </p>
-                            <p className="text-[10px] text-muted-foreground mt-1">Bodyguards</p>
+                            <p className="text-[10px] text-muted-foreground mt-1">Safe from theft</p>
                         </div>
                     </div>
+                    {(safeInfo?.total_slots ?? 0) === 0 && (
+                        <Button className="btn-gold w-full mt-4" size="sm">
+                            <Lock className="w-3 h-3 mr-1" />
+                            Purchase Vault Slots
+                        </Button>
+                    )}
                 </motion.div>
             </div>
 
