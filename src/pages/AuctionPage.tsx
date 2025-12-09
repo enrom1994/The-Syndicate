@@ -356,7 +356,7 @@ const AuctionPage = () => {
                                             </Button>
                                         </div>
                                     </motion.div>
-                                ))}
+                                ))
                             )}
                         </TabsContent>
 
