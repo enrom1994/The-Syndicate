@@ -220,16 +220,20 @@ const LuckyWheelPage = () => {
                                         backgroundColor: index % 2 === 0 ? 'rgba(212, 175, 55, 0.3)' : 'rgba(26, 20, 15, 0.8)',
                                     }}
                                 >
-                                    <span
-                                        className="absolute text-xs font-bold"
+                                    <div
+                                        className="absolute flex items-center justify-center"
                                         style={{
                                             transform: `skewY(-${skewAngle}deg) rotate(${180 / prizes.length}deg)`,
-                                            left: '50%',
-                                            top: '30%',
+                                            left: '40%',
+                                            top: '20%',
                                         }}
                                     >
-                                        {prize.icon}
-                                    </span>
+                                        <img
+                                            src={prize.icon}
+                                            alt={prize.name}
+                                            className="w-6 h-6 object-contain drop-shadow-lg"
+                                        />
+                                    </div>
                                 </div>
                             );
                         })}
@@ -249,7 +253,7 @@ const LuckyWheelPage = () => {
                             exit={{ opacity: 0 }}
                             className="noir-card p-4 mb-4 text-center"
                         >
-                            <p className="text-2xl mb-1">{spinResult.icon}</p>
+                            <img src={spinResult.icon} alt={spinResult.prize_name} className="w-12 h-12 object-contain mx-auto mb-1" />
                             <p className="font-cinzel font-bold text-lg" style={{ color: spinResult.color }}>
                                 {spinResult.prize_name}
                             </p>
@@ -301,7 +305,7 @@ const LuckyWheelPage = () => {
                     <div className="grid grid-cols-5 gap-2">
                         {prizes.map((prize) => (
                             <div key={prize.id} className="noir-card p-2 text-center">
-                                <p className="text-lg">{prize.icon}</p>
+                                <img src={prize.icon} alt={prize.name} className="w-8 h-8 object-contain mx-auto" />
                                 <p className="text-[10px] text-muted-foreground truncate">{prize.name}</p>
                             </div>
                         ))}

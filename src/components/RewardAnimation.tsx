@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Gift } from 'lucide-react';
+import { Gift } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { haptic } from '@/lib/haptics';
 import { GameIcon } from './GameIcon';
@@ -17,7 +17,7 @@ interface Particle {
 const rewardIcons: Record<RewardType, React.ReactNode> = {
     cash: <GameIcon type="cash" className="w-8 h-8" />,
     diamonds: <GameIcon type="diamond" className="w-12 h-12" />,
-    energy: <Zap className="w-6 h-6 text-yellow-400" />,
+    energy: <img src="/images/icons/energy.png" alt="Energy" className="w-6 h-6 object-contain" />,
     item: <Gift className="w-6 h-6 text-purple-400" />,
 };
 
