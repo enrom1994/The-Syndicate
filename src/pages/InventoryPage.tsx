@@ -21,6 +21,7 @@ interface InventoryItemProps {
     equipped?: boolean;
     location: 'inventory' | 'equipped' | 'safe';
     isProcessing?: boolean;
+    canEquip?: boolean; // Whether equipping is allowed (false if another item is equipped)
     delay?: number;
     onEquip?: () => void;
     onUnequip?: () => void;
@@ -44,7 +45,7 @@ const rarityBadgeColors = {
 };
 
 const InventoryItemComponent = ({
-    id, name, quantity, stat, rarity, category, iconUrl, equipped, location, isProcessing, delay = 0,
+    id, name, quantity, stat, rarity, category, iconUrl, equipped, location, isProcessing, canEquip = true, delay = 0,
     onEquip, onUnequip, onSell, onMoveToSafe, onMoveFromSafe
 }: InventoryItemProps) => {
     // Fallback icon based on category
@@ -140,7 +141,8 @@ const InventoryItemComponent = ({
                         <Button
                             className="btn-gold h-8 px-2 text-xs"
                             onClick={onEquip}
-                            disabled={isProcessing}
+                            disabled={isProcessing || !canEquip}
+                            title={!canEquip ? 'Unequip current item first' : undefined}
                         >
                             {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : (
                                 <>
@@ -222,6 +224,10 @@ const InventoryPage = () => {
     const weapons = inventory.filter(i => i.category === 'weapon');
     const equipment = inventory.filter(i => i.category === 'equipment');
     const contraband = inventory.filter(i => i.category === 'contraband');
+
+    // Check if there's already an equipped item (must unequip first)
+    const hasEquippedWeapon = weapons.some(i => i.is_equipped);
+    const hasEquippedEquipment = equipment.some(i => i.is_equipped);
 
     const formatStat = (item: InventoryItemType): string => {
         if (item.attack_bonus > 0) return `+${item.attack_bonus} Attack`;
@@ -473,6 +479,7 @@ const InventoryPage = () => {
                                             equipped={item.is_equipped}
                                             location={item.location}
                                             isProcessing={processingItemId === item.id}
+                                            canEquip={!hasEquippedWeapon || item.is_equipped}
                                             delay={0.05 * index}
                                             onEquip={() => handleEquip(item)}
                                             onUnequip={() => handleUnequip(item)}
@@ -500,6 +507,7 @@ const InventoryPage = () => {
                                             equipped={item.is_equipped}
                                             location={item.location}
                                             isProcessing={processingItemId === item.id}
+                                            canEquip={!hasEquippedEquipment || item.is_equipped}
                                             delay={0.05 * index}
                                             onEquip={() => handleEquip(item)}
                                             onUnequip={() => handleUnequip(item)}
