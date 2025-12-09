@@ -12,6 +12,8 @@ import { OfflineSummaryModal } from '@/components/OfflineSummaryModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { Crown, Timer } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface OfflineEarnings {
   totalCash: number;
@@ -19,6 +21,12 @@ interface OfflineEarnings {
   hoursAway: number;
   attacksReceived: number;
   cashLost: number;
+}
+
+interface VipStatus {
+  isActive: boolean;
+  daysRemaining: number;
+  hoursRemaining: number;
 }
 
 const Index = () => {
@@ -34,6 +42,25 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(!hasSeenIntro && onboardingComplete);
   const [showOfflineSummary, setShowOfflineSummary] = useState(false);
   const [offlineEarnings, setOfflineEarnings] = useState<OfflineEarnings | null>(null);
+  const [vipStatus, setVipStatus] = useState<VipStatus>({ isActive: false, daysRemaining: 0, hoursRemaining: 0 });
+
+  // Fetch VIP status
+  useEffect(() => {
+    const fetchVipStatus = async () => {
+      if (!player?.id) return;
+      const { data, error } = await supabase.rpc('get_vip_status', {
+        target_player_id: player.id
+      });
+      if (!error && data) {
+        setVipStatus({
+          isActive: data.is_active,
+          daysRemaining: data.days_remaining || 0,
+          hoursRemaining: data.hours_remaining || 0,
+        });
+      }
+    };
+    fetchVipStatus();
+  }, [player?.id]);
 
   useEffect(() => {
     if (!hasSeenIntro && onboardingComplete) {
@@ -163,8 +190,24 @@ const Index = () => {
                 </div>
 
                 {/* Wallet Connect Button - Centered */}
-                <div className="flex justify-center py-4 px-4">
+                <div className="flex flex-col items-center py-4 px-4 gap-2">
                   <WalletButton />
+
+                  {/* VIP Status Badge */}
+                  {vipStatus.isActive && (
+                    <Link to="/shop">
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 rounded-full"
+                      >
+                        <Crown className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="text-xs font-cinzel text-amber-300">VIP</span>
+                        <Timer className="w-3 h-3 text-amber-400/70" />
+                        <span className="text-xs text-amber-200">{vipStatus.daysRemaining}d {vipStatus.hoursRemaining}h</span>
+                      </motion.div>
+                    </Link>
+                  )}
                 </div>
 
                 <PlayerStats />
