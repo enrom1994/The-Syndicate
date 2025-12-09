@@ -53,13 +53,13 @@ const StatBadge = ({ icon, label, value, delay = 0 }: StatBadgeProps) => (
     initial={{ opacity: 0, scale: 0.9 }}
     animate={{ opacity: 1, scale: 1 }}
     transition={{ duration: 0.4, delay }}
-    className="stat-badge flex flex-col items-center justify-center py-2 px-3 bg-primary/10 rounded-md border border-primary/20"
+    className="flex flex-col items-center"
   >
-    <div className="w-5 h-5 mb-1 flex items-center justify-center">
+    <div className="stat-badge flex items-center gap-1 px-2 py-1 text-muted-foreground hover:bg-primary/10 transition-colors">
       {icon}
+      <span className="font-inter font-medium text-xs">{value}</span>
     </div>
-    <span className="font-cinzel font-bold text-sm text-foreground">{value}</span>
-    <span className="text-[8px] text-muted-foreground uppercase tracking-wider">{label}</span>
+    <span className="text-[8px] text-muted-foreground uppercase tracking-wider mt-0.5">{label}</span>
   </motion.div>
 );
 
