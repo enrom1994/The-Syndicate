@@ -208,6 +208,7 @@ const LuckyWheelPage = () => {
                         animate={{ rotate: rotation }}
                         transition={{ duration: 4, ease: [0.2, 0, 0.2, 1] }}
                     >
+                        {/* Wheel segments (colored backgrounds) */}
                         {prizes.map((prize, index) => {
                             const angle = (360 / prizes.length) * index;
                             const skewAngle = 90 - (360 / prizes.length);
@@ -219,28 +220,48 @@ const LuckyWheelPage = () => {
                                         transform: `rotate(${angle}deg) skewY(${skewAngle}deg)`,
                                         backgroundColor: index % 2 === 0 ? 'rgba(212, 175, 55, 0.3)' : 'rgba(26, 20, 15, 0.8)',
                                     }}
-                                >
-                                    <div
-                                        className="absolute flex items-center justify-center"
-                                        style={{
-                                            transform: `skewY(-${skewAngle}deg) rotate(${180 / prizes.length}deg)`,
-                                            left: '40%',
-                                            top: '20%',
-                                        }}
-                                    >
-                                        <img
-                                            src={prize.icon}
-                                            alt={prize.name}
-                                            className="w-6 h-6 object-contain drop-shadow-lg"
-                                        />
-                                    </div>
-                                </div>
+                                />
                             );
                         })}
                         {/* Center circle */}
-                        <div className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-background border-2 border-primary flex items-center justify-center">
+                        <div className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-background border-2 border-primary flex items-center justify-center z-10">
                             <Sparkles className="w-6 h-6 text-primary" />
                         </div>
+                    </motion.div>
+
+                    {/* Icons overlay - positioned using polar coordinates */}
+                    <motion.div
+                        className="absolute inset-0 pointer-events-none"
+                        style={{ rotate: rotation }}
+                        animate={{ rotate: rotation }}
+                        transition={{ duration: 4, ease: [0.2, 0, 0.2, 1] }}
+                    >
+                        {prizes.map((prize, index) => {
+                            // Calculate position for each icon using polar coordinates
+                            const segmentAngle = 360 / prizes.length;
+                            const iconAngle = (segmentAngle * index) + (segmentAngle / 2) - 90; // Center of segment, offset by -90 to start from top
+                            const radius = 80; // Distance from center in pixels
+                            const x = 128 + radius * Math.cos((iconAngle * Math.PI) / 180); // 128 = half of 256px wheel
+                            const y = 128 + radius * Math.sin((iconAngle * Math.PI) / 180);
+
+                            return (
+                                <div
+                                    key={`icon-${prize.id}`}
+                                    className="absolute flex items-center justify-center"
+                                    style={{
+                                        left: x - 16, // Center the 32px icon
+                                        top: y - 16,
+                                        transform: `rotate(${-rotation}deg)`, // Counter-rotate to keep icons upright
+                                    }}
+                                >
+                                    <img
+                                        src={prize.icon}
+                                        alt={prize.name}
+                                        className="w-8 h-8 object-contain drop-shadow-lg"
+                                    />
+                                </div>
+                            );
+                        })}
                     </motion.div>
                 </motion.div>
 
