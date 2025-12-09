@@ -107,7 +107,7 @@ const LuckyWheelPage = () => {
 
             if (data?.success) {
                 // Find the index of the won prize in our prizes array
-                const prizeIndex = prizes.findIndex(p => p.id === data.prize_id);
+                const prizeIndex = prizes.findIndex(p => p.name === data.prize_name);
                 const actualIndex = prizeIndex >= 0 ? prizeIndex : 0;
 
                 // Calculate rotation to land on the correct prize
@@ -116,7 +116,7 @@ const LuckyWheelPage = () => {
                 const prizeAngle = segmentAngle * actualIndex + (segmentAngle / 2); // Center of the segment
                 const spins = 5 + Math.random() * 3; // 5-8 full rotations for effect
                 // We rotate clockwise, pointer is at top (0 degrees), so we need to land with prize at top
-                const finalRotation = rotation + (360 * spins) + (360 - prizeAngle);
+                const finalRotation = rotation + (360 * spins) - prizeAngle;
 
                 setRotation(finalRotation);
 
