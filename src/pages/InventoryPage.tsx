@@ -395,9 +395,7 @@ const InventoryPage = () => {
                     transition={{ duration: 0.5 }}
                     className="flex items-center gap-3 mb-6"
                 >
-                    <div className="w-10 h-10 rounded-sm bg-gradient-gold flex items-center justify-center">
-                        <Package className="w-5 h-5 text-primary-foreground" />
-                    </div>
+                    <img src="/images/icons/inventory.png" alt="Inventory" className="w-12 h-12 object-contain" />
                     <div>
                         <h1 className="font-cinzel text-xl font-bold text-foreground">Inventory</h1>
                         <p className="text-xs text-muted-foreground">{totalItems} items • {hiredCrew.length} crew types</p>

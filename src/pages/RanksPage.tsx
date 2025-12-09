@@ -206,9 +206,7 @@ const RanksPage = () => {
                     transition={{ duration: 0.5 }}
                     className="flex items-center gap-3 mb-6"
                 >
-                    <div className="w-10 h-10 rounded-sm bg-gradient-gold flex items-center justify-center">
-                        <Trophy className="w-5 h-5 text-primary-foreground" />
-                    </div>
+                    <img src="/images/icons/fedora.png" alt="Leaderboard" className="w-12 h-12 object-contain" />
                     <div>
                         <h1 className="font-cinzel text-xl font-bold text-foreground">Leaderboard</h1>
                         <p className="text-xs text-muted-foreground">

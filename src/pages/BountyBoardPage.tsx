@@ -345,9 +345,7 @@ const BountyBoardPage = () => {
                     animate={{ opacity: 1 }}
                     className="flex items-center gap-3 mb-6"
                 >
-                    <div className="w-10 h-10 rounded-sm bg-gradient-gold flex items-center justify-center">
-                        <Target className="w-5 h-5 text-primary-foreground" />
-                    </div>
+                    <img src="/images/icons/bounty.png" alt="Bounty Board" className="w-12 h-12 object-contain" />
                     <div>
                         <h1 className="font-cinzel text-xl font-bold text-foreground">Bounty Board</h1>
                         <p className="text-xs text-muted-foreground">Hunt targets or place bounties</p>

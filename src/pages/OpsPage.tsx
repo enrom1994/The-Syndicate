@@ -578,9 +578,7 @@ const OpsPage = () => {
                     transition={{ duration: 0.5 }}
                     className="flex items-center gap-3 mb-6"
                 >
-                    <div className="w-10 h-10 rounded-sm bg-gradient-gold flex items-center justify-center">
-                        <Swords className="w-5 h-5 text-primary-foreground" />
-                    </div>
+                    <img src="/images/icons/briefcase.png" alt="Operations" className="w-12 h-12 object-contain" />
                     <div>
                         <h1 className="font-cinzel text-xl font-bold text-foreground">Operations</h1>
                         <p className="text-xs text-muted-foreground">Attack, execute jobs, earn rewards</p>
