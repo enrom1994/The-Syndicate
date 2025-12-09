@@ -176,7 +176,7 @@ const MarketPage = () => {
                         </div>
                         <Button
                             size="sm"
-                            className="btn-gold h-auto px-3 py-1.5 text-xs flex items-center gap-1.5 animate-pulse shadow-[0_0_15px_rgba(212,175,55,0.5)]"
+                            className="btn-gold h-auto px-3 py-1.5 text-xs flex items-center gap-1.5 shadow-[0_0_12px_rgba(212,175,55,0.6)] hover:shadow-[0_0_20px_rgba(212,175,55,0.8)] transition-shadow"
                             onClick={() => navigate('/shop')}
                         >
                             <Store className="w-4 h-4" />
