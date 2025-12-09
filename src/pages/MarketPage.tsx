@@ -168,9 +168,7 @@ const MarketPage = () => {
                 >
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-sm bg-gradient-gold flex items-center justify-center">
-                                <ShoppingBag className="w-5 h-5 text-primary-foreground" />
-                            </div>
+                            <img src="/images/icons/blackmarket.png" alt="Black Market" className="w-12 h-12 object-contain" />
                             <div>
                                 <h1 className="font-cinzel text-xl font-bold text-foreground">Black Market</h1>
                                 <p className="text-xs text-muted-foreground">Illegal goods & rare items</p>
