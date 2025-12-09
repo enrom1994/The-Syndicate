@@ -96,25 +96,33 @@ const LuckyWheelPage = () => {
         setSpinResult(null);
         haptic.medium();
 
-        // Animate wheel spin
-        const spins = 5 + Math.random() * 3; // 5-8 full rotations
-        const prizeIndex = Math.floor(Math.random() * prizes.length);
-        const prizeAngle = (360 / prizes.length) * prizeIndex;
-        const finalRotation = rotation + (360 * spins) + prizeAngle;
-        setRotation(finalRotation);
-
         try {
+            // Call backend FIRST to get the actual prize
             const { data, error } = await supabase.rpc('spin_lucky_wheel', {
                 target_player_id: player.id,
                 use_diamonds: useDiamonds
             });
 
-            // Wait for animation
-            await new Promise(resolve => setTimeout(resolve, 4000));
-
             if (error) throw error;
 
             if (data?.success) {
+                // Find the index of the won prize in our prizes array
+                const prizeIndex = prizes.findIndex(p => p.id === data.prize_id);
+                const actualIndex = prizeIndex >= 0 ? prizeIndex : 0;
+
+                // Calculate rotation to land on the correct prize
+                // The pointer is at the top, so we need to rotate the wheel so the prize ends up at top
+                const segmentAngle = 360 / prizes.length;
+                const prizeAngle = segmentAngle * actualIndex + (segmentAngle / 2); // Center of the segment
+                const spins = 5 + Math.random() * 3; // 5-8 full rotations for effect
+                // We rotate clockwise, pointer is at top (0 degrees), so we need to land with prize at top
+                const finalRotation = rotation + (360 * spins) + (360 - prizeAngle);
+
+                setRotation(finalRotation);
+
+                // Wait for animation to complete
+                await new Promise(resolve => setTimeout(resolve, 4000));
+
                 haptic.success();
                 setSpinResult({
                     prize_name: data.prize_name,
