@@ -9,10 +9,10 @@
 -- =====================================================
 
 -- PvP Combat Supplies (production-only, not purchasable)
-INSERT INTO public.item_definitions (name, description, category, buy_price, sell_price, attack_bonus, defense_bonus, icon)
+INSERT INTO public.item_definitions (name, description, category, rarity, buy_price, sell_price, attack_bonus, defense_bonus, icon)
 VALUES 
-    ('Bootleg Whiskey', 'Liquid courage for your crew. Required for Safe Heist attacks.', 'consumable', 0, 500, 0, 0, '/images/blackmarket/bootlegwhiskey.png'),
-    ('Cocaine Stash', 'High-octane fuel for Drive-By attacks.', 'consumable', 0, 1000, 0, 0, '/images/blackmarket/cocainestash.png')
+    ('Bootleg Whiskey', 'Liquid courage for your crew. Required for Safe Heist attacks.', 'consumable', 'common', 0, 500, 0, 0, '/images/icons/bootlegwhiskey.png'),
+    ('Cocaine Stash', 'High-octane fuel for Drive-By attacks.', 'consumable', 'uncommon', 0, 1000, 0, 0, '/images/icons/cocainestash.png')
 ON CONFLICT (name) DO UPDATE SET
     description = EXCLUDED.description,
     category = EXCLUDED.category,
@@ -20,10 +20,10 @@ ON CONFLICT (name) DO UPDATE SET
     icon = EXCLUDED.icon;
 
 -- New Trade Goods
-INSERT INTO public.item_definitions (name, description, category, buy_price, sell_price, attack_bonus, defense_bonus, icon)
+INSERT INTO public.item_definitions (name, description, category, rarity, buy_price, sell_price, attack_bonus, defense_bonus, icon)
 VALUES 
-    ('Forged Documents', 'Fake passports, IDs, and papers. Always in demand.', 'contraband', 0, 3000, 0, 0, '/images/blackmarket/forgeddocuments.png'),
-    ('Smuggled Weapons', 'Untraceable firearms and explosives.', 'contraband', 0, 6000, 0, 0, '/images/blackmarket/smuggledweapons.png')
+    ('Forged Documents', 'Fake passports, IDs, and papers. Always in demand.', 'contraband', 'uncommon', 0, 3000, 0, 0, '/images/icons/forgeddocuments.png'),
+    ('Smuggled Weapons', 'Untraceable firearms and explosives.', 'contraband', 'rare', 0, 6000, 0, 0, '/images/icons/smuggledweapons.png')
 ON CONFLICT (name) DO UPDATE SET
     description = EXCLUDED.description,
     category = EXCLUDED.category,
