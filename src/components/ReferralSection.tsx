@@ -37,7 +37,7 @@ export const ReferralSection = ({ compact = false }: ReferralSectionProps) => {
     const [showReferrals, setShowReferrals] = useState(false);
 
     // Telegram Bot username - update this to match your bot
-    const BOT_USERNAME = 'TONMafiaBot';
+    const BOT_USERNAME = 'The_Syndicate_Game_Bot';
 
     const loadStats = async () => {
         setIsLoading(true);
@@ -268,17 +268,17 @@ export const ReferralSection = ({ compact = false }: ReferralSectionProps) => {
                         <div
                             key={milestone.id}
                             className={`flex items-center gap-3 p-2 rounded ${milestone.is_claimed
-                                    ? 'bg-muted/10 opacity-50'
-                                    : milestone.can_claim
-                                        ? 'bg-green-500/10 border border-green-500/30'
-                                        : 'bg-muted/20'
+                                ? 'bg-muted/10 opacity-50'
+                                : milestone.can_claim
+                                    ? 'bg-green-500/10 border border-green-500/30'
+                                    : 'bg-muted/20'
                                 }`}
                         >
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${milestone.is_claimed
-                                    ? 'bg-green-500/20'
-                                    : milestone.can_claim
-                                        ? 'bg-green-500/30'
-                                        : 'bg-muted/30'
+                                ? 'bg-green-500/20'
+                                : milestone.can_claim
+                                    ? 'bg-green-500/30'
+                                    : 'bg-muted/30'
                                 }`}>
                                 {milestone.is_claimed ? (
                                     <Check className="w-4 h-4 text-green-400" />
