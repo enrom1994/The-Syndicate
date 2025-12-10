@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Briefcase, TrendingUp, DollarSign, Clock, ArrowUp, Loader2, Factory, Users, Package, AlertCircle, Diamond, Zap } from 'lucide-react';
+import { Briefcase, TrendingUp, DollarSign, Clock, ArrowUp, Loader2, Factory, Users, Package, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -58,6 +58,7 @@ const BusinessCard = ({
         transition={{ duration: 0.5, delay }}
         className="noir-card p-4"
     >
+        {/* Header: Image + Name + Level */}
         <div className="flex items-start gap-3 mb-3">
             <div className="w-16 h-16 rounded-sm bg-muted/30 flex items-center justify-center shrink-0 overflow-hidden">
                 <img
@@ -71,18 +72,19 @@ const BusinessCard = ({
                     }}
                 />
             </div>
-            <div className="flex-1">
-                <div className="flex items-center justify-between">
-                    <h3 className="font-cinzel font-semibold text-sm text-foreground">{name}</h3>
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-cinzel font-semibold text-sm text-foreground truncate">{name}</h3>
                     {owned && (
-                        <span className="text-xs text-primary font-medium">Lv. {level}/{maxLevel}</span>
+                        <span className="text-xs text-primary font-medium whitespace-nowrap">Lv. {level}/{maxLevel}</span>
                     )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{description}</p>
             </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-3">
+        {/* Stats Grid - 3 columns for owned, 2 for unowned */}
+        <div className={`grid ${owned ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mb-4`}>
             <div className="bg-muted/20 rounded-sm p-2">
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <DollarSign className="w-3 h-3" />
@@ -93,68 +95,89 @@ const BusinessCard = ({
             <div className="bg-muted/20 rounded-sm p-2">
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="w-3 h-3" />
-                    <span>Collect</span>
+                    <span>Cooldown</span>
                 </div>
                 <p className="font-cinzel font-bold text-sm text-foreground">{cooldown}</p>
             </div>
+            {owned && (
+                <div className="bg-muted/20 rounded-sm p-2">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <TrendingUp className="w-3 h-3" />
+                        <span>Daily</span>
+                    </div>
+                    <p className="font-cinzel font-bold text-sm text-green-400">${(income * 24).toLocaleString()}</p>
+                </div>
+            )}
         </div>
 
+        {/* Buttons Section */}
         {owned ? (
-            <div className="flex gap-2">
+            <div className="space-y-2">
+                {/* Row 1: Upgrade Button */}
                 <Button
-                    className="flex-1 btn-gold text-xs"
+                    className="w-full btn-gold text-xs h-9"
                     disabled={level >= maxLevel || isProcessing}
                     onClick={onUpgrade}
                 >
                     {isProcessing ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : level >= maxLevel ? (
+                        'MAX LEVEL'
                     ) : (
                         <>
                             <ArrowUp className="w-4 h-4 mr-1" />
-                            Upgrade ${upgradeCost.toLocaleString()}
+                            Upgrade — ${upgradeCost.toLocaleString()}
                         </>
                     )}
                 </Button>
-                <Button
-                    variant="outline"
-                    className={`flex-1 text-xs ${canCollect ? 'border-primary text-primary' : ''}`}
-                    disabled={isProcessing || !canCollect}
-                    onClick={onCollect}
-                >
-                    {isProcessing ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                        <>
-                            <DollarSign className="w-4 h-4 mr-1" />
-                            {canCollect ? 'Collect' : cooldownRemaining || 'Wait'}
-                        </>
-                    )}
-                </Button>
-                {/* Rush Collect Button - only show when on cooldown */}
-                {!canCollect && onRushCollect && (
+
+                {/* Row 2: Collect + Rush side by side */}
+                <div className="flex gap-2">
                     <Button
                         variant="outline"
-                        className="text-xs border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
-                        disabled={isRushing}
-                        onClick={onRushCollect}
+                        className={`flex-1 text-xs h-9 ${canCollect ? 'border-primary text-primary hover:bg-primary/10' : ''}`}
+                        disabled={isProcessing || !canCollect}
+                        onClick={onCollect}
                     >
-                        {isRushing ? (
+                        {isProcessing ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                             <>
-                                <Diamond className="w-3 h-3 mr-1" />
-                                5💎
+                                <DollarSign className="w-4 h-4 mr-1" />
+                                {canCollect ? 'Collect Now' : cooldownRemaining || 'Waiting...'}
                             </>
                         )}
                     </Button>
-                )}
+
+                    {/* Rush Collect Button - only show when on cooldown */}
+                    {!canCollect && onRushCollect && (
+                        <Button
+                            variant="outline"
+                            className="text-xs h-9 px-3 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+                            disabled={isRushing}
+                            onClick={onRushCollect}
+                        >
+                            {isRushing ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <>
+                                    <img src="/images/icons/diamond.png" alt="💎" className="w-4 h-4 mr-1" />
+                                    5
+                                </>
+                            )}
+                        </Button>
+                    )}
+                </div>
             </div>
         ) : (
-            <Button className="w-full btn-gold text-xs" onClick={onBuy} disabled={isProcessing}>
+            <Button className="w-full btn-gold text-xs h-9" onClick={onBuy} disabled={isProcessing}>
                 {isProcessing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                    `Buy for $${upgradeCost.toLocaleString()}`
+                    <>
+                        <Briefcase className="w-4 h-4 mr-1" />
+                        Buy for ${upgradeCost.toLocaleString()}
+                    </>
                 )}
             </Button>
         )}

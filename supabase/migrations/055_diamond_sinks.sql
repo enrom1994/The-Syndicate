@@ -6,6 +6,16 @@
 -- Feature 3: High Stakes Missions - Premium jobs with diamond entry
 
 -- =====================================================
+-- 0. FIX NOTIFICATION TYPE CONSTRAINT (add 'business' type)
+-- =====================================================
+ALTER TABLE public.notifications 
+DROP CONSTRAINT IF EXISTS notifications_type_check;
+
+ALTER TABLE public.notifications 
+ADD CONSTRAINT notifications_type_check 
+CHECK (type IN ('attack', 'income', 'job', 'family', 'system', 'bounty', 'purchase', 'upgrade', 'reward', 'business'));
+
+-- =====================================================
 -- 1. JOB CHAINS: ADD STREAK COLUMNS TO PLAYERS
 -- =====================================================
 
@@ -261,7 +271,7 @@ BEGIN
     END IF;
     
     -- Calculate income (1 hour worth)
-    income_amount := business_record.income_per_hour;
+    income_amount := business_record.base_income_per_hour;
     
     -- Check for 2x income booster
     SELECT EXISTS (
@@ -391,6 +401,7 @@ CREATE TABLE IF NOT EXISTS public.high_stakes_jobs (
 -- Enable RLS
 ALTER TABLE public.high_stakes_jobs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can view high stakes jobs" ON public.high_stakes_jobs;
 CREATE POLICY "Anyone can view high stakes jobs"
     ON public.high_stakes_jobs FOR SELECT
     USING (true);
