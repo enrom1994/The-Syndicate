@@ -309,7 +309,11 @@ serve(async (req) => {
             key
         );
 
-        // Get player data
+        // Regenerate energy based on time offline BEFORE fetching player data
+        // This ensures players get their accumulated energy when they return
+        await supabase.rpc('regenerate_energy', { player_id_input: userId });
+
+        // Get player data (now with updated energy)
         const { data: player } = await supabase
             .from('players')
             .select('*')
