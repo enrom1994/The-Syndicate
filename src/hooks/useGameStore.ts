@@ -246,6 +246,40 @@ interface GameState {
         xp_earned?: number;
         leveled_up?: boolean;
         new_level?: number;
+        current_streak?: number;
+        streak_bonus_percent?: number;
+        chain_broken?: boolean;
+        can_continue_until?: string;
+    }>;
+
+    // Diamond Sink: Job Chains
+    getJobChainStatus: () => Promise<{
+        streak: number;
+        active: boolean;
+        chain_broken: boolean;
+        can_continue: boolean;
+        seconds_to_continue: number;
+        continue_cost: number;
+        bonus_percent: number;
+    } | null>;
+    continueJobChain: () => Promise<{ success: boolean; message: string; diamonds_spent?: number }>;
+
+    // Diamond Sink: Rush Mode
+    rushBusinessCollect: (playerBusinessId: string) => Promise<{ success: boolean; message: string; income_collected?: number; diamonds_spent?: number }>;
+    rushPveCooldown: (targetId: string) => Promise<{ success: boolean; message: string; diamonds_spent?: number }>;
+
+    // Diamond Sink: High Stakes
+    getHighStakesJobs: () => Promise<any[]>;
+    executeHighStakesJob: (jobId: string) => Promise<{
+        success: boolean;
+        result?: 'victory' | 'defeat';
+        message?: string;
+        cash_earned?: number;
+        xp_earned?: number;
+        diamonds_spent?: number;
+        diamonds_lost?: number;
+        leveled_up?: boolean;
+        new_level?: number;
     }>;
 
     // Attack actions (PvP)
@@ -1077,6 +1111,10 @@ export const useGameStore = create<GameState>((set, get) => ({
             xp_earned?: number;
             leveled_up?: boolean;
             new_level?: number;
+            current_streak?: number;
+            streak_bonus_percent?: number;
+            chain_broken?: boolean;
+            can_continue_until?: string;
         };
     },
 
@@ -1103,6 +1141,125 @@ export const useGameStore = create<GameState>((set, get) => ({
             cash_lost?: number;
             respect_gained?: number;
             respect_lost?: number;
+        };
+    },
+
+    // Diamond Sink: Job Chain Status
+    getJobChainStatus: async () => {
+        const { playerId } = get();
+        if (!playerId) return null;
+
+        const { data, error } = await supabase.rpc('get_job_chain_status', {
+            player_id_input: playerId,
+        });
+
+        if (error) {
+            console.error('Failed to get job chain status:', error);
+            return null;
+        }
+
+        return data;
+    },
+
+    // Diamond Sink: Continue Job Chain (15 diamonds)
+    continueJobChain: async () => {
+        const { playerId } = get();
+        if (!playerId) return { success: false, message: 'Not logged in' };
+
+        const { data, error } = await supabase.rpc('continue_job_chain', {
+            player_id_input: playerId,
+        });
+
+        if (error) {
+            console.error('Failed to continue job chain:', error);
+            return { success: false, message: error.message };
+        }
+
+        return data as { success: boolean; message: string; diamonds_spent?: number };
+    },
+
+    // Diamond Sink: Rush Business Collect (5 diamonds)
+    rushBusinessCollect: async (playerBusinessId) => {
+        const { playerId, loadBusinesses } = get();
+        if (!playerId) return { success: false, message: 'Not logged in' };
+
+        const { data, error } = await supabase.rpc('rush_business_collect', {
+            player_id_input: playerId,
+            player_business_id_input: playerBusinessId,
+        });
+
+        if (error) {
+            console.error('Failed to rush collect:', error);
+            return { success: false, message: error.message };
+        }
+
+        if (data?.success) {
+            await loadBusinesses();
+        }
+
+        return data as { success: boolean; message: string; income_collected?: number; diamonds_spent?: number };
+    },
+
+    // Diamond Sink: Rush PvE Cooldown (3 diamonds)
+    rushPveCooldown: async (targetId) => {
+        const { playerId } = get();
+        if (!playerId) return { success: false, message: 'Not logged in' };
+
+        const { data, error } = await supabase.rpc('rush_pve_cooldown', {
+            player_id_input: playerId,
+            target_id_input: targetId,
+        });
+
+        if (error) {
+            console.error('Failed to rush cooldown:', error);
+            return { success: false, message: error.message };
+        }
+
+        return data as { success: boolean; message: string; diamonds_spent?: number };
+    },
+
+    // Diamond Sink: Get High Stakes Jobs
+    getHighStakesJobs: async () => {
+        const { playerId } = get();
+        if (!playerId) return [];
+
+        const { data, error } = await supabase.rpc('get_high_stakes_jobs', {
+            viewer_id: playerId,
+        });
+
+        if (error) {
+            console.error('Failed to get high stakes jobs:', error);
+            return [];
+        }
+
+        return data || [];
+    },
+
+    // Diamond Sink: Execute High Stakes Job
+    executeHighStakesJob: async (jobId) => {
+        const { playerId } = get();
+        if (!playerId) return { success: false, message: 'Not logged in' };
+
+        const { data, error } = await supabase.rpc('execute_high_stakes_job', {
+            player_id_input: playerId,
+            job_id_input: jobId,
+        });
+
+        if (error) {
+            console.error('Failed to execute high stakes job:', error);
+            return { success: false, message: error.message };
+        }
+
+        return data as {
+            success: boolean;
+            result?: 'victory' | 'defeat';
+            message?: string;
+            cash_earned?: number;
+            xp_earned?: number;
+            diamonds_spent?: number;
+            diamonds_lost?: number;
+            leveled_up?: boolean;
+            new_level?: number;
         };
     },
 

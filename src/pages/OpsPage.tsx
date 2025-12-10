@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Swords, Target, Clock, Zap, Loader2, Skull, Users, Shield, DollarSign, AlertTriangle } from 'lucide-react';
+import { Swords, Target, Clock, Zap, Loader2, Skull, Users, Shield, DollarSign, AlertTriangle, Flame, Diamond, Star } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -269,54 +269,166 @@ const TargetCard = ({
 };
 
 // =====================================================
-// JOB CARD
+// JOB CARD (with streak bonus display)
 // =====================================================
 
-const JobCard = ({ job, isProcessing, delay = 0, onExecute }: {
+const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0 }: {
     job: JobDefinition;
     isProcessing: boolean;
     delay?: number;
     onExecute: () => void;
-}) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay }}
-        className="noir-card p-4"
-    >
-        <div className="flex items-start justify-between mb-2">
-            <div>
-                <h3 className="font-cinzel font-semibold text-sm text-foreground">{job.name}</h3>
-                <p className="text-xs text-muted-foreground">{job.description}</p>
-            </div>
-        </div>
+    streakBonus?: number;
+}) => {
+    const bonusCash = streakBonus > 0 ? Math.round(job.cash_reward * (1 + streakBonus / 100)) : job.cash_reward;
+    const bonusXp = streakBonus > 0 ? Math.round(job.experience_reward * (1 + streakBonus / 100)) : job.experience_reward;
 
-        {/* Rewards Display */}
-        <div className="flex items-center gap-4 mt-2 mb-3">
-            <div className="flex items-center gap-1 text-sm">
-                <GameIcon type="cash" className="w-4 h-4" />
-                <span className="font-bold text-green-400">${job.cash_reward.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center gap-1 text-sm">
-                <img src="/images/icons/xp.png" alt="XP" className="w-4 h-4" />
-                <span className="font-bold text-cyan-400">+{job.experience_reward} XP</span>
-            </div>
-        </div>
-
-        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
-            <Zap className="w-3 h-3 text-yellow-500" />
-            -{job.energy_cost} Energy
-        </div>
-
-        <Button
-            className="w-full btn-gold text-xs"
-            onClick={onExecute}
-            disabled={isProcessing}
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay }}
+            className="noir-card p-4"
         >
-            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Execute Job'}
-        </Button>
-    </motion.div>
-);
+            <div className="flex items-start justify-between mb-2">
+                <div>
+                    <h3 className="font-cinzel font-semibold text-sm text-foreground">{job.name}</h3>
+                    <p className="text-xs text-muted-foreground">{job.description}</p>
+                </div>
+            </div>
+
+            {/* Rewards Display */}
+            <div className="flex items-center gap-4 mt-2 mb-3">
+                <div className="flex items-center gap-1 text-sm">
+                    <GameIcon type="cash" className="w-4 h-4" />
+                    <span className="font-bold text-green-400">${bonusCash.toLocaleString()}</span>
+                    {streakBonus > 0 && (
+                        <span className="text-xs text-orange-400">+{streakBonus}%</span>
+                    )}
+                </div>
+                <div className="flex items-center gap-1 text-sm">
+                    <img src="/images/icons/xp.png" alt="XP" className="w-4 h-4" />
+                    <span className="font-bold text-cyan-400">+{bonusXp} XP</span>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+                <Zap className="w-3 h-3 text-yellow-500" />
+                -{job.energy_cost} Energy
+            </div>
+
+            <Button
+                className="w-full btn-gold text-xs"
+                onClick={onExecute}
+                disabled={isProcessing}
+            >
+                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Execute Job'}
+            </Button>
+        </motion.div>
+    );
+};
+
+// =====================================================
+// HIGH STAKES JOB CARD
+// =====================================================
+
+interface HighStakesJob {
+    id: string;
+    name: string;
+    description: string;
+    entry_cost_diamonds: number;
+    energy_cost: number;
+    cash_reward: number;
+    xp_reward: number;
+    success_rate: number;
+    required_level: number;
+    cooldown_minutes: number;
+    is_available: boolean;
+    cooldown_remaining_seconds: number;
+    player_meets_level: boolean;
+}
+
+const HighStakesCard = ({ job, isProcessing, delay = 0, onExecute }: {
+    job: HighStakesJob;
+    isProcessing: boolean;
+    delay?: number;
+    onExecute: () => void;
+}) => {
+    const formatCooldown = (seconds: number) => {
+        if (seconds <= 0) return '';
+        const mins = Math.floor(seconds / 60);
+        const hours = Math.floor(mins / 60);
+        if (hours > 0) return `${hours}h ${mins % 60}m`;
+        return `${mins}m`;
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay }}
+            className="noir-card p-4 border-l-4 border-yellow-500"
+        >
+            <div className="flex items-start justify-between mb-2">
+                <div>
+                    <div className="flex items-center gap-2">
+                        <Star className="w-4 h-4 text-yellow-500" />
+                        <h3 className="font-cinzel font-semibold text-sm text-foreground">{job.name}</h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{job.description}</p>
+                </div>
+                <div className="flex items-center gap-1 bg-yellow-500/20 px-2 py-1 rounded text-xs">
+                    <Diamond className="w-3 h-3 text-cyan-400" />
+                    <span className="text-cyan-400 font-bold">{job.entry_cost_diamonds}</span>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-xs mb-3">
+                <div className="bg-green-500/10 rounded p-2 text-center">
+                    <p className="text-muted-foreground">Reward</p>
+                    <p className="font-bold text-green-400">${job.cash_reward.toLocaleString()}</p>
+                </div>
+                <div className="bg-cyan-500/10 rounded p-2 text-center">
+                    <p className="text-muted-foreground">XP</p>
+                    <p className="font-bold text-cyan-400">+{job.xp_reward}</p>
+                </div>
+                <div className="bg-red-500/10 rounded p-2 text-center">
+                    <p className="text-muted-foreground">Success</p>
+                    <p className="font-bold text-red-400">{job.success_rate}%</p>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
+                <Zap className="w-3 h-3 text-yellow-500" />
+                -{job.energy_cost} Energy
+                <span className="mx-1">•</span>
+                <Shield className="w-3 h-3" />
+                Lv {job.required_level}+
+            </div>
+
+            <Button
+                className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-xs"
+                onClick={onExecute}
+                disabled={isProcessing || !job.is_available || !job.player_meets_level}
+            >
+                {isProcessing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                ) : !job.player_meets_level ? (
+                    `Requires Lv ${job.required_level}`
+                ) : !job.is_available ? (
+                    <>
+                        <Clock className="w-4 h-4 mr-1" />
+                        {formatCooldown(job.cooldown_remaining_seconds)}
+                    </>
+                ) : (
+                    <>
+                        <Diamond className="w-4 h-4 mr-1" />
+                        Enter ({job.entry_cost_diamonds}💎)
+                    </>
+                )}
+            </Button>
+        </motion.div>
+    );
+};
 
 // =====================================================
 // MAIN PAGE
@@ -325,7 +437,16 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute }: {
 const OpsPage = () => {
     const { toast } = useToast();
     const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
-    const { jobDefinitions, isLoadingDefinitions, completeJob } = useGameStore();
+    const {
+        jobDefinitions,
+        isLoadingDefinitions,
+        completeJob,
+        getJobChainStatus,
+        continueJobChain,
+        rushPveCooldown,
+        getHighStakesJobs,
+        executeHighStakesJob
+    } = useGameStore();
 
     const [activeTab, setActiveTab] = useState('pve');
 
@@ -355,6 +476,23 @@ const OpsPage = () => {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [pendingPvpAttack, setPendingPvpAttack] = useState<{ target: TargetPlayer; attackType: string } | null>(null);
 
+    // Job Chain state
+    const [chainStatus, setChainStatus] = useState<{
+        streak: number;
+        active: boolean;
+        chain_broken: boolean;
+        can_continue: boolean;
+        seconds_to_continue: number;
+        bonus_percent: number;
+    } | null>(null);
+    const [showChainContinue, setShowChainContinue] = useState(false);
+    const [continueCountdown, setContinueCountdown] = useState(0);
+
+    // High Stakes state
+    const [highStakesJobs, setHighStakesJobs] = useState<HighStakesJob[]>([]);
+    const [isLoadingHighStakes, setIsLoadingHighStakes] = useState(false);
+    const [confirmHighStakes, setConfirmHighStakes] = useState<HighStakesJob | null>(null);
+
     // =====================================================
     // LOAD DATA
     // =====================================================
@@ -364,8 +502,38 @@ const OpsPage = () => {
             loadPveTargets();
             loadPvpTargets();
             loadPvpAttackTypes();
+            loadJobChainStatus();
+            loadHighStakesJobs();
         }
     }, [player?.id]);
+
+    // Countdown timer for chain continue
+    useEffect(() => {
+        if (continueCountdown > 0) {
+            const timer = setTimeout(() => setContinueCountdown(c => c - 1), 1000);
+            return () => clearTimeout(timer);
+        } else if (showChainContinue && continueCountdown <= 0) {
+            setShowChainContinue(false);
+            loadJobChainStatus(); // Refresh status after expiry
+        }
+    }, [continueCountdown, showChainContinue]);
+
+    const loadJobChainStatus = async () => {
+        const status = await getJobChainStatus();
+        if (status) {
+            setChainStatus(status);
+        }
+    };
+
+    const loadHighStakesJobs = async () => {
+        setIsLoadingHighStakes(true);
+        try {
+            const jobs = await getHighStakesJobs();
+            setHighStakesJobs(jobs);
+        } finally {
+            setIsLoadingHighStakes(false);
+        }
+    };
 
     const loadPveTargets = async () => {
         if (!player?.id) return;
@@ -534,6 +702,7 @@ const OpsPage = () => {
             const result = await completeJob(job.id);
             if (result.success) {
                 haptic.success();
+                await loadJobChainStatus(); // Refresh chain status
 
                 // Show cash animation
                 if (result.cash_earned) {
@@ -545,20 +714,94 @@ const OpsPage = () => {
                     setTimeout(() => rewardXp(result.xp_earned!), 400);
                 }
 
+                const streakMsg = result.current_streak && result.current_streak > 0
+                    ? ` (🔥 Streak ${result.current_streak})`
+                    : '';
+
                 toast({
                     title: result.leveled_up ? 'LEVEL UP! 🎉' : 'Job Completed!',
                     description: result.leveled_up
                         ? `You reached Level ${result.new_level}!`
-                        : `Earned $${result.cash_earned?.toLocaleString()} & ${result.xp_earned} XP`,
+                        : `Earned $${result.cash_earned?.toLocaleString()} & ${result.xp_earned} XP${streakMsg}`,
                 });
                 await refetchPlayer();
             } else {
                 haptic.error();
+
+                // Check if chain is broken - offer continue option
+                if (result.chain_broken && result.can_continue_until) {
+                    setShowChainContinue(true);
+                    setContinueCountdown(120); // 2 minutes
+                }
+
                 toast({ title: 'Job Failed', description: result.message, variant: 'destructive' });
+                await loadJobChainStatus();
             }
         } catch (error) {
             console.error('Job error:', error);
             toast({ title: 'Error', description: 'Job failed', variant: 'destructive' });
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleContinueChain = async () => {
+        setProcessingId('chain-continue');
+        try {
+            const result = await continueJobChain();
+            if (result.success) {
+                haptic.success();
+                toast({ title: '🔥 Chain Continued!', description: 'Keep the streak going!' });
+                setShowChainContinue(false);
+                await loadJobChainStatus();
+                await refetchPlayer();
+            } else {
+                haptic.error();
+                toast({ title: 'Failed', description: result.message, variant: 'destructive' });
+            }
+        } catch (error) {
+            toast({ title: 'Error', variant: 'destructive' });
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleHighStakesExecute = async (job: HighStakesJob) => {
+        setConfirmHighStakes(job);
+    };
+
+    const executeHighStakes = async () => {
+        if (!confirmHighStakes) return;
+        setConfirmHighStakes(null);
+        setProcessingId(confirmHighStakes.id);
+
+        try {
+            const result = await executeHighStakesJob(confirmHighStakes.id);
+            if (result.success) {
+                if (result.result === 'victory') {
+                    haptic.success();
+                    if (result.cash_earned) rewardCash(result.cash_earned);
+                    if (result.xp_earned) setTimeout(() => rewardXp(result.xp_earned!), 400);
+                    toast({
+                        title: '🎰 HIGH STAKES WIN!',
+                        description: `Scored $${result.cash_earned?.toLocaleString()}!`
+                    });
+                } else {
+                    haptic.error();
+                    toast({
+                        title: '💀 Mission Failed',
+                        description: `Lost ${result.diamonds_lost}💎 entry fee`,
+                        variant: 'destructive'
+                    });
+                }
+                await refetchPlayer();
+                await loadHighStakesJobs();
+            } else {
+                haptic.error();
+                toast({ title: 'Error', description: result.message, variant: 'destructive' });
+            }
+        } catch (error) {
+            toast({ title: 'Error', variant: 'destructive' });
         } finally {
             setProcessingId(null);
         }
@@ -626,7 +869,7 @@ const OpsPage = () => {
                 </motion.div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 bg-muted/30 rounded-sm mb-4">
+                    <TabsList className="grid w-full grid-cols-4 bg-muted/30 rounded-sm mb-4">
                         <TabsTrigger value="pve" className="font-cinzel text-xs flex items-center gap-1">
                             <Skull className="w-3 h-3" />
                             Heists
@@ -638,6 +881,10 @@ const OpsPage = () => {
                         <TabsTrigger value="jobs" className="font-cinzel text-xs flex items-center gap-1">
                             <Target className="w-3 h-3" />
                             Jobs
+                        </TabsTrigger>
+                        <TabsTrigger value="highstakes" className="font-cinzel text-xs flex items-center gap-1">
+                            <Star className="w-3 h-3 text-yellow-500" />
+                            Stakes
                         </TabsTrigger>
                     </TabsList>
 
@@ -696,6 +943,26 @@ const OpsPage = () => {
 
                     {/* Jobs Tab */}
                     <TabsContent value="jobs" className="space-y-3 mt-0">
+                        {/* Streak Banner */}
+                        {chainStatus && chainStatus.streak > 0 && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="noir-card p-3 border-l-4 border-orange-500 flex items-center justify-between"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Flame className="w-5 h-5 text-orange-500" />
+                                    <div>
+                                        <span className="text-sm font-bold text-orange-400">Streak: {chainStatus.streak}</span>
+                                        <span className="text-xs text-muted-foreground ml-2">+{chainStatus.bonus_percent}% bonus</span>
+                                    </div>
+                                </div>
+                                {!chainStatus.active && (
+                                    <span className="text-xs text-yellow-400">Complete a job to keep streak!</span>
+                                )}
+                            </motion.div>
+                        )}
+
                         {isLoadingDefinitions ? (
                             <div className="flex items-center justify-center py-12">
                                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -710,6 +977,33 @@ const OpsPage = () => {
                                     isProcessing={processingId === job.id}
                                     delay={0.05 * idx}
                                     onExecute={() => handleJobExecute(job)}
+                                    streakBonus={chainStatus?.bonus_percent || 0}
+                                />
+                            ))
+                        )}
+                    </TabsContent>
+
+                    {/* High Stakes Tab */}
+                    <TabsContent value="highstakes" className="space-y-3 mt-0">
+                        <div className="noir-card p-3 mb-3 flex items-center gap-2 text-xs text-yellow-400">
+                            <Diamond className="w-4 h-4" />
+                            <span>Premium missions with 💎 entry fee. Higher risk, 3x rewards!</span>
+                        </div>
+
+                        {isLoadingHighStakes ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                            </div>
+                        ) : highStakesJobs.length === 0 ? (
+                            <p className="text-center text-muted-foreground py-8">No high stakes missions available</p>
+                        ) : (
+                            highStakesJobs.map((job, idx) => (
+                                <HighStakesCard
+                                    key={job.id}
+                                    job={job}
+                                    isProcessing={processingId === job.id}
+                                    delay={0.05 * idx}
+                                    onExecute={() => handleHighStakesExecute(job)}
                                 />
                             ))
                         )}
@@ -749,6 +1043,68 @@ const OpsPage = () => {
                 respectGained={combatResult.respectGained}
                 respectLost={combatResult.respectLost}
             />
+
+            {/* Job Chain Continue Dialog */}
+            <AlertDialog open={showChainContinue} onOpenChange={setShowChainContinue}>
+                <AlertDialogContent className="noir-card border-border/50 max-w-xs">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-cinzel text-foreground flex items-center gap-2">
+                            <Flame className="w-5 h-5 text-orange-500" />
+                            Chain Broken!
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Your {chainStatus?.streak || 0}-streak is about to end!
+                            <br /><br />
+                            <span className="text-cyan-400">Pay 15💎 to continue your streak?</span>
+                            <br />
+                            <span className="text-yellow-400 text-xs">Time remaining: {continueCountdown}s</span>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Let it End</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleContinueChain}
+                            className="bg-gradient-to-r from-orange-600 to-red-600"
+                            disabled={processingId === 'chain-continue'}
+                        >
+                            {processingId === 'chain-continue' ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <>Continue (15💎)</>
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* High Stakes Confirm Dialog */}
+            <AlertDialog open={!!confirmHighStakes} onOpenChange={() => setConfirmHighStakes(null)}>
+                <AlertDialogContent className="noir-card border-border/50 max-w-xs">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-cinzel text-foreground flex items-center gap-2">
+                            <Star className="w-5 h-5 text-yellow-500" />
+                            {confirmHighStakes?.name}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            <div className="space-y-2">
+                                <p><strong>Entry Fee:</strong> <span className="text-cyan-400">{confirmHighStakes?.entry_cost_diamonds}💎</span></p>
+                                <p><strong>Reward:</strong> <span className="text-green-400">${confirmHighStakes?.cash_reward.toLocaleString()}</span></p>
+                                <p><strong>Success Rate:</strong> <span className="text-red-400">{confirmHighStakes?.success_rate}%</span></p>
+                                <p className="text-yellow-400 text-xs mt-2">⚠️ If you fail, you lose the entry fee!</p>
+                            </div>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={executeHighStakes}
+                            className="bg-gradient-to-r from-yellow-600 to-orange-600"
+                        >
+                            Enter ({confirmHighStakes?.entry_cost_diamonds}💎)
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </MainLayout>
     );
 };

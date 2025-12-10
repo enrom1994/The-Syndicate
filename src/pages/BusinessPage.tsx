@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Briefcase, TrendingUp, DollarSign, Clock, ArrowUp, Loader2, Factory, Users, Package, AlertCircle } from 'lucide-react';
+import { Briefcase, TrendingUp, DollarSign, Clock, ArrowUp, Loader2, Factory, Users, Package, AlertCircle, Diamond, Zap } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -20,13 +20,16 @@ interface BusinessCardProps {
     income: number;
     upgradeCost: number;
     cooldown: string;
+    cooldownRemaining?: string;
     owned: boolean;
     canCollect: boolean;
     delay?: number;
     isProcessing?: boolean;
+    isRushing?: boolean;
     onBuy: () => void;
     onUpgrade: () => void;
     onCollect: () => void;
+    onRushCollect?: () => void;
 }
 
 const BusinessCard = ({
@@ -38,13 +41,16 @@ const BusinessCard = ({
     income,
     upgradeCost,
     cooldown,
+    cooldownRemaining,
     owned,
     canCollect,
     delay = 0,
     isProcessing = false,
+    isRushing = false,
     onBuy,
     onUpgrade,
-    onCollect
+    onCollect,
+    onRushCollect
 }: BusinessCardProps) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -120,10 +126,28 @@ const BusinessCard = ({
                     ) : (
                         <>
                             <DollarSign className="w-4 h-4 mr-1" />
-                            {canCollect ? 'Collect' : 'Collecting...'}
+                            {canCollect ? 'Collect' : cooldownRemaining || 'Wait'}
                         </>
                     )}
                 </Button>
+                {/* Rush Collect Button - only show when on cooldown */}
+                {!canCollect && onRushCollect && (
+                    <Button
+                        variant="outline"
+                        className="text-xs border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+                        disabled={isRushing}
+                        onClick={onRushCollect}
+                    >
+                        {isRushing ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <>
+                                <Diamond className="w-3 h-3 mr-1" />
+                                5💎
+                            </>
+                        )}
+                    </Button>
+                )}
             </div>
         ) : (
             <Button className="w-full btn-gold text-xs" onClick={onBuy} disabled={isProcessing}>
@@ -163,7 +187,8 @@ const BusinessPage = () => {
         loadBusinesses,
         buyBusiness,
         upgradeBusiness,
-        collectIncome
+        collectIncome,
+        rushBusinessCollect
     } = useGameStore();
 
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -179,6 +204,7 @@ const BusinessPage = () => {
     const [recipes, setRecipes] = useState<any[]>([]);
     const [isLoadingRecipes, setIsLoadingRecipes] = useState(false);
     const [producingRecipeId, setProducingRecipeId] = useState<string | null>(null);
+    const [rushingId, setRushingId] = useState<string | null>(null);
 
     // Load production recipes
     useEffect(() => {
@@ -254,8 +280,24 @@ const BusinessPage = () => {
             upgrade_cost: owned ? owned.upgrade_cost : def.base_purchase_cost,
             playerBusinessId: owned?.id,
             canCollect: owned ? canCollectFromBusiness(owned.last_collected, owned.collect_cooldown_minutes) : false,
+            lastCollected: owned?.last_collected,
+            cooldownMinutes: owned?.collect_cooldown_minutes || def.collect_cooldown_minutes,
         };
     });
+
+    // Calculate cooldown remaining as formatted string
+    const getCooldownRemaining = (lastCollected: string | undefined, cooldownMinutes: number): string => {
+        if (!lastCollected) return '';
+        const lastDate = new Date(lastCollected);
+        const now = new Date();
+        const minutesPassed = (now.getTime() - lastDate.getTime()) / (1000 * 60);
+        const remaining = Math.max(0, cooldownMinutes - minutesPassed);
+        if (remaining <= 0) return '';
+        const hours = Math.floor(remaining / 60);
+        const mins = Math.floor(remaining % 60);
+        if (hours > 0) return `${hours}h ${mins}m`;
+        return `${mins}m`;
+    };
 
     const handleAction = (
         type: 'buy' | 'upgrade' | 'collect',
@@ -300,6 +342,38 @@ const BusinessPage = () => {
         } finally {
             setIsProcessing(false);
             setPendingAction(null);
+        }
+    };
+
+    const handleRushCollect = async (playerBusinessId: string, businessName: string) => {
+        setRushingId(playerBusinessId);
+        try {
+            const result = await rushBusinessCollect(playerBusinessId);
+            if (result.success) {
+                if (result.income_collected) {
+                    rewardCash(result.income_collected);
+                }
+                toast({
+                    title: '⚡ Rush Collect!',
+                    description: `Collected $${result.income_collected?.toLocaleString()} from ${businessName} (5💎)`,
+                });
+                await refetchPlayer();
+            } else {
+                toast({
+                    title: 'Rush Failed',
+                    description: result.message,
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Rush collect error:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to rush collect.',
+                variant: 'destructive',
+            });
+        } finally {
+            setRushingId(null);
         }
     };
 
@@ -432,13 +506,16 @@ const BusinessPage = () => {
                                             income={business.income_per_hour}
                                             upgradeCost={business.upgrade_cost}
                                             cooldown={formatCooldown(business.collect_cooldown_minutes)}
+                                            cooldownRemaining={getCooldownRemaining(business.lastCollected, business.cooldownMinutes)}
                                             owned={business.owned}
                                             canCollect={business.canCollect}
                                             delay={0.1 * index}
                                             isProcessing={isProcessing && pendingAction?.businessId === business.id}
+                                            isRushing={rushingId === business.playerBusinessId}
                                             onBuy={() => handleAction('buy', business.name, business.id, business.base_purchase_cost)}
                                             onUpgrade={() => handleAction('upgrade', business.name, business.id, business.upgrade_cost, business.playerBusinessId)}
                                             onCollect={() => handleAction('collect', business.name, business.id, 0, business.playerBusinessId)}
+                                            onRushCollect={business.owned && business.playerBusinessId ? () => handleRushCollect(business.playerBusinessId!, business.name) : undefined}
                                         />
                                     ))
                                 )}
