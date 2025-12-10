@@ -5,6 +5,13 @@
 -- production recipes for all businesses.
 
 -- =====================================================
+-- 0. UPDATE CATEGORY CONSTRAINT TO ALLOW CONSUMABLES
+-- =====================================================
+ALTER TABLE public.item_definitions DROP CONSTRAINT IF EXISTS item_definitions_category_check;
+ALTER TABLE public.item_definitions ADD CONSTRAINT item_definitions_category_check 
+    CHECK (category IN ('weapon', 'equipment', 'contraband', 'consumable'));
+
+-- =====================================================
 -- 1. ADD NEW ITEM DEFINITIONS
 -- =====================================================
 
