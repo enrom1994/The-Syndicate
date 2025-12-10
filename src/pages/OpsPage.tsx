@@ -258,7 +258,7 @@ const TargetCard = ({
                                     <div className="flex items-center justify-between">
                                         <span className="font-cinzel font-bold text-sm text-foreground">{type.name}</span>
                                         <div className="flex items-center gap-1 text-xs text-yellow-400">
-                                            <img src="/images/icons/stamina.png" alt="" className="w-3 h-3" />
+                                            <img src="/images/icons/energy.png" alt="" className="w-3 h-3" />
                                             <span>{type.stamina_cost}</span>
                                         </div>
                                     </div>
