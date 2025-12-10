@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Swords, Target, Clock, Zap, Loader2, Skull, Users, Shield, DollarSign, AlertTriangle, Flame, Diamond, Star } from 'lucide-react';
+import { Swords, Target, Clock, Loader2, Skull, Users, Shield, DollarSign, AlertTriangle, Flame, Diamond, Star } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -61,6 +61,8 @@ interface PvpAttackType {
     stamina_cost: number;
     requires_crew: boolean;
     requires_consumables: boolean;
+    consumable_item_name: string | null;
+    consumable_qty: number;
     steals_cash: boolean;
     steals_vault: boolean;
     steals_contraband: boolean;
@@ -131,7 +133,7 @@ const PveTargetCard = ({
             </div>
 
             <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
-                <Zap className="w-3 h-3" />
+                <img src="/images/icons/energy.png" alt="" className="w-3 h-3" />
                 -{target.stamina_cost} Stamina
                 <span className="mx-1">•</span>
                 <Shield className="w-3 h-3" />
@@ -239,20 +241,56 @@ const TargetCard = ({
             ) : (
                 <div className="space-y-2">
                     {attackTypes.map(type => (
-                        <Button
+                        <div
                             key={type.id}
-                            variant="outline"
-                            size="sm"
-                            className="w-full text-xs justify-between"
+                            className="noir-card p-3 cursor-pointer hover:bg-muted/30 transition-colors"
                             onClick={() => {
-                                onAttack(type.id);
-                                setShowTypes(false);
+                                if (!isProcessing) {
+                                    onAttack(type.id);
+                                    setShowTypes(false);
+                                }
                             }}
-                            disabled={isProcessing}
                         >
-                            <span>{type.name}</span>
-                            <span className="text-muted-foreground">{type.stamina_cost}⚡</span>
-                        </Button>
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="font-cinzel font-semibold text-sm text-foreground">{type.name}</span>
+                                <span className="text-xs text-muted-foreground">{type.description}</span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 text-xs">
+                                {/* Stamina cost */}
+                                <span className="flex items-center gap-1 bg-yellow-500/20 px-2 py-0.5 rounded">
+                                    <img src="/images/icons/energy.png" alt="" className="w-3 h-3" />
+                                    <span className="text-yellow-400">{type.stamina_cost}</span>
+                                </span>
+                                {/* Crew requirement */}
+                                {type.requires_crew && (
+                                    <span className="flex items-center gap-1 bg-blue-500/20 px-2 py-0.5 rounded">
+                                        <Users className="w-3 h-3 text-blue-400" />
+                                        <span className="text-blue-400">Crew</span>
+                                    </span>
+                                )}
+                                {/* Consumable requirement */}
+                                {type.requires_consumables && type.consumable_item_name && (
+                                    <span className="flex items-center gap-1 bg-cyan-500/20 px-2 py-0.5 rounded">
+                                        <img
+                                            src={`/images/icons/${type.consumable_item_name.toLowerCase().replace(/\s+/g, '')}.png`}
+                                            alt=""
+                                            className="w-3 h-3"
+                                        />
+                                        <span className="text-cyan-400">{type.consumable_qty}x</span>
+                                    </span>
+                                )}
+                                {/* What it steals */}
+                                {type.steals_cash && (
+                                    <span className="text-green-400">💰 {type.cash_steal_percent}%</span>
+                                )}
+                                {type.steals_vault && (
+                                    <span className="text-yellow-400">🔐 {type.vault_steal_percent}%</span>
+                                )}
+                                {type.kills_crew && (
+                                    <span className="text-red-400">💀 Kills Crew</span>
+                                )}
+                            </div>
+                        </div>
                     ))}
                     <Button
                         variant="ghost"
@@ -312,7 +350,7 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0 }: {
             </div>
 
             <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
-                <Zap className="w-3 h-3 text-yellow-500" />
+                <img src="/images/icons/energy.png" alt="" className="w-3 h-3" />
                 -{job.energy_cost} Energy
             </div>
 
@@ -398,7 +436,7 @@ const HighStakesCard = ({ job, isProcessing, delay = 0, onExecute }: {
             </div>
 
             <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
-                <Zap className="w-3 h-3 text-yellow-500" />
+                <img src="/images/icons/energy.png" alt="" className="w-3 h-3" />
                 -{job.energy_cost} Energy
                 <span className="mx-1">•</span>
                 <Shield className="w-3 h-3" />
