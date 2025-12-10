@@ -166,7 +166,7 @@ const PveTargetCard = ({
 };
 
 // =====================================================
-// PVP TARGET CARD (with attack type selection)
+// PVP TARGET CARD - MOBILE OPTIMIZED
 // =====================================================
 
 const TargetCard = ({
@@ -184,10 +184,10 @@ const TargetCard = ({
 }) => {
     const [showTypes, setShowTypes] = useState(false);
 
-    const getRisk = (defense: number): { label: string; color: string } => {
-        if (defense < 30) return { label: 'Low', color: 'text-green-500' };
-        if (defense < 70) return { label: 'Medium', color: 'text-yellow-500' };
-        return { label: 'High', color: 'text-red-500' };
+    const getRisk = (defense: number): { label: string; color: string; bgColor: string } => {
+        if (defense < 30) return { label: 'Easy', color: 'text-green-400', bgColor: 'bg-green-500/20' };
+        if (defense < 70) return { label: 'Medium', color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' };
+        return { label: 'Hard', color: 'text-red-400', bgColor: 'bg-red-500/20' };
     };
 
     const formatNetWorth = (cash: number): string => {
@@ -203,108 +203,136 @@ const TargetCard = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay }}
-            className="noir-card p-4"
+            className="noir-card overflow-hidden"
         >
-            <div className="flex items-start justify-between mb-3">
-                <div>
-                    <h3 className="font-cinzel font-semibold text-sm text-foreground">
-                        {target.username || `Player ${target.id.slice(0, 6)}`}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">Enemy Player</p>
-                </div>
-                <span className={`text-xs font-medium ${risk.color}`}>{risk.label} Risk</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 mb-3">
-                <div>
-                    <p className="text-xs text-muted-foreground">Net Worth</p>
-                    <p className="font-cinzel font-bold text-sm text-primary">{formatNetWorth(target.cash)}</p>
-                </div>
-                <div>
-                    <p className="text-xs text-muted-foreground">Defense</p>
+            {/* Target Header */}
+            <div className="p-3 border-b border-border/30">
+                <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Progress value={Math.min(target.defense, 100)} className="h-1.5 flex-1" />
-                        <span className="text-xs text-foreground">{target.defense}</span>
-                    </div>
-                </div>
-            </div>
-
-            {!showTypes ? (
-                <Button
-                    className="w-full btn-gold text-xs"
-                    onClick={() => setShowTypes(true)}
-                    disabled={isProcessing}
-                >
-                    <Swords className="w-4 h-4 mr-2" />
-                    Choose Attack
-                </Button>
-            ) : (
-                <div className="space-y-2">
-                    {attackTypes.map(type => (
-                        <div
-                            key={type.id}
-                            className="noir-card p-3 cursor-pointer hover:bg-muted/30 transition-colors"
-                            onClick={() => {
-                                if (!isProcessing) {
-                                    onAttack(type.id);
-                                    setShowTypes(false);
-                                }
-                            }}
-                        >
-                            <div className="flex items-center justify-between mb-1">
-                                <span className="font-cinzel font-semibold text-sm text-foreground">{type.name}</span>
-                                <span className="text-xs text-muted-foreground">{type.description}</span>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 text-xs">
-                                {/* Stamina cost */}
-                                <span className="flex items-center gap-1 bg-yellow-500/20 px-2 py-0.5 rounded">
-                                    <img src="/images/icons/energy.png" alt="" className="w-3 h-3" />
-                                    <span className="text-yellow-400">{type.stamina_cost}</span>
-                                </span>
-                                {/* Crew requirement */}
-                                {type.requires_crew && (
-                                    <span className="flex items-center gap-1 bg-blue-500/20 px-2 py-0.5 rounded">
-                                        <Users className="w-3 h-3 text-blue-400" />
-                                        <span className="text-blue-400">Crew</span>
-                                    </span>
-                                )}
-                                {/* Consumable requirement */}
-                                {type.requires_consumables && type.consumable_item_name && (
-                                    <span className="flex items-center gap-1 bg-cyan-500/20 px-2 py-0.5 rounded">
-                                        <img
-                                            src={`/images/icons/${type.consumable_item_name.toLowerCase().replace(/\s+/g, '')}.png`}
-                                            alt=""
-                                            className="w-3 h-3"
-                                        />
-                                        <span className="text-cyan-400">{type.consumable_qty}x</span>
-                                    </span>
-                                )}
-                                {/* What it steals */}
-                                {type.steals_cash && (
-                                    <span className="text-green-400">💰 {type.cash_steal_percent}%</span>
-                                )}
-                                {type.steals_vault && (
-                                    <span className="text-yellow-400">🔐 {type.vault_steal_percent}%</span>
-                                )}
-                                {type.kills_crew && (
-                                    <span className="text-red-400">💀 Kills Crew</span>
-                                )}
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
+                            <Skull className="w-4 h-4 text-red-200" />
+                        </div>
+                        <div>
+                            <h3 className="font-cinzel font-semibold text-sm text-foreground leading-tight">
+                                {target.username || `Player ${target.id.slice(0, 6)}`}
+                            </h3>
+                            <div className="flex items-center gap-2 text-xs">
+                                <span className="text-green-400 font-medium">{formatNetWorth(target.cash)}</span>
+                                <span className="text-muted-foreground">•</span>
+                                <span className="text-muted-foreground">DEF {target.defense}</span>
                             </div>
                         </div>
-                    ))}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full text-xs"
-                        onClick={() => setShowTypes(false)}
-                    >
-                        Cancel
-                    </Button>
+                    </div>
+                    <span className={`text-xs font-medium px-2 py-1 rounded ${risk.bgColor} ${risk.color}`}>
+                        {risk.label}
+                    </span>
                 </div>
-            )}
+            </div>
+
+            {/* Attack Types or Button */}
+            <div className="p-3">
+                {!showTypes ? (
+                    <Button
+                        className="w-full btn-gold text-xs h-9"
+                        onClick={() => setShowTypes(true)}
+                        disabled={isProcessing}
+                    >
+                        <Swords className="w-4 h-4 mr-2" />
+                        Select Attack Type
+                    </Button>
+                ) : (
+                    <div className="space-y-2">
+                        {attackTypes.map(type => (
+                            <div
+                                key={type.id}
+                                className="relative rounded-lg border border-border/50 bg-card/50 hover:bg-muted/40 transition-all cursor-pointer overflow-hidden"
+                                onClick={() => {
+                                    if (!isProcessing) {
+                                        onAttack(type.id);
+                                        setShowTypes(false);
+                                    }
+                                }}
+                            >
+                                {/* Attack Header */}
+                                <div className="px-3 py-2 border-b border-border/20">
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-cinzel font-bold text-sm text-foreground">{type.name}</span>
+                                        <div className="flex items-center gap-1 text-xs text-yellow-400">
+                                            <img src="/images/icons/stamina.png" alt="" className="w-3 h-3" />
+                                            <span>{type.stamina_cost}</span>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{type.description}</p>
+                                </div>
+
+                                {/* Requirements Row */}
+                                <div className="px-3 py-2 flex flex-wrap items-center gap-1.5">
+                                    {/* Crew requirement */}
+                                    {type.requires_crew && (
+                                        <span className="flex items-center gap-1 bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 rounded text-xs">
+                                            <Users className="w-3 h-3 text-blue-400" />
+                                            <span className="text-blue-300">Crew</span>
+                                        </span>
+                                    )}
+
+                                    {/* Consumable requirement */}
+                                    {type.requires_consumables && type.consumable_item_name && (
+                                        <span className="flex items-center gap-1 bg-cyan-500/20 border border-cyan-500/30 px-2 py-0.5 rounded text-xs">
+                                            <img
+                                                src={`/images/icons/${type.consumable_item_name.toLowerCase().replace(/\s+/g, '')}.png`}
+                                                alt=""
+                                                className="w-3 h-3"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                }}
+                                            />
+                                            <span className="text-cyan-300">{type.consumable_qty}x {type.consumable_item_name}</span>
+                                        </span>
+                                    )}
+
+                                    {/* Rewards/Effects */}
+                                    <div className="flex-1 flex justify-end gap-1.5 flex-wrap">
+                                        {type.steals_cash && (
+                                            <span className="flex items-center gap-0.5 text-xs text-green-400">
+                                                <span>💰</span>
+                                                <span>{type.cash_steal_percent}%</span>
+                                            </span>
+                                        )}
+                                        {type.steals_vault && (
+                                            <span className="flex items-center gap-0.5 text-xs text-yellow-400">
+                                                <span>🔐</span>
+                                                <span>{type.vault_steal_percent}%</span>
+                                            </span>
+                                        )}
+                                        {type.steals_contraband && (
+                                            <span className="text-xs text-purple-400">📦</span>
+                                        )}
+                                        {type.steals_respect && (
+                                            <span className="text-xs text-orange-400">⭐</span>
+                                        )}
+                                        {type.kills_crew && (
+                                            <span className="text-xs text-red-400">💀</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full text-xs text-muted-foreground h-8"
+                            onClick={() => setShowTypes(false)}
+                        >
+                            Cancel
+                        </Button>
+                    </div>
+                )}
+            </div>
         </motion.div>
     );
 };
+
 
 // =====================================================
 // JOB CARD (with streak bonus display)
