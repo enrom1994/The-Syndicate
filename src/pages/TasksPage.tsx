@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { GameIcon } from '@/components/GameIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, PlayerTask } from '@/hooks/useGameStore';
+import { ReferralSection } from '@/components/ReferralSection';
 
 type TaskType = 'telegram' | 'daily' | 'weekly' | 'special';
 
@@ -235,6 +236,9 @@ const TasksPage = () => {
                         </p>
                     </div>
                 </motion.div>
+
+                {/* Referral Section - at top */}
+                <ReferralSection />
 
                 {isLoadingTasks ? (
                     <div className="flex items-center justify-center py-12">

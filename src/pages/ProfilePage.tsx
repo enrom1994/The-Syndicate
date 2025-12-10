@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore } from '@/hooks/useGameStore';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
+import { ReferralSection } from '@/components/ReferralSection';
 
 // Compact Stat Card for training
 interface StatCardProps {
@@ -274,6 +275,16 @@ const ProfilePage = () => {
                             value={`${totalCrew} members`}
                         />
                     </div>
+                </motion.div>
+
+                {/* Referral Stats (Compact) */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.15 }}
+                    className="mb-4"
+                >
+                    <ReferralSection compact />
                 </motion.div>
 
                 {/* Combat Stats */}

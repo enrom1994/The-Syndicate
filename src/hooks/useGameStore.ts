@@ -149,6 +149,33 @@ export interface ItemDefinition {
     is_purchasable: boolean;
 }
 
+// Referral Types
+export interface ReferralStats {
+    referral_code: string;
+    total_referrals: number;
+    qualified_referrals: number;
+    pending_referrals: number;
+    referrals: {
+        id: string;
+        username: string;
+        level: number;
+        is_qualified: boolean;
+        created_at: string;
+    }[];
+    milestones: {
+        id: string;
+        milestone_count: number;
+        reward_type: 'cash' | 'diamonds' | 'item';
+        reward_amount: number;
+        reward_item_name: string | null;
+        reward_item_icon: string | null;
+        title: string;
+        description: string;
+        is_claimed: boolean;
+        can_claim: boolean;
+    }[];
+}
+
 interface GameState {
     // Player data (synced from AuthContext)
     playerId: string | null;
@@ -292,6 +319,11 @@ interface GameState {
         respect_gained?: number;
         respect_lost?: number;
     }>;
+
+    // Referral system
+    getReferralStats: () => Promise<ReferralStats | null>;
+    claimReferralMilestone: (milestoneId: string) => Promise<{ success: boolean; message: string; reward_type?: string; reward_amount?: number; reward_item_name?: string }>;
+    applyReferralCode: (code: string) => Promise<{ success: boolean; message: string }>;
 
     // Clear on logout
     reset: () => void;
@@ -1261,6 +1293,57 @@ export const useGameStore = create<GameState>((set, get) => ({
             leveled_up?: boolean;
             new_level?: number;
         };
+    },
+
+    // Referral system
+    getReferralStats: async () => {
+        const { playerId } = get();
+        if (!playerId) return null;
+
+        const { data, error } = await supabase.rpc('get_referral_stats', {
+            player_id_input: playerId,
+        });
+
+        if (error) {
+            console.error('Failed to get referral stats:', error);
+            return null;
+        }
+
+        return data as ReferralStats;
+    },
+
+    claimReferralMilestone: async (milestoneId) => {
+        const { playerId } = get();
+        if (!playerId) return { success: false, message: 'Not logged in' };
+
+        const { data, error } = await supabase.rpc('claim_referral_milestone', {
+            player_id_input: playerId,
+            milestone_id_input: milestoneId,
+        });
+
+        if (error) {
+            console.error('Failed to claim referral milestone:', error);
+            return { success: false, message: error.message };
+        }
+
+        return data as { success: boolean; message: string; reward_type?: string; reward_amount?: number; reward_item_name?: string };
+    },
+
+    applyReferralCode: async (code) => {
+        const { playerId } = get();
+        if (!playerId) return { success: false, message: 'Not logged in' };
+
+        const { data, error } = await supabase.rpc('apply_referral_code', {
+            new_player_id: playerId,
+            code_input: code,
+        });
+
+        if (error) {
+            console.error('Failed to apply referral code:', error);
+            return { success: false, message: error.message };
+        }
+
+        return data as { success: boolean; message: string };
     },
 
     reset: () => set({
