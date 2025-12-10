@@ -66,8 +66,9 @@ const InventoryItemComponent = ({
             transition={{ duration: 0.5, delay }}
             className={`noir-card p-3 border-l-2 ${rarityColors[item.rarity]} ${hasAssigned ? 'ring-1 ring-primary/50' : ''}`}
         >
-            <div className="flex items-center gap-3">
-                {/* Icon */}
+            {/* Row 1: Icon, Name/Stats, Quantity */}
+            <div className="flex items-center gap-2">
+                {/* Icon - slightly smaller */}
                 <div className="w-10 h-10 rounded-sm bg-muted/50 flex items-center justify-center shrink-0 overflow-hidden">
                     {item.icon ? (
                         <img
@@ -83,24 +84,24 @@ const InventoryItemComponent = ({
 
                 {/* Name & Stats */}
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                        <h3 className="font-cinzel font-semibold text-sm text-foreground truncate">{item.name}</h3>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <h3 className="font-cinzel font-semibold text-sm text-foreground truncate max-w-[120px]">{item.name}</h3>
                         {item.location === 'safe' && (
-                            <span className="px-1.5 py-0.5 text-[10px] bg-green-500/20 text-green-500 rounded-sm flex items-center gap-0.5">
+                            <span className="px-1 py-0.5 text-[9px] bg-green-500/20 text-green-500 rounded-sm flex items-center gap-0.5 shrink-0">
                                 <Lock className="w-2 h-2" /> SAFE
                             </span>
                         )}
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`px-1.5 py-0.5 text-[10px] rounded-sm ${rarityBadgeColors[item.rarity]}`}>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className={`px-1 py-0.5 text-[9px] rounded-sm shrink-0 ${rarityBadgeColors[item.rarity]}`}>
                             {item.rarity.toUpperCase()}
                         </span>
-                        <span className="text-xs text-primary">{formatStat()}</span>
+                        <span className="text-[11px] text-primary">{formatStat()}</span>
                     </div>
                 </div>
 
                 {/* Quantity & Assignment */}
-                <div className="text-right mr-2">
+                <div className="text-right shrink-0">
                     <p className="font-cinzel font-bold text-sm text-foreground">x{item.quantity}</p>
                     {item.category !== 'contraband' && (
                         <p className={`text-[10px] ${hasAssigned ? 'text-primary' : 'text-muted-foreground'}`}>
@@ -108,10 +109,12 @@ const InventoryItemComponent = ({
                         </p>
                     )}
                 </div>
+            </div>
 
-                {/* Action Buttons */}
+            {/* Row 2: Action Buttons - full width, aligned right */}
+            <div className="flex justify-end gap-1.5 mt-2 pt-2 border-t border-muted/20">
                 {item.category === 'contraband' ? (
-                    <Button className="btn-gold h-8 px-2 text-xs" onClick={onSell}>
+                    <Button className="btn-gold h-7 px-3 text-xs" onClick={onSell}>
                         <Gavel className="w-3 h-3 mr-1" />
                         Auction
                     </Button>
@@ -119,21 +122,21 @@ const InventoryItemComponent = ({
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 px-2 text-xs"
+                        className="h-7 px-3 text-xs"
                         onClick={onMoveFromSafe}
                         disabled={isProcessing}
                     >
                         {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : (
                             <>
                                 <Unlock className="w-3 h-3 mr-1" />
-                                Remove
+                                Remove from Safe
                             </>
                         )}
                     </Button>
                 ) : (
-                    <div className="flex gap-1">
+                    <>
                         <Button
-                            className="btn-gold h-8 px-2 text-xs"
+                            className="btn-gold h-7 px-3 text-xs"
                             onClick={onAssign}
                             disabled={isProcessing}
                         >
@@ -142,26 +145,28 @@ const InventoryItemComponent = ({
                         <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 px-1.5 text-xs"
+                            className="h-7 px-2 text-xs"
                             onClick={onMoveToSafe}
                             disabled={isProcessing || item.assigned_quantity > 0}
                             title={item.assigned_quantity > 0 ? 'Unassign first' : 'Move to Safe'}
                         >
-                            <Lock className="w-3 h-3" />
+                            <Lock className="w-3 h-3 mr-1" />
+                            Safe
                         </Button>
                         {onSell && (
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 px-1.5 text-xs text-green-500 hover:text-green-400"
+                                className="h-7 px-2 text-xs text-green-500 hover:text-green-400"
                                 onClick={onSell}
                                 disabled={isProcessing || item.assigned_quantity > 0}
                                 title={item.assigned_quantity > 0 ? 'Unassign first' : 'Sell for cash'}
                             >
-                                <DollarSign className="w-3 h-3" />
+                                <DollarSign className="w-3 h-3 mr-1" />
+                                Sell
                             </Button>
                         )}
-                    </div>
+                    </>
                 )}
             </div>
         </motion.div>

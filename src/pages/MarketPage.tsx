@@ -36,23 +36,30 @@ const MarketItem = ({ name, description, price, stat, image, delay = 0, onBuy }:
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay }}
-        className="noir-card p-3 flex items-center gap-3"
+        className="noir-card p-3"
     >
-        <div className="w-16 h-16 rounded-sm overflow-hidden shrink-0 bg-muted/30">
-            <img
-                src={image}
-                alt={name}
-                className="w-full h-full object-cover"
-            />
+        {/* Row 1: Image, Name, Price */}
+        <div className="flex items-center gap-2">
+            <div className="w-12 h-12 rounded-sm overflow-hidden shrink-0 bg-muted/30">
+                <img
+                    src={image}
+                    alt={name}
+                    className="w-full h-full object-cover"
+                />
+            </div>
+            <div className="flex-1 min-w-0">
+                <h3 className="font-cinzel font-semibold text-sm text-foreground truncate">{name}</h3>
+                {stat && <p className="text-xs text-primary mt-0.5">{stat}</p>}
+            </div>
+            <div className="text-right shrink-0">
+                <p className="font-cinzel font-bold text-sm text-primary">${price.toLocaleString()}</p>
+            </div>
         </div>
-        <div className="flex-1 min-w-0">
-            <h3 className="font-cinzel font-semibold text-sm text-foreground">{name}</h3>
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{description}</p>
-            {stat && <p className="text-xs text-primary mt-1">{stat}</p>}
-        </div>
-        <div className="text-right shrink-0">
-            <p className="font-cinzel font-bold text-sm text-primary">${price.toLocaleString()}</p>
-            <Button size="sm" className="mt-2 btn-gold text-xs px-3 py-1 h-auto" onClick={onBuy}>
+
+        {/* Row 2: Description + Buy Button */}
+        <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-muted/20">
+            <p className="text-xs text-muted-foreground line-clamp-1 flex-1">{description}</p>
+            <Button size="sm" className="btn-gold text-xs px-4 py-1 h-7 shrink-0" onClick={onBuy}>
                 Buy
             </Button>
         </div>
