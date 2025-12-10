@@ -36,8 +36,9 @@ export const ReferralSection = ({ compact = false }: ReferralSectionProps) => {
     const [claimingId, setClaimingId] = useState<string | null>(null);
     const [showReferrals, setShowReferrals] = useState(false);
 
-    // Telegram Bot username - update this to match your bot
+    // Telegram Bot username and Mini App short name
     const BOT_USERNAME = 'The_Syndicate_Game_Bot';
+    const APP_SHORT_NAME = 'Syndicate';
 
     const loadStats = async () => {
         setIsLoading(true);
@@ -52,7 +53,8 @@ export const ReferralSection = ({ compact = false }: ReferralSectionProps) => {
 
     const getReferralLink = () => {
         if (!stats?.referral_code) return '';
-        return `https://t.me/${BOT_USERNAME}?start=${stats.referral_code}`;
+        // Use startapp parameter for Telegram Mini App deep links
+        return `https://t.me/${BOT_USERNAME}/${APP_SHORT_NAME}?startapp=${stats.referral_code}`;
     };
 
     const handleCopy = async () => {
