@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type IconType = 'cash' | 'diamond' | 'ton' | 'briefcase' | 'fedora';
+type IconType = 'cash' | 'diamond' | 'ton' | 'briefcase' | 'fedora' | 'energy';
 
 interface GameIconProps {
     type: IconType;
@@ -14,6 +14,7 @@ const iconPaths: Record<IconType, string> = {
     ton: '/images/icons/ton_symbol.png',
     briefcase: '/images/icons/briefcase.png',
     fedora: '/images/icons/fedora.png',
+    energy: '/images/icons/energy.png',
 };
 
 export const GameIcon = ({ type, className, alt }: GameIconProps) => {

@@ -31,7 +31,12 @@ interface TaskCardProps {
 const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
     const rewardDisplay = task.reward_type === 'cash'
         ? `$${(task.reward_amount / 1000).toFixed(0)}K`
-        : `${task.reward_amount} 💎`;
+        : task.reward_type === 'energy'
+            ? `${task.reward_amount} ⚡`
+            : `${task.reward_amount} 💎`;
+
+    const showProgress = task.requirement_target > 1 && !task.is_completed;
+    const progressPercent = Math.min(100, (task.progress / task.requirement_target) * 100);
 
     return (
         <motion.div
@@ -70,19 +75,40 @@ const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
                             <div className="flex items-center gap-1 text-xs text-primary font-semibold">
                                 {task.reward_type === 'cash' ? (
                                     <GameIcon type="cash" className="w-4 h-4" />
+                                ) : task.reward_type === 'energy' ? (
+                                    <GameIcon type="energy" className="w-4 h-4" />
                                 ) : (
                                     <GameIcon type="diamond" className="w-5 h-5" />
                                 )}
                                 {rewardDisplay}
                             </div>
-                            {task.expires_at && (
+                            {task.reset_hours && (
                                 <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
                                     <Clock className="w-3 h-3" />
-                                    {new Date(task.expires_at).toLocaleDateString()}
+                                    {task.reset_hours === 24 ? 'Daily' : 'Weekly'}
                                 </div>
                             )}
                         </div>
                     </div>
+
+                    {/* Progress Bar */}
+                    {showProgress && (
+                        <div className="mt-2">
+                            <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+                                <span>Progress</span>
+                                <span className={task.can_claim ? 'text-green-400' : ''}>
+                                    {task.progress}/{task.requirement_target}
+                                </span>
+                            </div>
+                            <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                                <div
+                                    className={`h-full transition-all duration-300 ${task.can_claim ? 'bg-green-500' : 'bg-primary'
+                                        }`}
+                                    style={{ width: `${progressPercent}%` }}
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     {!task.is_completed && (
                         <div className="flex gap-2 mt-3">
@@ -102,8 +128,8 @@ const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
                             )}
                             <Button
                                 size="sm"
-                                className="btn-gold flex-1 text-xs"
-                                disabled={isVerifying}
+                                className={`flex-1 text-xs ${task.can_claim ? 'btn-gold' : ''}`}
+                                disabled={isVerifying || !task.can_claim}
                                 onClick={() => onVerify(task.id)}
                             >
                                 {isVerifying ? (
@@ -111,8 +137,10 @@ const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
                                         <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
                                         Verifying...
                                     </>
-                                ) : (
+                                ) : task.can_claim ? (
                                     'Claim'
+                                ) : (
+                                    `${task.progress}/${task.requirement_target}`
                                 )}
                             </Button>
                         </div>
@@ -122,6 +150,7 @@ const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
         </motion.div>
     );
 };
+
 
 const TasksPage = () => {
     const { toast } = useToast();

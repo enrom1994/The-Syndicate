@@ -92,7 +92,12 @@ export interface PlayerTask {
     reward_type: 'cash' | 'diamonds' | 'energy';
     reward_amount: number;
     link: string | null;
+    requirement_type: string | null;
+    requirement_target: number;
+    progress: number;
     is_completed: boolean;
+    can_claim: boolean;
+    reset_hours: number | null;
 }
 
 export interface JobDefinition {
@@ -578,7 +583,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
     },
 
-    // Load tasks with completion status
+    // Load tasks with progress from new RPC
     loadTasks: async () => {
         const { playerId } = get();
         if (!playerId) return;
@@ -586,32 +591,28 @@ export const useGameStore = create<GameState>((set, get) => ({
         set({ isLoadingTasks: true });
 
         try {
-            const { data: defs } = await supabase
-                .from('task_definitions')
-                .select('*')
-                .eq('is_active', true);
-
-            const { data: completed } = await supabase
-                .from('player_tasks')
-                .select('*')
-                .eq('player_id', playerId);
-
-            const completedMap = new Map((completed || []).map((t: any) => [t.task_id, t]));
-
-            const tasks: PlayerTask[] = (defs || []).map((def: any) => {
-                const t = completedMap.get(def.id) || {};
-                return {
-                    id: t.id || def.id,
-                    task_id: def.id,
-                    title: def.title,
-                    description: def.description,
-                    task_type: def.task_type,
-                    reward_type: def.reward_type,
-                    reward_amount: def.reward_amount,
-                    link: def.link,
-                    is_completed: t.is_completed || false,
-                };
+            const { data, error } = await supabase.rpc('get_tasks_with_progress', {
+                player_id_input: playerId
             });
+
+            if (error) throw error;
+
+            const tasks: PlayerTask[] = (data || []).map((t: any) => ({
+                id: t.id,
+                task_id: t.task_id,
+                title: t.title,
+                description: t.description,
+                task_type: t.task_type,
+                reward_type: t.reward_type,
+                reward_amount: t.reward_amount,
+                link: t.link,
+                requirement_type: t.requirement_type,
+                requirement_target: t.requirement_target || 1,
+                progress: t.progress || 0,
+                is_completed: t.is_completed || false,
+                can_claim: t.can_claim || false,
+                reset_hours: t.reset_hours,
+            }));
 
             set({ tasks });
         } catch (error) {
