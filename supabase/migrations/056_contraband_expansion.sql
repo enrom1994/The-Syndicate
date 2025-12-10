@@ -529,9 +529,12 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
+
 -- =====================================================
 -- 5. UPDATE GET_PVP_ATTACK_TYPES TO INCLUDE CONSUMABLES
 -- =====================================================
+
+DROP FUNCTION IF EXISTS get_pvp_attack_types();
 
 CREATE OR REPLACE FUNCTION get_pvp_attack_types()
 RETURNS TABLE (
