@@ -511,47 +511,32 @@ const ShopPage = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.5 }}
-                        className="noir-card p-4 mb-6 ring-2 ring-red-500 relative overflow-hidden"
+                        className="noir-card p-3 mb-4 ring-2 ring-red-500 relative overflow-hidden"
                     >
                         {/* Urgent banner */}
-                        <div className="absolute top-0 left-0 right-0 bg-red-500 text-white text-center py-1">
-                            <span className="text-[10px] font-bold">⏰ LIMITED TIME OFFER ⏰</span>
+                        <div className="absolute top-0 left-0 right-0 bg-red-500 text-white text-center py-0.5">
+                            <span className="text-[9px] font-bold">⏰ LIMITED OFFER ⏰</span>
                         </div>
 
-                        <div className="mt-6 flex items-start gap-3">
-                            <div className="w-16 h-16 rounded-sm bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shrink-0">
-                                <span className="text-3xl">🎁</span>
+                        <div className="mt-4 flex items-start gap-2">
+                            <div className="w-12 h-12 rounded-sm bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shrink-0">
+                                <span className="text-2xl">🎁</span>
                             </div>
-                            <div className="flex-1">
-                                <h3 className="font-cinzel font-bold text-lg text-foreground">Mobster Starter Pack</h3>
-                                <p className="text-xs text-red-400 font-semibold mb-2">Expires in: {timeRemaining}</p>
-                                <ul className="space-y-1 mb-3">
-                                    <li className="text-xs text-muted-foreground flex items-center gap-1">
-                                        ✓ Level 3 Boost
-                                    </li>
-                                    <li className="text-xs text-muted-foreground flex items-center gap-1">
-                                        ✓ Speakeasy Business (Needs Repair)
-                                    </li>
-                                    <li className="text-xs text-muted-foreground flex items-center gap-1">
-                                        ✓ 10x Whiskey Crates
-                                    </li>
-                                    <li className="text-xs text-muted-foreground flex items-center gap-1">
-                                        ✓ $25,000 Cash
-                                    </li>
-                                    <li className="text-xs text-muted-foreground flex items-center gap-1">
-                                        ✓ 100 Diamonds
-                                    </li>
-                                    <li className="text-xs text-primary flex items-center gap-1">
-                                        ✨ "Made Man" Badge
-                                    </li>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="font-cinzel font-bold text-sm text-foreground">Starter Pack</h3>
+                                <p className="text-[10px] text-red-400 font-semibold mb-1">⏱ {timeRemaining}</p>
+                                <ul className="space-y-0 mb-2">
+                                    <li className="text-[10px] text-muted-foreground">✓ Lvl 3 • $25K • 100💎</li>
+                                    <li className="text-[10px] text-muted-foreground">✓ Speakeasy • 10 Whiskey</li>
+                                    <li className="text-[10px] text-primary">✨ Made Man Badge</li>
                                 </ul>
                                 <Button
-                                    className="w-full btn-gold text-sm"
+                                    className="w-full btn-gold text-[11px] h-8"
                                     onClick={handleBuyStarterPack}
                                     disabled={processingId === 'starter_pack'}
                                 >
                                     {processingId === 'starter_pack' ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <Loader2 className="w-3 h-3 animate-spin" />
                                     ) : (
                                         '1 TON - Become a Made Man'
                                     )}
