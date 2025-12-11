@@ -276,7 +276,7 @@ serve(async (req) => {
             if (startParam && startParam.length > 0) {
                 console.log('[Auth] Applying referral code for new user:', startParam);
                 const { data: referralResult, error: referralError } = await supabase.rpc('apply_referral_code', {
-                    referred_player_id: userId,
+                    new_player_id: userId,
                     code_input: startParam
                 });
 
