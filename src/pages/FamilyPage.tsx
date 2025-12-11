@@ -710,6 +710,55 @@ const FamilyPage = () => {
                 </DialogContent>
             </Dialog>
 
+            {/* View Profile Dialog */}
+            <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
+                <DialogContent className="bg-card border-border">
+                    <DialogHeader>
+                        <DialogTitle className="font-cinzel">Member Profile</DialogTitle>
+                    </DialogHeader>
+                    {selectedPlayer && (
+                        <div className="space-y-4 py-4">
+                            <div className="flex items-center gap-3 pb-3 border-b border-border/50">
+                                <div className="w-12 h-12 rounded-sm bg-gradient-gold flex items-center justify-center">
+                                    <span className="text-lg font-cinzel font-bold">
+                                        {selectedPlayer.name.charAt(0).toUpperCase()}
+                                    </span>
+                                </div>
+                                <div>
+                                    <h3 className="font-cinzel font-bold text-lg">{selectedPlayer.name}</h3>
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                        {roleIcons[selectedPlayer.role]}
+                                        {selectedPlayer.role}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-muted/20 p-3 rounded-sm">
+                                    <p className="text-xs text-muted-foreground">Level</p>
+                                    <p className="font-cinzel font-bold text-lg">{selectedPlayer.level}</p>
+                                </div>
+                                <div className="bg-muted/20 p-3 rounded-sm">
+                                    <p className="text-xs text-muted-foreground">Respect</p>
+                                    <p className="font-cinzel font-bold text-lg text-primary">
+                                        {selectedPlayer.respect.toLocaleString()}
+                                    </p>
+                                </div>
+                                <div className="bg-muted/20 p-3 rounded-sm col-span-2">
+                                    <p className="text-xs text-muted-foreground">Total Contribution</p>
+                                    <p className="font-cinzel font-bold text-lg text-primary">
+                                        ${selectedPlayer.contribution.toLocaleString()}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setProfileOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* Leave Family Confirm */}
             <ConfirmDialog
                 open={leaveOpen}
