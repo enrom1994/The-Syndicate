@@ -198,6 +198,9 @@ const FamilyPage = () => {
     const [contributeOpen, setContributeOpen] = useState(false);
     const [contributeAmount, setContributeAmount] = useState(10000);
 
+    const [inviteOpen, setInviteOpen] = useState(false);
+    const [inviteUsername, setInviteUsername] = useState('');
+
     const [leaveOpen, setLeaveOpen] = useState(false);
 
     // Load family data
@@ -341,6 +344,36 @@ const FamilyPage = () => {
         } catch (error) {
             console.error('Contribute error:', error);
             toast({ title: 'Error', description: 'Failed to contribute. Please try again.', variant: 'destructive' });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleInvite = async () => {
+        if (!player?.id || !inviteUsername.trim()) return;
+
+        setIsProcessing(true);
+
+        try {
+            const { data, error } = await supabase.rpc('invite_to_family', {
+                inviter_id: player.id,
+                invitee_username: inviteUsername.trim(),
+                message_input: null
+            });
+
+            if (error) throw error;
+
+            if (data?.success) {
+                haptic.success();
+                toast({ title: 'Invite Sent', description: data.message });
+                setInviteOpen(false);
+                setInviteUsername('');
+            } else {
+                toast({ title: 'Error', description: data?.message || 'Failed to send invite', variant: 'destructive' });
+            }
+        } catch (error) {
+            console.error('Invite error:', error);
+            toast({ title: 'Error', description: 'Failed to send invite. Please try again.', variant: 'destructive' });
         } finally {
             setIsProcessing(false);
         }
@@ -502,7 +535,12 @@ const FamilyPage = () => {
                             Members
                         </h2>
                         {canInvite(myRole) && (
-                            <Button size="sm" variant="ghost" className="text-xs text-primary">
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-xs text-primary"
+                                onClick={() => setInviteOpen(true)}
+                            >
                                 <Plus className="w-4 h-4 mr-1" />
                                 Invite
                             </Button>
@@ -612,6 +650,42 @@ const FamilyPage = () => {
                 }
                 variant={confirmAction.type === 'kick' ? 'destructive' : 'default'}
             />
+
+            {/* Invite Member Dialog */}
+            <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+                <DialogContent className="bg-card border-border">
+                    <DialogHeader>
+                        <DialogTitle className="font-cinzel">Invite Member</DialogTitle>
+                        <DialogDescription>
+                            Enter the username of the player you want to invite
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <Input
+                            placeholder="Enter username..."
+                            value={inviteUsername}
+                            onChange={(e) => setInviteUsername(e.target.value)}
+                            className="bg-muted/30 border-border/50"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && inviteUsername.trim()) {
+                                    handleInvite();
+                                }
+                            }}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button>
+                        <Button
+                            className="btn-gold"
+                            onClick={handleInvite}
+                            disabled={isProcessing || !inviteUsername.trim()}
+                        >
+                            {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                            Send Invite
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Leave Family Confirm */}
             <ConfirmDialog
