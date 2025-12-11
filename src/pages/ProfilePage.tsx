@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { User, Sword, Shield, Zap, Brain, TrendingUp, DollarSign, Users, Building, Crown, Star } from 'lucide-react';
+import { User, Sword, Shield, TrendingUp, Crown, Star } from 'lucide-react';
 import { useState } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -235,7 +235,10 @@ const ProfilePage = () => {
                         </div>
                         <div className="text-center bg-muted/30 rounded-sm p-1.5">
                             <p className="text-[10px] text-muted-foreground">Diamonds</p>
-                            <p className="font-cinzel font-bold text-xs text-cyan-400">{(player?.diamonds ?? 0).toLocaleString()} 💎</p>
+                            <p className="font-cinzel font-bold text-xs text-cyan-400 flex items-center justify-center gap-1">
+                                {(player?.diamonds ?? 0).toLocaleString()}
+                                <img src="/images/icons/diamond.png" alt="diamonds" className="w-4 h-4" />
+                            </p>
                         </div>
                     </div>
                 </motion.div>
@@ -253,24 +256,24 @@ const ProfilePage = () => {
                     </h2>
                     <div className="grid grid-cols-2 gap-2">
                         <EmpireStat
-                            icon={<DollarSign className="w-4 h-4" />}
+                            icon={<img src="/images/icons/cash.png" alt="cash" className="w-4 h-4" />}
                             label="Cash on Hand"
                             value={formatCash(cash)}
                             color="text-green-400"
                         />
                         <EmpireStat
-                            icon={<Building className="w-4 h-4" />}
+                            icon={<img src="/images/icons/thevault.png" alt="vault" className="w-4 h-4" />}
                             label="Banked Cash"
                             value={formatCash(bankedCash)}
                             color="text-blue-400"
                         />
                         <EmpireStat
-                            icon={<Building className="w-4 h-4" />}
+                            icon={<img src="/images/icons/business.png" alt="business" className="w-4 h-4" />}
                             label="Businesses"
                             value={`${businesses.length} owned`}
                         />
                         <EmpireStat
-                            icon={<Users className="w-4 h-4" />}
+                            icon={<img src="/images/icons/hire.png" alt="crew" className="w-4 h-4" />}
                             label="Crew Size"
                             value={`${totalCrew} members`}
                         />
