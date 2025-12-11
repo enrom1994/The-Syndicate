@@ -253,8 +253,9 @@ const LuckyWheelPage = () => {
                     >
                         {prizes.map((prize, index) => {
                             // Calculate position for each icon using polar coordinates
+                            // Match the segment angle calculation exactly (no offset)
                             const segmentAngle = 360 / prizes.length;
-                            const iconAngle = (segmentAngle * index) + (segmentAngle / 2) - 90; // Center of segment, offset by -90 to start from top
+                            const iconAngle = (segmentAngle * index) + (segmentAngle / 2); // Center of segment, NO offset
                             const radius = 80; // Distance from center in pixels
                             const x = 128 + radius * Math.cos((iconAngle * Math.PI) / 180); // 128 = half of 256px wheel
                             const y = 128 + radius * Math.sin((iconAngle * Math.PI) / 180);
