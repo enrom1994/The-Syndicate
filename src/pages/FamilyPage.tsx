@@ -721,11 +721,11 @@ const FamilyPage = () => {
                             <div className="flex items-center gap-3 pb-3 border-b border-border/50">
                                 <div className="w-12 h-12 rounded-sm bg-gradient-gold flex items-center justify-center">
                                     <span className="text-lg font-cinzel font-bold">
-                                        {selectedPlayer.name.charAt(0).toUpperCase()}
+                                        {(selectedPlayer.username || selectedPlayer.first_name || 'U').charAt(0).toUpperCase()}
                                     </span>
                                 </div>
                                 <div>
-                                    <h3 className="font-cinzel font-bold text-lg">{selectedPlayer.name}</h3>
+                                    <h3 className="font-cinzel font-bold text-lg">{selectedPlayer.username || selectedPlayer.first_name}</h3>
                                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                                         {roleIcons[selectedPlayer.role]}
                                         {selectedPlayer.role}
