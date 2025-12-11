@@ -24,6 +24,7 @@ const CreateFamilyPage = () => {
     const [familyName, setFamilyName] = useState('');
     const [familyTag, setFamilyTag] = useState('');
     const [description, setDescription] = useState('');
+    const [joinType, setJoinType] = useState<'open' | 'request'>('open');
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -71,7 +72,8 @@ const CreateFamilyPage = () => {
                 creator_id: player.id,
                 family_name: familyName,
                 family_tag: familyTag,
-                family_description: description || null
+                family_description: description || null,
+                family_join_type: joinType
             });
 
             if (error) throw error;
