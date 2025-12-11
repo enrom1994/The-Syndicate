@@ -37,6 +37,7 @@ const FamilySettingsPage = () => {
     const [familyName, setFamilyName] = useState('');
     const [familyTag, setFamilyTag] = useState('');
     const [description, setDescription] = useState('');
+    const [joinType, setJoinType] = useState<'open' | 'request'>('open');
     const [recruitmentStatus, setRecruitmentStatus] = useState<RecruitmentStatus>('open');
     const [minLevel, setMinLevel] = useState(1);
 
@@ -61,6 +62,7 @@ const FamilySettingsPage = () => {
                     setFamilyName(family.name);
                     setFamilyTag(family.tag || '');
                     setDescription(family.description || '');
+                    setJoinType((family as any).join_type || 'open');
                     setRecruitmentStatus(family.is_recruiting ? 'open' : 'closed');
                     setMinLevel(family.min_level_required);
                 } else {
