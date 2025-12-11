@@ -339,6 +339,9 @@ serve(async (req) => {
         // This ensures players get their accumulated energy when they return
         await supabase.rpc('regenerate_energy', { player_id_input: userId });
 
+        // Regenerate stamina based on time offline (1 per 4 minutes)
+        await supabase.rpc('regenerate_stamina', { player_id_input: userId });
+
         // Get player data (now with updated energy)
         const { data: player } = await supabase
             .from('players')
