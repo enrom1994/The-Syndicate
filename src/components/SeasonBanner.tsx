@@ -82,12 +82,7 @@ export const EnergyBar = ({ energy, maxEnergy, regenTime = '2m 30s' }: EnergyBar
                     <img src="/images/icons/energy.png" alt="Energy" className="w-4 h-4 object-contain" />
                     <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Energy</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                    <span className="font-inter font-medium text-xs text-orange-400">{energy}/{maxEnergy}</span>
-                    {energy < maxEnergy && (
-                        <span className="text-[10px] text-muted-foreground">+1 in {regenTime}</span>
-                    )}
-                </div>
+                <span className="font-inter font-medium text-xs text-orange-400">{energy}/{maxEnergy}</span>
             </div>
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                 <motion.div
@@ -97,6 +92,9 @@ export const EnergyBar = ({ energy, maxEnergy, regenTime = '2m 30s' }: EnergyBar
                     className="h-full bg-gradient-to-r from-red-500 via-orange-500 to-orange-400 rounded-full"
                 />
             </div>
+            {energy < maxEnergy && (
+                <p className="text-[9px] text-muted-foreground mt-1 text-right">+1 in {regenTime}</p>
+            )}
         </motion.div>
     );
 };
@@ -122,12 +120,7 @@ export const StaminaBar = ({ stamina, maxStamina, regenTime = '4m 00s' }: Stamin
                     <img src="/images/icons/stamina.png" alt="Stamina" className="w-4 h-4 object-contain" />
                     <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Stamina</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                    <span className="font-inter font-medium text-xs text-cyan-400">{stamina}/{maxStamina}</span>
-                    {stamina < maxStamina && (
-                        <span className="text-[10px] text-muted-foreground">+1 in {regenTime}</span>
-                    )}
-                </div>
+                <span className="font-inter font-medium text-xs text-cyan-400">{stamina}/{maxStamina}</span>
             </div>
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                 <motion.div
@@ -137,6 +130,9 @@ export const StaminaBar = ({ stamina, maxStamina, regenTime = '4m 00s' }: Stamin
                     className="h-full bg-gradient-to-r from-blue-500 via-cyan-500 to-cyan-400 rounded-full"
                 />
             </div>
+            {stamina < maxStamina && (
+                <p className="text-[9px] text-muted-foreground mt-1 text-right">+1 in {regenTime}</p>
+            )}
         </motion.div>
     );
 };
