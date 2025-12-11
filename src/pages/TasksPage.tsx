@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { haptic } from '@/lib/haptics';
 import { rewardCash, rewardDiamonds } from '@/components/RewardAnimation';
 import { useToast } from '@/hooks/use-toast';
-import { GameIcon } from '@/components/GameIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, PlayerTask } from '@/hooks/useGameStore';
 import { ReferralSection } from '@/components/ReferralSection';
@@ -32,8 +31,8 @@ const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
     const rewardDisplay = task.reward_type === 'cash'
         ? `$${(task.reward_amount / 1000).toFixed(0)}K`
         : task.reward_type === 'energy'
-            ? `${task.reward_amount} ⚡`
-            : `${task.reward_amount} 💎`;
+            ? `${task.reward_amount}`
+            : `${task.reward_amount}`;
 
     const showProgress = task.requirement_target > 1 && !task.is_completed;
     const progressPercent = Math.min(100, (task.progress / task.requirement_target) * 100);
@@ -72,13 +71,13 @@ const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
                         </div>
 
                         <div className="text-right shrink-0">
-                            <div className="flex items-center gap-1 text-xs text-primary font-semibold">
+                            <div className="flex items-center gap-1 text-sm text-primary font-semibold">
                                 {task.reward_type === 'cash' ? (
-                                    <GameIcon type="cash" className="w-4 h-4" />
+                                    <img src="/images/icons/cash.png" alt="Cash" className="w-6 h-6" />
                                 ) : task.reward_type === 'energy' ? (
-                                    <GameIcon type="energy" className="w-4 h-4" />
+                                    <img src="/images/icons/energy.png" alt="Energy" className="w-6 h-6" />
                                 ) : (
-                                    <GameIcon type="diamond" className="w-5 h-5" />
+                                    <img src="/images/icons/diamond.png" alt="Diamonds" className="w-6 h-6" />
                                 )}
                                 {rewardDisplay}
                             </div>
@@ -209,7 +208,9 @@ const TasksPage = () => {
                     title: 'Task Complete!',
                     description: `+${task.reward_type === 'cash'
                         ? `$${task.reward_amount.toLocaleString()}`
-                        : `${task.reward_amount} 💎`}`,
+                        : task.reward_type === 'energy'
+                            ? `${task.reward_amount} Energy`
+                            : `${task.reward_amount} Diamonds`}`,
                 });
             } else {
                 haptic.error();
