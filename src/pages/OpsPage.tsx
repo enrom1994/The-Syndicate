@@ -124,7 +124,10 @@ const PveTargetCard = ({
                 </div>
                 <div>
                     <p className="text-muted-foreground">XP</p>
-                    <p className="font-bold text-blue-400">+{target.xp_reward}</p>
+                    <p className="font-bold text-cyan-400 flex items-center gap-1">
+                        <img src="/images/icons/xp.png" alt="" className="w-3 h-3" />
+                        +{target.xp_reward}
+                    </p>
                 </div>
                 <div>
                     <p className="text-muted-foreground">Respect</p>
@@ -133,7 +136,7 @@ const PveTargetCard = ({
             </div>
 
             <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
-                <img src="/images/icons/energy.png" alt="" className="w-3 h-3" />
+                <img src="/images/icons/stamina.png" alt="" className="w-3 h-3" />
                 -{target.stamina_cost} Stamina
                 <span className="mx-1">•</span>
                 <Shield className="w-3 h-3" />
@@ -258,7 +261,7 @@ const TargetCard = ({
                                     <div className="flex items-center justify-between">
                                         <span className="font-cinzel font-bold text-sm text-foreground">{type.name}</span>
                                         <div className="flex items-center gap-1 text-xs text-yellow-400">
-                                            <img src="/images/icons/energy.png" alt="" className="w-3 h-3" />
+                                            <img src="/images/icons/stamina.png" alt="" className="w-3 h-3" />
                                             <span>{type.stamina_cost}</span>
                                         </div>
                                     </div>
@@ -455,7 +458,10 @@ const HighStakesCard = ({ job, isProcessing, delay = 0, onExecute }: {
                 </div>
                 <div className="bg-cyan-500/10 rounded p-2 text-center">
                     <p className="text-muted-foreground">XP</p>
-                    <p className="font-bold text-cyan-400">+{job.xp_reward}</p>
+                    <p className="font-bold text-cyan-400 flex items-center justify-center gap-1">
+                        <img src="/images/icons/xp.png" alt="" className="w-3 h-3" />
+                        +{job.xp_reward}
+                    </p>
                 </div>
                 <div className="bg-red-500/10 rounded p-2 text-center">
                     <p className="text-muted-foreground">Success</p>
