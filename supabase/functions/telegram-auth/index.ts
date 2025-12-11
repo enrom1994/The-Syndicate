@@ -273,6 +273,12 @@ serve(async (req) => {
             const params = new URLSearchParams(initData);
             const startParam = params.get('start_param');
 
+            // Debug logging for referral system
+            console.log('[Auth Referral Debug] initData keys:', Array.from(params.keys()));
+            console.log('[Auth Referral Debug] start_param value:', startParam);
+            console.log('[Auth Referral Debug] isNewUser:', isNewUser);
+            console.log('[Auth Referral Debug] userId:', userId);
+
             if (startParam && startParam.length > 0) {
                 console.log('[Auth] Applying referral code for new user:', startParam);
                 const { data: referralResult, error: referralError } = await supabase.rpc('apply_referral_code', {
@@ -283,8 +289,10 @@ serve(async (req) => {
                 if (referralError) {
                     console.error('[Auth] Failed to apply referral code:', referralError);
                 } else {
-                    console.log('[Auth] Referral code result:', referralResult);
+                    console.log('[Auth] Referral code result:', JSON.stringify(referralResult));
                 }
+            } else {
+                console.log('[Auth Referral Debug] No start_param found, skipping referral');
             }
         }
 
