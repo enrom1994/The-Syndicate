@@ -248,7 +248,7 @@ const TargetCard = ({
                         {attackTypes.map(type => (
                             <div
                                 key={type.id}
-                                className="relative rounded-lg border border-border/50 bg-card/50 hover:bg-muted/40 transition-all cursor-pointer overflow-hidden"
+                                className="relative rounded-lg border-2 border-yellow-500/50 bg-gradient-to-r from-yellow-900/10 to-orange-900/10 hover:border-yellow-400 hover:bg-yellow-900/20 transition-all cursor-pointer overflow-hidden"
                                 onClick={() => {
                                     if (!isProcessing) {
                                         onAttack(type.id);
@@ -256,68 +256,82 @@ const TargetCard = ({
                                     }
                                 }}
                             >
-                                {/* Attack Header */}
-                                <div className="px-3 py-2 border-b border-border/20">
+                                {/* Attack Header with Cost */}
+                                <div className="px-3 py-2 bg-yellow-500/10 border-b border-yellow-500/30">
                                     <div className="flex items-center justify-between">
-                                        <span className="font-cinzel font-bold text-sm text-foreground">{type.name}</span>
-                                        <div className="flex items-center gap-1 text-xs text-yellow-400">
+                                        <span className="font-cinzel font-bold text-sm text-primary">{type.name}</span>
+                                        <div className="flex items-center gap-1 bg-black/40 px-2 py-0.5 rounded-full">
                                             <img src="/images/icons/stamina.png" alt="" className="w-3 h-3" />
-                                            <span>{type.stamina_cost}</span>
+                                            <span className="text-xs font-bold text-yellow-400">{type.stamina_cost}</span>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-0.5">{type.description}</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">{type.description}</p>
                                 </div>
 
-                                {/* Requirements Row */}
-                                <div className="px-3 py-2 flex flex-wrap items-center gap-1.5">
-                                    {/* Crew requirement */}
-                                    {type.requires_crew && (
-                                        <span className="flex items-center gap-1 bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 rounded text-xs">
-                                            <Users className="w-3 h-3 text-blue-400" />
-                                            <span className="text-blue-300">Crew</span>
-                                        </span>
-                                    )}
-
-                                    {/* Consumable requirement */}
-                                    {type.requires_consumables && type.consumable_item_name && (
-                                        <span className="flex items-center gap-1 bg-cyan-500/20 border border-cyan-500/30 px-2 py-0.5 rounded text-xs">
-                                            <img
-                                                src={`/images/icons/${type.consumable_item_name.toLowerCase().replace(/\s+/g, '')}.png`}
-                                                alt=""
-                                                className="w-3 h-3"
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).style.display = 'none';
-                                                }}
-                                            />
-                                            <span className="text-cyan-300">{type.consumable_qty}x {type.consumable_item_name}</span>
-                                        </span>
-                                    )}
-
-                                    {/* Rewards/Effects */}
-                                    <div className="flex-1 flex justify-end gap-1.5 flex-wrap">
+                                {/* Potential Gains Section */}
+                                <div className="px-3 py-2">
+                                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1">Potential Gains</p>
+                                    <div className="flex flex-wrap gap-1.5">
                                         {type.steals_cash && (
-                                            <span className="flex items-center gap-0.5 text-xs text-green-400">
-                                                <span>💰</span>
-                                                <span>{type.cash_steal_percent}%</span>
+                                            <span className="flex items-center gap-1 bg-green-500/20 border border-green-500/40 px-2 py-1 rounded text-xs">
+                                                <span className="text-green-400">💰</span>
+                                                <span className="text-green-300 font-medium">{type.cash_steal_percent}% Cash</span>
                                             </span>
                                         )}
                                         {type.steals_vault && (
-                                            <span className="flex items-center gap-0.5 text-xs text-yellow-400">
-                                                <span>🔐</span>
-                                                <span>{type.vault_steal_percent}%</span>
+                                            <span className="flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/40 px-2 py-1 rounded text-xs">
+                                                <span className="text-yellow-400">🔐</span>
+                                                <span className="text-yellow-300 font-medium">{type.vault_steal_percent}% Vault</span>
                                             </span>
                                         )}
                                         {type.steals_contraband && (
-                                            <span className="text-xs text-purple-400">📦</span>
+                                            <span className="flex items-center gap-1 bg-purple-500/20 border border-purple-500/40 px-2 py-1 rounded text-xs">
+                                                <span className="text-purple-400">📦</span>
+                                                <span className="text-purple-300 font-medium">Items</span>
+                                            </span>
                                         )}
                                         {type.steals_respect && (
-                                            <span className="text-xs text-orange-400">⭐</span>
+                                            <span className="flex items-center gap-1 bg-orange-500/20 border border-orange-500/40 px-2 py-1 rounded text-xs">
+                                                <span className="text-orange-400">⭐</span>
+                                                <span className="text-orange-300 font-medium">Respect</span>
+                                            </span>
                                         )}
                                         {type.kills_crew && (
-                                            <span className="text-xs text-red-400">💀</span>
+                                            <span className="flex items-center gap-1 bg-red-500/20 border border-red-500/40 px-2 py-1 rounded text-xs">
+                                                <span className="text-red-400">💀</span>
+                                                <span className="text-red-300 font-medium">Crew</span>
+                                            </span>
                                         )}
                                     </div>
                                 </div>
+
+                                {/* Requirements Section */}
+                                {(type.requires_crew || type.requires_consumables) && (
+                                    <div className="px-3 py-2 bg-red-500/5 border-t border-red-500/20">
+                                        <p className="text-[9px] uppercase tracking-wider text-red-400/70 mb-1">Requires</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {type.requires_crew && (
+                                                <span className="flex items-center gap-1 bg-blue-500/20 border border-blue-500/30 px-2 py-0.5 rounded text-xs">
+                                                    <Users className="w-3 h-3 text-blue-400" />
+                                                    <span className="text-blue-300">Crew Member</span>
+                                                </span>
+                                            )}
+                                            {type.requires_consumables && type.consumable_item_name && (
+                                                <span className="flex items-center gap-1 bg-cyan-500/20 border border-cyan-500/30 px-2 py-0.5 rounded text-xs">
+                                                    <img
+                                                        src={`/images/icons/${type.consumable_item_name.toLowerCase().replace(/\s+/g, '')}.png`}
+                                                        alt=""
+                                                        className="w-3 h-3"
+                                                        onError={(e) => {
+                                                            (e.target as HTMLImageElement).style.display = 'none';
+                                                        }}
+                                                    />
+                                                    <span className="text-cyan-300">{type.consumable_qty}x {type.consumable_item_name}</span>
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ))}
 
