@@ -19,6 +19,7 @@ interface Family {
     treasury: number;
     total_respect: number;
     is_recruiting: boolean;
+    join_type?: 'open' | 'request';
     min_level_required: number;
     member_count: number;
     boss_name: string | null;
@@ -52,8 +53,11 @@ const FamilyCard = ({ family, delay = 0, onJoin, isJoining }: FamilyCardProps) =
                     </p>
                 </div>
             </div>
-            <span className="px-2 py-0.5 text-[10px] rounded-sm bg-green-500/20 text-green-400">
-                Open
+            <span className={`px-2 py-0.5 text-[10px] rounded-sm ${family.join_type === 'request'
+                    ? 'bg-yellow-500/20 text-yellow-400'
+                    : 'bg-green-500/20 text-green-400'
+                }`}>
+                {family.join_type === 'request' ? 'Request-Only' : 'Open'}
             </span>
         </div>
 
@@ -82,7 +86,7 @@ const FamilyCard = ({ family, delay = 0, onJoin, isJoining }: FamilyCardProps) =
             ) : (
                 <UserPlus className="w-4 h-4 mr-1" />
             )}
-            Join Family
+            {family.join_type === 'request' ? 'Request to Join' : 'Join Family'}
         </Button>
     </motion.div>
 );
@@ -138,23 +142,28 @@ const BrowseFamiliesPage = () => {
         setIsJoining(true);
 
         try {
-            const { data, error } = await supabase.rpc('join_family', {
-                joiner_id: player.id,
-                target_family_id: selectedFamily.id
-            });
+            const isRequestOnly = selectedFamily.join_type === 'request';
+            const rpcName = isRequestOnly ? 'request_to_join_family' : 'join_family';
+            const params = isRequestOnly
+                ? { requester_id: player.id, family_id_input: selectedFamily.id, message_input: null }
+                : { joiner_id: player.id, target_family_id: selectedFamily.id };
+
+            const { data, error } = await supabase.rpc(rpcName, params);
 
             if (error) throw error;
 
             if (data?.success) {
                 haptic.success();
                 toast({
-                    title: 'Welcome!',
+                    title: isRequestOnly ? 'Request Sent!' : 'Welcome!',
                     description: data.message,
                 });
-                navigate('/family');
+                if (!isRequestOnly) {
+                    navigate('/family');
+                }
             } else {
                 toast({
-                    title: 'Cannot Join',
+                    title: isRequestOnly ? 'Cannot Send Request' : 'Cannot Join',
                     description: data?.message || 'Failed to join family',
                     variant: 'destructive',
                 });
@@ -267,10 +276,14 @@ const BrowseFamiliesPage = () => {
             <ConfirmDialog
                 open={confirmOpen}
                 onOpenChange={setConfirmOpen}
-                title="Join Family?"
-                description={`Join ${selectedFamily?.name}? You will start as a Street Runner.`}
+                title={selectedFamily?.join_type === 'request' ? 'Request to Join?' : 'Join Family?'}
+                description={
+                    selectedFamily?.join_type === 'request'
+                        ? `Request to join ${selectedFamily?.name}? The family leaders will review your request.`
+                        : `Join ${selectedFamily?.name}? You will start as a Recruit.`
+                }
                 onConfirm={confirmJoin}
-                confirmText="Join"
+                confirmText={selectedFamily?.join_type === 'request' ? 'Send Request' : 'Join'}
             />
         </MainLayout>
     );
