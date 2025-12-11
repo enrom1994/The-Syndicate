@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { GameIcon } from '@/components/GameIcon';
 
-type FamilyRole = 'Boss' | 'Underboss' | 'Consigliere' | 'Caporegime' | 'Soldier' | 'Street Runner';
+type FamilyRole = 'Don' | 'Consigliere' | 'Advisor' | 'Lieutenant' | 'Associate' | 'Recruit';
 
 interface Member {
     player_id: string;
@@ -60,38 +60,38 @@ interface PlayerFamilyResponse {
     members?: Member[];
 }
 
-const roleHierarchy: FamilyRole[] = ['Boss', 'Underboss', 'Consigliere', 'Caporegime', 'Soldier', 'Street Runner'];
+const roleHierarchy: FamilyRole[] = ['Don', 'Consigliere', 'Advisor', 'Lieutenant', 'Associate', 'Recruit'];
 const roleIcons: Record<FamilyRole, React.ReactNode> = {
-    'Boss': <Crown className="w-4 h-4 text-primary" />,
-    'Underboss': <Star className="w-4 h-4 text-yellow-400" />,
-    'Consigliere': <Shield className="w-4 h-4 text-blue-400" />,
-    'Caporegime': <Sword className="w-4 h-4 text-red-400" />,
-    'Soldier': <User className="w-4 h-4 text-muted-foreground" />,
-    'Street Runner': <User className="w-4 h-4 text-muted-foreground/50" />,
+    'Don': <Crown className="w-4 h-4 text-primary" />,
+    'Consigliere': <Star className="w-4 h-4 text-yellow-400" />,
+    'Advisor': <Shield className="w-4 h-4 text-blue-400" />,
+    'Lieutenant': <Sword className="w-4 h-4 text-red-400" />,
+    'Associate': <User className="w-4 h-4 text-muted-foreground" />,
+    'Recruit': <User className="w-4 h-4 text-muted-foreground/50" />,
 };
 
 // Permission checks based on role
 const canPromote = (myRole: FamilyRole, targetRole: FamilyRole): boolean => {
-    if (myRole === 'Boss') return targetRole !== 'Boss' && roleHierarchy.indexOf(targetRole) > 1;
-    if (myRole === 'Underboss') return roleHierarchy.indexOf(targetRole) >= 4;
+    if (myRole === 'Don') return targetRole !== 'Don' && roleHierarchy.indexOf(targetRole) > 1;
+    if (myRole === 'Consigliere') return roleHierarchy.indexOf(targetRole) >= 4;
     return false;
 };
 
 const canDemote = (myRole: FamilyRole, targetRole: FamilyRole): boolean => {
     const targetIndex = roleHierarchy.indexOf(targetRole);
-    if (myRole === 'Boss') return targetIndex > 0 && targetIndex < roleHierarchy.length - 1;
-    if (myRole === 'Underboss') return targetIndex >= 3 && targetIndex < roleHierarchy.length - 1;
+    if (myRole === 'Don') return targetIndex > 0 && targetIndex < roleHierarchy.length - 1;
+    if (myRole === 'Consigliere') return targetIndex >= 3 && targetIndex < roleHierarchy.length - 1;
     return false;
 };
 
 const canKick = (myRole: FamilyRole, targetRole: FamilyRole): boolean => {
-    if (myRole === 'Boss') return targetRole !== 'Boss';
-    if (myRole === 'Underboss') return roleHierarchy.indexOf(targetRole) >= 3;
+    if (myRole === 'Don') return targetRole !== 'Don';
+    if (myRole === 'Consigliere') return roleHierarchy.indexOf(targetRole) >= 3;
     return false;
 };
 
 const canInvite = (role: FamilyRole): boolean => {
-    return ['Boss', 'Underboss', 'Consigliere', 'Caporegime'].includes(role);
+    return ['Don', 'Consigliere', 'Advisor', 'Lieutenant'].includes(role);
 };
 
 interface MemberCardProps {
