@@ -556,6 +556,9 @@ const OpsPage = () => {
         cashLost: number;
         respectGained: number;
         respectLost: number;
+        xpGained?: number;
+        itemsStolen?: string[];
+        crewLost?: number;
     }>({ open: false, result: 'victory', targetName: '', cashGained: 0, cashLost: 0, respectGained: 0, respectLost: 0 });
 
     // PvP confirm dialog
@@ -750,16 +753,30 @@ const OpsPage = () => {
                     haptic.success();
                     if (data.cash_stolen) rewardCash(data.cash_stolen);
                     setCombatResult({
-                        open: true, result: 'victory', targetName: data.defender_name,
-                        cashGained: data.cash_stolen || 0, cashLost: 0,
-                        respectGained: data.respect_stolen || 0, respectLost: 0
+                        open: true,
+                        result: 'victory',
+                        targetName: data.defender_name,
+                        cashGained: data.cash_stolen || 0,
+                        cashLost: 0,
+                        respectGained: data.respect_stolen || 0,
+                        respectLost: 0,
+                        xpGained: 0, // PvP doesn't give XP currently
+                        itemsStolen: data.contraband_stolen > 0 ? [`${data.contraband_stolen} Contraband`] : [],
+                        crewLost: 0 // Attacker won, no crew lost
                     });
                 } else {
                     haptic.error();
                     setCombatResult({
-                        open: true, result: 'defeat', targetName: data.defender_name,
-                        cashGained: 0, cashLost: 0,
-                        respectGained: 0, respectLost: data.attacker_respect_loss || 0
+                        open: true,
+                        result: 'defeat',
+                        targetName: data.defender_name,
+                        cashGained: 0,
+                        cashLost: 0,
+                        respectGained: 0,
+                        respectLost: data.attacker_respect_loss || 0,
+                        xpGained: 0,
+                        itemsStolen: [],
+                        crewLost: data.attacker_crew_loss || 0
                     });
                 }
                 await refetchPlayer();
@@ -1128,6 +1145,9 @@ const OpsPage = () => {
                 cashLost={combatResult.cashLost}
                 respectGained={combatResult.respectGained}
                 respectLost={combatResult.respectLost}
+                xpGained={combatResult.xpGained}
+                itemsStolen={combatResult.itemsStolen}
+                crewLost={combatResult.crewLost}
             />
 
             {/* Job Chain Continue Dialog */}
