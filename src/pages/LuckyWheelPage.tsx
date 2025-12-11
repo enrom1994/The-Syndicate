@@ -111,12 +111,19 @@ const LuckyWheelPage = () => {
                 const actualIndex = prizeIndex >= 0 ? prizeIndex : 0;
 
                 // Calculate rotation to land on the correct prize
-                // The pointer is at the top, so we need to rotate the wheel so the prize ends up at top
+                // The wheel renders segments starting from index 0 at the right side (3 o'clock)
+                // The pointer is at the top (12 o'clock)
+                // So segment 0's center is at (segmentAngle/2) degrees from the right
+                // To land segment N at top, we rotate the wheel so that segment N points up
                 const segmentAngle = 360 / prizes.length;
-                const prizeAngle = segmentAngle * actualIndex + (segmentAngle / 2); // Center of the segment
-                const spins = 5 + Math.random() * 3; // 5-8 full rotations for effect
-                // We rotate clockwise, pointer is at top (0 degrees), so we need to land with prize at top
-                const finalRotation = rotation + (360 * spins) - prizeAngle;
+                const segmentCenter = actualIndex * segmentAngle + segmentAngle / 2;
+                // We need to rotate the wheel so segmentCenter ends up at 270° (top/12 o'clock)
+                // Current position: segmentCenter is at segmentCenter degrees from right
+                // Target: 270° (top)
+                // Rotation needed: 270 - segmentCenter (then add full spins)
+                const baseRotation = 270 - segmentCenter;
+                const spins = 5 + Math.floor(Math.random() * 3); // 5-7 full rotations
+                const finalRotation = baseRotation + (360 * spins);
 
                 setRotation(finalRotation);
 
