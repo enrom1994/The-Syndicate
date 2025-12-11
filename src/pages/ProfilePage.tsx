@@ -19,6 +19,7 @@ interface StatCardProps {
     icon: React.ReactNode;
     level: number;
     currentBonus: string;
+    nextBonus: string;
     trainCost: number;
     color: string;
     onTrain: () => void;
@@ -30,6 +31,7 @@ const StatCard = ({
     icon,
     level,
     currentBonus,
+    nextBonus,
     trainCost,
     color,
     onTrain,
@@ -44,7 +46,11 @@ const StatCard = ({
                 <span className="font-cinzel font-semibold text-xs text-foreground">{name}</span>
                 <span className="text-[10px] text-primary font-bold">Lv.{level}</span>
             </div>
-            <span className="text-[10px] text-muted-foreground">{currentBonus}</span>
+            <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <span>{currentBonus}</span>
+                <span className="text-primary">→</span>
+                <span className="text-green-400">{nextBonus}</span>
+            </div>
         </div>
         <Button
             size="sm"
@@ -57,6 +63,7 @@ const StatCard = ({
         </Button>
     </div>
 );
+
 
 // Stat display for empire overview
 const EmpireStat = ({ icon, label, value, color = "text-foreground" }: { icon: React.ReactNode; label: string; value: string; color?: string }) => (
@@ -340,6 +347,7 @@ const ProfilePage = () => {
                             icon={<Sword className="w-4 h-4 text-primary-foreground" />}
                             level={strength}
                             currentBonus={getBonus('strength', strength)}
+                            nextBonus={getBonus('strength', strength + 1)}
                             trainCost={getTrainCost(strength)}
                             color="bg-red-600"
                             onTrain={() => handleTrainClick('Strength', getTrainCost(strength), 'strength')}
@@ -350,6 +358,7 @@ const ProfilePage = () => {
                             icon={<Shield className="w-4 h-4 text-primary-foreground" />}
                             level={defense}
                             currentBonus={getBonus('defense', defense)}
+                            nextBonus={getBonus('defense', defense + 1)}
                             trainCost={getTrainCost(defense)}
                             color="bg-blue-600"
                             onTrain={() => handleTrainClick('Defense', getTrainCost(defense), 'defense')}
