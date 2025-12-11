@@ -712,49 +712,92 @@ const FamilyPage = () => {
 
             {/* View Profile Dialog */}
             <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
-                <DialogContent className="bg-card border-border">
+                <DialogContent className="bg-card border-border max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="font-cinzel">Member Profile</DialogTitle>
+                        <DialogTitle className="font-cinzel text-center">Member Profile</DialogTitle>
                     </DialogHeader>
                     {selectedPlayer && (
-                        <div className="space-y-4 py-4">
-                            <div className="flex items-center gap-3 pb-3 border-b border-border/50">
-                                <div className="w-12 h-12 rounded-sm bg-gradient-gold flex items-center justify-center">
-                                    <span className="text-lg font-cinzel font-bold">
-                                        {(selectedPlayer.username || selectedPlayer.first_name || 'U').charAt(0).toUpperCase()}
-                                    </span>
-                                </div>
-                                <div>
-                                    <h3 className="font-cinzel font-bold text-lg">{selectedPlayer.username || selectedPlayer.first_name}</h3>
-                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <div className="space-y-6 py-4">
+                            {/* Profile Header */}
+                            <div className="flex flex-col items-center gap-3 pb-4 border-b border-border/30">
+                                <div className="relative">
+                                    <div className="w-20 h-20 rounded-sm bg-gradient-gold flex items-center justify-center shadow-lg">
+                                        <span className="text-3xl font-cinzel font-bold text-primary-foreground">
+                                            {(selectedPlayer.username || selectedPlayer.first_name || 'U').charAt(0).toUpperCase()}
+                                        </span>
+                                    </div>
+                                    <div className="absolute -bottom-2 -right-2 bg-muted rounded-sm p-1.5 border border-border shadow-md">
                                         {roleIcons[selectedPlayer.role]}
-                                        {selectedPlayer.role}
-                                    </p>
+                                    </div>
+                                </div>
+                                <div className="text-center">
+                                    <h3 className="font-cinzel font-bold text-xl mb-1">
+                                        {selectedPlayer.username || selectedPlayer.first_name}
+                                    </h3>
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+                                        {roleIcons[selectedPlayer.role]}
+                                        <span className="text-sm font-medium text-primary">
+                                            {selectedPlayer.role}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
+                            {/* Stats Grid */}
                             <div className="grid grid-cols-2 gap-3">
-                                <div className="bg-muted/20 p-3 rounded-sm">
-                                    <p className="text-xs text-muted-foreground">Level</p>
-                                    <p className="font-cinzel font-bold text-lg">{selectedPlayer.level}</p>
+                                <div className="bg-gradient-to-br from-primary/5 to-transparent p-4 rounded-lg border border-primary/10">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-8 h-8 rounded-sm bg-primary/10 flex items-center justify-center">
+                                            <span className="text-lg">🎖️</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">Level</p>
+                                    </div>
+                                    <p className="font-cinzel font-bold text-2xl">{selectedPlayer.level}</p>
                                 </div>
-                                <div className="bg-muted/20 p-3 rounded-sm">
-                                    <p className="text-xs text-muted-foreground">Respect</p>
-                                    <p className="font-cinzel font-bold text-lg text-primary">
+                                <div className="bg-gradient-to-br from-yellow-500/5 to-transparent p-4 rounded-lg border border-yellow-500/10">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-8 h-8 rounded-sm bg-yellow-500/10 flex items-center justify-center">
+                                            <span className="text-lg">⭐</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">Respect</p>
+                                    </div>
+                                    <p className="font-cinzel font-bold text-2xl text-primary">
                                         {selectedPlayer.respect.toLocaleString()}
                                     </p>
                                 </div>
-                                <div className="bg-muted/20 p-3 rounded-sm col-span-2">
-                                    <p className="text-xs text-muted-foreground">Total Contribution</p>
-                                    <p className="font-cinzel font-bold text-lg text-primary">
+                                <div className="bg-gradient-to-br from-green-500/5 to-transparent p-4 rounded-lg border border-green-500/10 col-span-2">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="w-8 h-8 rounded-sm bg-green-500/10 flex items-center justify-center">
+                                            <span className="text-lg">💰</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">Family Contribution</p>
+                                    </div>
+                                    <p className="font-cinzel font-bold text-2xl text-primary">
                                         ${selectedPlayer.contribution.toLocaleString()}
                                     </p>
                                 </div>
                             </div>
+
+                            {/* Member Since */}
+                            <div className="text-center pt-2 border-t border-border/30">
+                                <p className="text-xs text-muted-foreground">
+                                    Member since {new Date(selectedPlayer.joined_at).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                    })}
+                                </p>
+                            </div>
                         </div>
                     )}
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setProfileOpen(false)}>Close</Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setProfileOpen(false)}
+                            className="w-full"
+                        >
+                            Close
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
