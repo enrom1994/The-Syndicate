@@ -41,6 +41,10 @@ const FamilySettingsPage = () => {
     const [recruitmentStatus, setRecruitmentStatus] = useState<RecruitmentStatus>('open');
     const [minLevel, setMinLevel] = useState(1);
 
+    const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+    const [loadingRequests, setLoadingRequests] = useState(false);
+    const [processingRequest, setProcessingRequest] = useState<string | null>(null);
+
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [confirmAction, setConfirmAction] = useState<'disband' | 'save' | null>(null);
 
@@ -88,6 +92,74 @@ const FamilySettingsPage = () => {
 
         loadSettings();
     }, [player?.id]);
+
+    // Load pending join requests
+    const loadPendingRequests = async () => {
+        if (!player?.id) return;
+
+        setLoadingRequests(true);
+        try {
+            const { data, error } = await supabase.rpc('get_family_join_requests', {
+                actor_id: player.id
+            });
+
+            if (error) throw error;
+
+            if (data?.success) {
+                setPendingRequests(data.requests || []);
+            }
+        } catch (error) {
+            console.error('Failed to load requests:', error);
+        } finally {
+            setLoadingRequests(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!isLoading && (isBoss || joinType === 'request')) {
+            loadPendingRequests();
+        }
+    }, [isLoading, isBoss, joinType]);
+
+    const handleProcessRequest = async (requestId: string, action: 'accept' | 'reject') => {
+        if (!player?.id) return;
+
+        setProcessingRequest(requestId);
+
+        try {
+            const { data, error } = await supabase.rpc('process_join_request', {
+                actor_id: player.id,
+                request_id: requestId,
+                action: action
+            });
+
+            if (error) throw error;
+
+            if (data?.success) {
+                haptic.success();
+                toast({
+                    title: action === 'accept' ? 'Request Accepted' : 'Request Declined',
+                    description: data.message
+                });
+                loadPendingRequests();
+            } else {
+                toast({
+                    title: 'Error',
+                    description: data?.message || 'Failed to process request',
+                    variant: 'destructive'
+                });
+            }
+        } catch (error) {
+            console.error('Process request error:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to process request. Please try again.',
+                variant: 'destructive'
+            });
+        } finally {
+            setProcessingRequest(null);
+        }
+    };
 
     const handleSave = () => {
         setConfirmAction('save');
