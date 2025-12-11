@@ -564,7 +564,9 @@ const OpsPage = () => {
         continueJobChain,
         rushPveCooldown,
         getHighStakesJobs,
-        executeHighStakesJob
+        executeHighStakesJob,
+        loadCrew,
+        loadInventory
     } = useGameStore();
 
     const [activeTab, setActiveTab] = useState('pve');
@@ -813,6 +815,8 @@ const OpsPage = () => {
                     });
                 }
                 await refetchPlayer();
+                await loadCrew();
+                await loadInventory();
                 await loadPvpTargets();
             } else {
                 toast({ title: 'Attack Failed', description: data?.message, variant: 'destructive' });
