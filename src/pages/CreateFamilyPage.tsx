@@ -37,10 +37,13 @@ const CreateFamilyPage = () => {
         (player?.diamonds ?? 0) >= diamondCost;
 
     const handleCreate = () => {
+        // TEMPORARILY DISABLED FOR TESTING - Uncomment to re-enable
+        /*
         if (!tonConnectUI.wallet) {
             tonConnectUI.openModal();
             return;
         }
+        */
         if (isValid) {
             setConfirmOpen(true);
         }
@@ -53,6 +56,8 @@ const CreateFamilyPage = () => {
         setConfirmOpen(false);
 
         try {
+            // TEMPORARILY DISABLED FOR TESTING - Uncomment to re-enable TON payment
+            /*
             // First, send TON payment
             const transaction = {
                 validUntil: Math.floor(Date.now() / 1000) + 600,
@@ -65,6 +70,7 @@ const CreateFamilyPage = () => {
             };
 
             await tonConnectUI.sendTransaction(transaction);
+            */
 
             // Then create family via RPC
             const { data, error } = await supabase.rpc('create_family', {
