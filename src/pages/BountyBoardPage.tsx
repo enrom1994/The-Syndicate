@@ -529,8 +529,8 @@ const BountyBoardPage = () => {
                             {/* Cost info */}
                             <div className="bg-muted/20 p-3 rounded-sm mb-4 text-xs">
                                 <div className="flex items-center gap-2 text-primary">
-                                    <GameIcon type="diamond" className="w-5 h-5" />
-                                    <span>Costs 1,000 💎 to place a bounty</span>
+                                    <img src="/images/icons/diamond.png" alt="diamonds" className="w-5 h-5" />
+                                    <span>Costs 1,000 Diamonds to place a bounty</span>
                                 </div>
                                 <p className="text-muted-foreground mt-1">Max 2 active bounties. 50% refund on cancellation.</p>
                             </div>
@@ -638,9 +638,13 @@ const BountyBoardPage = () => {
                                             {isProcessing ? (
                                                 <Loader2 className="w-4 h-4 mr-1 animate-spin" />
                                             ) : (
-                                                <Plus className="w-4 h-4 mr-1" />
+                                                <>
+                                                    <Plus className="w-4 h-4 mr-1" />
+                                                    Place Bounty (1,000
+                                                    <img src="/images/icons/diamond.png" alt="diamonds" className="w-4 h-4 mx-1" />
+                                                    )
+                                                </>
                                             )}
-                                            Place Bounty (1,000 💎)
                                         </Button>
                                     </>
                                 )}
@@ -662,7 +666,7 @@ const BountyBoardPage = () => {
                 description={
                     pendingAction?.type === 'hunt_npc' ? `Hunt ${pendingAction.name}? This costs 5 stamina.` :
                         pendingAction?.type === 'hunt_player' ? `Hunt ${pendingAction.name} for $${pendingAction.amount?.toLocaleString()}? This costs 10 stamina.` :
-                            pendingAction?.type === 'place' ? `Place $${pendingAction.amount?.toLocaleString()} bounty on ${pendingAction.name} for ${bountyDuration}h? Cost: 1,000 💎 + bounty amount` :
+                            pendingAction?.type === 'place' ? `Place $${pendingAction.amount?.toLocaleString()} bounty on ${pendingAction.name} for ${bountyDuration}h? Cost: 1,000 Diamonds + bounty amount` :
                                 `Cancel bounty on ${pendingAction?.name}? You'll receive 50% refund ($${((pendingAction?.amount || 0) / 2).toLocaleString()}).`
                 }
                 onConfirm={confirmAction}

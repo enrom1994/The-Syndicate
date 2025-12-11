@@ -131,9 +131,9 @@ const DailyRewardsPage = () => {
                     reward_display: d.reward_type === 'cash'
                         ? `$${(d.reward_amount / 1000).toFixed(0)}K`
                         : d.reward_type === 'diamonds'
-                            ? `${d.reward_amount} 💎`
+                            ? `${d.reward_amount} Diamonds`
                             : d.reward_type === 'energy'
-                                ? `${d.reward_amount} ⚡`
+                                ? `${d.reward_amount} Energy`
                                 : 'Mystery',
                 })));
             }
