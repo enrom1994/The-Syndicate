@@ -143,8 +143,13 @@ const BountyBoardPage = () => {
 
             if (error) throw error;
             setSearchResults(data || []);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Search failed:', error);
+            toast({
+                title: 'Search Error',
+                description: error.message || 'Failed to search players',
+                variant: 'destructive'
+            });
         } finally {
             setIsSearching(false);
         }
