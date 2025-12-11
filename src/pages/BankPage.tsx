@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Lock, ArrowDownToLine, ArrowUpFromLine, Shield, Clock, Wallet, Loader2, Package, LockKeyhole, Unlock } from 'lucide-react';
+import { Lock, ArrowDownToLine, ArrowUpFromLine, Shield, Wallet, Loader2, Package, LockKeyhole, Unlock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { MainLayout } from '@/components/MainLayout';
@@ -48,8 +48,6 @@ const BankPage = () => {
     // Get data from player state (with defaults for loading state)
     const walletCash = player?.cash ?? 0;
     const bankedCash = player?.banked_cash ?? 0;
-    const interestRate = 0.5; // 0.5% per day (could be stored in config table)
-    const lastInterest = Math.floor(bankedCash * (interestRate / 100)); // Estimated daily interest
 
     // Count items in safe
     const itemsInSafe = inventory.filter(i => i.location === 'safe');
@@ -347,23 +345,28 @@ const BankPage = () => {
                     </motion.div>
                 </div>
 
-                {/* Interest Info */}
+                {/* Protection Benefits */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.5, delay: 0.25 }}
                     className="noir-card p-4 mb-6"
                 >
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-primary" />
-                            <span className="text-xs text-muted-foreground">Daily Interest</span>
-                        </div>
-                        <span className="font-cinzel font-bold text-sm text-primary">+{interestRate}%</span>
+                    <div className="flex items-center gap-2 mb-3">
+                        <Shield className="w-4 h-4 text-primary" />
+                        <span className="text-xs font-semibold text-foreground">Vault Protection</span>
                     </div>
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/30">
-                        <span className="text-xs text-muted-foreground">Est. daily earnings</span>
-                        <span className="font-cinzel font-bold text-sm text-green-400">+${lastInterest.toLocaleString()}</span>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
+                            <p className="text-[10px] text-muted-foreground uppercase mb-1">Wallet</p>
+                            <p className="font-cinzel font-bold text-lg text-red-400">100%</p>
+                            <p className="text-[9px] text-red-400/70">Vulnerable to theft</p>
+                        </div>
+                        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
+                            <p className="text-[10px] text-muted-foreground uppercase mb-1">Vault</p>
+                            <p className="font-cinzel font-bold text-lg text-green-400">15%</p>
+                            <p className="text-[9px] text-green-400/70">Max theft in PvP</p>
+                        </div>
                     </div>
                 </motion.div>
 
