@@ -103,7 +103,7 @@ interface MemberCardProps {
 }
 
 const MemberCard = ({ member, myRole, isMe, delay = 0, onAction }: MemberCardProps) => {
-    const showActions = !isMe && myRole !== 'Soldier' && myRole !== 'Street Runner';
+    const showActions = !isMe && myRole !== 'Associate' && myRole !== 'Recruit';
     const canPromoteThis = canPromote(myRole, member.role);
     const canDemoteThis = canDemote(myRole, member.role);
     const canKickThis = canKick(myRole, member.role);
@@ -156,7 +156,7 @@ const MemberCard = ({ member, myRole, isMe, delay = 0, onAction }: MemberCardPro
                                 Demote
                             </DropdownMenuItem>
                         )}
-                        {myRole === 'Boss' && member.role !== 'Boss' && (
+                        {myRole === 'Don' && member.role !== 'Don' && (
                             <DropdownMenuItem onClick={() => onAction(member, 'transfer')}>
                                 <Crown className="w-4 h-4 mr-2 text-primary" />
                                 Transfer Leadership
