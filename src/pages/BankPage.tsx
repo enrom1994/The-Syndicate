@@ -320,55 +320,40 @@ const BankPage = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.15 }}
-                        className="noir-card p-4"
+                        className="noir-card p-4 border border-red-500/30"
                     >
-                        <p className="text-xs text-muted-foreground mb-1">Wallet</p>
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs text-muted-foreground">Wallet</p>
+                            <span className="text-[9px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-medium">AT RISK</span>
+                        </div>
                         <p className="font-cinzel font-bold text-lg text-foreground flex items-center gap-1">
                             <Wallet className="w-4 h-4 text-muted-foreground" />
                             ${walletCash.toLocaleString()}
                         </p>
-                        <p className="text-[10px] text-red-400 mt-1">⚠️ Vulnerable to theft</p>
+                        <p className="text-[10px] text-red-400 mt-2 flex items-center gap-1">
+                            ⚠️ 100% can be stolen in PvP
+                        </p>
                     </motion.div>
 
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
-                        className="noir-card p-4 border border-primary/30"
+                        className="noir-card p-4 border border-green-500/30"
                     >
-                        <p className="text-xs text-muted-foreground mb-1">Vault</p>
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs text-muted-foreground">Vault</p>
+                            <span className="text-[9px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded font-medium">PROTECTED</span>
+                        </div>
                         <p className="font-cinzel font-bold text-lg text-primary flex items-center gap-1">
                             <GameIcon type="cash" className="w-5 h-5" />
                             ${bankedCash.toLocaleString()}
                         </p>
-                        <p className="text-[10px] text-green-400 mt-1">✓ Protected</p>
+                        <p className="text-[10px] text-green-400 mt-2 flex items-center gap-1">
+                            ✓ Only 15% can be stolen in PvP
+                        </p>
                     </motion.div>
                 </div>
-
-                {/* Protection Benefits */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.25 }}
-                    className="noir-card p-4 mb-6"
-                >
-                    <div className="flex items-center gap-2 mb-3">
-                        <Shield className="w-4 h-4 text-primary" />
-                        <span className="text-xs font-semibold text-foreground">Vault Protection</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
-                            <p className="text-[10px] text-muted-foreground uppercase mb-1">Wallet</p>
-                            <p className="font-cinzel font-bold text-lg text-red-400">100%</p>
-                            <p className="text-[9px] text-red-400/70">Vulnerable to theft</p>
-                        </div>
-                        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 text-center">
-                            <p className="text-[10px] text-muted-foreground uppercase mb-1">Vault</p>
-                            <p className="font-cinzel font-bold text-lg text-green-400">15%</p>
-                            <p className="text-[9px] text-green-400/70">Max theft in PvP</p>
-                        </div>
-                    </div>
-                </motion.div>
 
                 {/* Deposit Section */}
                 <motion.div
