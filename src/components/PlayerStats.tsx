@@ -264,11 +264,11 @@ export const PlayerStats = () => {
         </div>
       </motion.div>
 
-      {/* Energy Bar */}
-      <EnergyBar energy={energy} maxEnergy={player?.max_energy ?? 100} regenTime={formattedTime} />
-
-      {/* Stamina Bar */}
-      <StaminaBar stamina={stamina} maxStamina={player?.max_stamina ?? 100} regenTime={staminaFormattedTime} />
+      {/* Energy & Stamina Bars - Side by Side */}
+      <div className="grid grid-cols-2 gap-2 mt-2">
+        <EnergyBar energy={energy} maxEnergy={player?.max_energy ?? 100} regenTime={formattedTime} />
+        <StaminaBar stamina={stamina} maxStamina={player?.max_stamina ?? 100} regenTime={staminaFormattedTime} />
+      </div>
 
       {/* XP Progress Bar */}
       <motion.div

@@ -75,7 +75,7 @@ export const EnergyBar = ({ energy, maxEnergy, regenTime = '2m 30s' }: EnergyBar
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
-            className="mt-2 noir-card p-2.5"
+            className="noir-card p-2.5"
         >
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-1.5">
@@ -115,7 +115,7 @@ export const StaminaBar = ({ stamina, maxStamina, regenTime = '4m 00s' }: Stamin
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.65 }}
-            className="mt-2 noir-card p-2.5"
+            className="noir-card p-2.5"
         >
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-1.5">
