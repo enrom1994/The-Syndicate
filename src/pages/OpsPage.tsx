@@ -355,28 +355,43 @@ const TargetCard = ({
 // JOB CARD (with streak bonus display)
 // =====================================================
 
-const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0 }: {
+const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, playerLevel = 1, playerEnergy = 0 }: {
     job: JobDefinition;
     isProcessing: boolean;
     delay?: number;
     onExecute: () => void;
     streakBonus?: number;
+    playerLevel?: number;
+    playerEnergy?: number;
 }) => {
     const bonusCash = streakBonus > 0 ? Math.round(job.cash_reward * (1 + streakBonus / 100)) : job.cash_reward;
     const bonusXp = streakBonus > 0 ? Math.round(job.experience_reward * (1 + streakBonus / 100)) : job.experience_reward;
+
+    const meetsLevelReq = playerLevel >= job.required_level;
+    const hasEnoughEnergy = playerEnergy >= job.energy_cost;
+    const canExecute = meetsLevelReq && hasEnoughEnergy && !isProcessing;
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay }}
-            className="noir-card p-4"
+            className={`noir-card p-4 ${!meetsLevelReq ? 'opacity-60' : ''}`}
         >
             <div className="flex items-start justify-between mb-2">
-                <div>
+                <div className="flex-1">
                     <h3 className="font-cinzel font-semibold text-sm text-foreground">{job.name}</h3>
                     <p className="text-xs text-muted-foreground">{job.description}</p>
                 </div>
+                {/* Required Level Badge */}
+                {job.required_level > 1 && (
+                    <div className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${meetsLevelReq
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-red-500/20 text-red-400'
+                        }`}>
+                        Lv {job.required_level}
+                    </div>
+                )}
             </div>
 
             {/* Rewards Display */}
@@ -394,17 +409,35 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0 }: {
                 </div>
             </div>
 
-            <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
-                <img src="/images/icons/energy.png" alt="" className="w-3 h-3" />
-                -{job.energy_cost} Energy
+            {/* Requirements Section */}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+                <div className={`flex items-center gap-1 ${hasEnoughEnergy ? '' : 'text-red-400'}`}>
+                    <img src="/images/icons/energy.png" alt="" className="w-3 h-3" />
+                    <span>{job.energy_cost} Energy</span>
+                </div>
+                {!meetsLevelReq && (
+                    <div className="flex items-center gap-1 text-red-400">
+                        <Star className="w-3 h-3" />
+                        <span>Requires Level {job.required_level}</span>
+                    </div>
+                )}
             </div>
 
             <Button
-                className="w-full btn-gold text-xs"
+                className={`w-full text-xs ${canExecute ? 'btn-gold' : ''}`}
                 onClick={onExecute}
-                disabled={isProcessing}
+                disabled={!canExecute}
+                variant={canExecute ? 'default' : 'outline'}
             >
-                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Execute Job'}
+                {isProcessing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                ) : !meetsLevelReq ? (
+                    `Requires Level ${job.required_level}`
+                ) : !hasEnoughEnergy ? (
+                    'Not Enough Energy'
+                ) : (
+                    'Execute Job'
+                )}
             </Button>
         </motion.div>
     );
@@ -1081,6 +1114,8 @@ const OpsPage = () => {
                                     delay={0.05 * idx}
                                     onExecute={() => handleJobExecute(job)}
                                     streakBonus={chainStatus?.bonus_percent || 0}
+                                    playerLevel={player?.level || 1}
+                                    playerEnergy={player?.energy || 0}
                                 />
                             ))
                         )}
