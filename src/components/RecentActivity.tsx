@@ -142,7 +142,7 @@ export const RecentActivity = () => {
 
             <div className="noir-card p-3">
                 {activities.length > 0 ? (
-                    activities.map((activity, index) => (
+                    activities.slice(0, 5).map((activity, index) => (
                         <ActivityItem key={activity.id} activity={activity} index={index} />
                     ))
                 ) : (
