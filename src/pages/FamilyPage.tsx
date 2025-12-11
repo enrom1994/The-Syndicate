@@ -201,6 +201,9 @@ const FamilyPage = () => {
     const [inviteOpen, setInviteOpen] = useState(false);
     const [inviteUsername, setInviteUsername] = useState('');
 
+    const [profileOpen, setProfileOpen] = useState(false);
+    const [selectedPlayer, setSelectedPlayer] = useState<Member | null>(null);
+
     const [leaveOpen, setLeaveOpen] = useState(false);
 
     // Load family data
@@ -244,7 +247,8 @@ const FamilyPage = () => {
 
     const handleMemberAction = (member: Member, action: 'promote' | 'demote' | 'kick' | 'view' | 'transfer') => {
         if (action === 'view') {
-            toast({ title: 'Opening Profile', description: `Viewing ${member.username || member.first_name}'s profile...` });
+            setSelectedPlayer(member);
+            setProfileOpen(true);
             return;
         }
         setConfirmAction({ type: action, member });
