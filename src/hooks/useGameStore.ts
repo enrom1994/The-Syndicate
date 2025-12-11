@@ -330,6 +330,10 @@ interface GameState {
     claimReferralMilestone: (milestoneId: string) => Promise<{ success: boolean; message: string; reward_type?: string; reward_amount?: number; reward_item_name?: string }>;
     applyReferralCode: (code: string) => Promise<{ success: boolean; message: string }>;
 
+    // Starter Pack system
+    buyStarterPack: () => Promise<{ success: boolean; message: string; rewards?: any }>;
+    repairBusiness: (playerBusinessId: string) => Promise<{ success: boolean; message: string; cost?: number }>;
+
     // Clear on logout
     reset: () => void;
 }
@@ -1345,6 +1349,58 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
 
         return data as { success: boolean; message: string };
+    },
+
+    // Starter Pack System
+    buyStarterPack: async () => {
+        const { playerId, loadBusinesses, loadInventory, loadAchievements } = get();
+        if (!playerId) return { success: false, message: 'Not logged in' };
+
+        const { data, error } = await supabase.rpc('buy_starter_pack', {
+            buyer_id: playerId,
+        });
+
+        if (error) {
+            console.error('Failed to buy starter pack:', error);
+            return { success: false, message: error.message };
+        }
+
+        const result = data as { success: boolean; message: string; rewards?: any };
+
+        // Reload relevant data if purchase successful
+        if (result.success) {
+            await Promise.all([
+                loadBusinesses(),
+                loadInventory(),
+                loadAchievements(),
+            ]);
+        }
+
+        return result;
+    },
+
+    repairBusiness: async (playerBusinessId) => {
+        const { playerId, loadBusinesses } = get();
+        if (!playerId) return { success: false, message: 'Not logged in' };
+
+        const { data, error } = await supabase.rpc('repair_business', {
+            repairer_id: playerId,
+            target_business_id: playerBusinessId,
+        });
+
+        if (error) {
+            console.error('Failed to repair business:', error);
+            return { success: false, message: error.message };
+        }
+
+        const result = data as { success: boolean; message: string; cost?: number };
+
+        // Reload businesses if repair successful
+        if (result.success) {
+            await loadBusinesses();
+        }
+
+        return result;
     },
 
     reset: () => set({

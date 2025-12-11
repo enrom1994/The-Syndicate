@@ -155,6 +155,45 @@ const ShopPage = () => {
         fetchVipStatus();
     }, [player?.id]);
 
+    // Calculate if starter pack is available (account < 24h old)
+    const [starterPackAvailable, setStarterPackAvailable] = useState(false);
+    const [timeRemaining, setTimeRemaining] = useState('');
+
+    useEffect(() => {
+        if (!player?.created_at || player?.starter_pack_claimed) {
+            setStarterPackAvailable(false);
+            return;
+        }
+
+        const createdAt = new Date(player.created_at).getTime();
+        const now = Date.now();
+        const elapsed = now - createdAt;
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+
+        if (elapsed < twentyFourHours) {
+            setStarterPackAvailable(true);
+
+            // Update countdown every second
+            const interval = setInterval(() => {
+                const remaining = twentyFourHours - (Date.now() - createdAt);
+                if (remaining <= 0) {
+                    setStarterPackAvailable(false);
+                    setTimeRemaining('');
+                    clearInterval(interval);
+                } else {
+                    const hours = Math.floor(remaining / (1000 * 60 * 60));
+                    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+                    setTimeRemaining(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+                }
+            }, 1000);
+
+            return () => clearInterval(interval);
+        } else {
+            setStarterPackAvailable(false);
+        }
+    }, [player?.created_at, player?.starter_pack_claimed]);
+
     const diamondPackages = [
         { name: 'Small', price: '1 TON', tonAmount: 1, diamonds: 120 },
         { name: 'Standard', price: '3 TON', tonAmount: 3, diamonds: 420, bonus: '60' },
@@ -229,6 +268,20 @@ const ShopPage = () => {
             name: vipStatus.isActive ? 'Extend VIP Pass (+7 days)' : 'VIP Pass (7-day Auto-Collector)',
             price: '5 TON',
             tonAmount: 5,
+        });
+        setConfirmOpen(true);
+    };
+
+    const handleBuyStarterPack = () => {
+        if (!tonConnectUI.wallet) {
+            tonConnectUI.openModal();
+            return;
+        }
+        setPendingPurchase({
+            type: 'starter_pack' as any,
+            name: 'Mobster Starter Pack',
+            price: '1 TON',
+            tonAmount: 1,
         });
         setConfirmOpen(true);
     };
@@ -365,6 +418,38 @@ const ShopPage = () => {
                     title: 'VIP Pass Activated! 👑',
                     description: `Auto-collect is now active for ${vipData?.days_remaining || 7} days!`,
                 });
+            } else if ((pendingPurchase.type as string) === 'starter_pack' && pendingPurchase.tonAmount) {
+                // Send TON transaction for Starter Pack
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 600,
+                    messages: [
+                        {
+                            address: TON_RECEIVING_ADDRESS,
+                            amount: toNanoTon(pendingPurchase.tonAmount).toString(),
+                        }
+                    ]
+                };
+
+                await tonConnectUI.sendTransaction(transaction);
+
+                // Call buy_starter_pack RPC
+                const { data, error } = await supabase.rpc('buy_starter_pack', {
+                    buyer_id: player.id
+                });
+
+                if (error) throw error;
+                if (!data?.success) throw new Error(data?.message || 'Failed to purchase');
+
+                haptic.success();
+                await refetchPlayer();
+
+                toast({
+                    title: 'Welcome to the Family! 👔',
+                    description: data.message || 'You are now a Made Man.',
+                });
+
+                // Hide the starter pack card
+                setStarterPackAvailable(false);
             }
         } catch (error) {
             console.error('Purchase error:', error);
@@ -419,6 +504,62 @@ const ShopPage = () => {
                         <span className="font-cinzel font-bold text-sm text-foreground">{player?.diamonds ?? 0}</span>
                     </div>
                 </motion.div>
+
+                {/* Starter Pack - Limited Time Offer */}
+                {starterPackAvailable && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5 }}
+                        className="noir-card p-4 mb-6 ring-2 ring-red-500 relative overflow-hidden"
+                    >
+                        {/* Urgent banner */}
+                        <div className="absolute top-0 left-0 right-0 bg-red-500 text-white text-center py-1">
+                            <span className="text-[10px] font-bold">⏰ LIMITED TIME OFFER ⏰</span>
+                        </div>
+
+                        <div className="mt-6 flex items-start gap-3">
+                            <div className="w-16 h-16 rounded-sm bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shrink-0">
+                                <span className="text-3xl">🎁</span>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-cinzel font-bold text-lg text-foreground">Mobster Starter Pack</h3>
+                                <p className="text-xs text-red-400 font-semibold mb-2">Expires in: {timeRemaining}</p>
+                                <ul className="space-y-1 mb-3">
+                                    <li className="text-xs text-muted-foreground flex items-center gap-1">
+                                        ✓ Level 3 Boost
+                                    </li>
+                                    <li className="text-xs text-muted-foreground flex items-center gap-1">
+                                        ✓ Speakeasy Business (Needs Repair)
+                                    </li>
+                                    <li className="text-xs text-muted-foreground flex items-center gap-1">
+                                        ✓ 10x Whiskey Crates
+                                    </li>
+                                    <li className="text-xs text-muted-foreground flex items-center gap-1">
+                                        ✓ $25,000 Cash
+                                    </li>
+                                    <li className="text-xs text-muted-foreground flex items-center gap-1">
+                                        ✓ 100 Diamonds
+                                    </li>
+                                    <li className="text-xs text-primary flex items-center gap-1">
+                                        ✨ "Made Man" Badge
+                                    </li>
+                                </ul>
+                                <Button
+                                    className="w-full btn-gold text-sm"
+                                    onClick={handleBuyStarterPack}
+                                    disabled={processingId === 'starter_pack'}
+                                >
+                                    {processingId === 'starter_pack' ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        '1 TON - Become a Made Man'
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-4 bg-muted/30 rounded-sm mb-4">
