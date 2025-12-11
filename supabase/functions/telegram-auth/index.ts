@@ -268,6 +268,24 @@ serve(async (req) => {
                 }, {
                     onConflict: 'player_id',
                 });
+
+            // Apply referral code if this is a new user with a start_param
+            const params = new URLSearchParams(initData);
+            const startParam = params.get('start_param');
+
+            if (startParam && startParam.length > 0) {
+                console.log('[Auth] Applying referral code for new user:', startParam);
+                const { data: referralResult, error: referralError } = await supabase.rpc('apply_referral_code', {
+                    referred_player_id: userId,
+                    code_input: startParam
+                });
+
+                if (referralError) {
+                    console.error('[Auth] Failed to apply referral code:', referralError);
+                } else {
+                    console.log('[Auth] Referral code result:', referralResult);
+                }
+            }
         }
 
         // Update player info on each login
