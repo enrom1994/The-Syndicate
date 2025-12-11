@@ -510,7 +510,7 @@ const FamilyPage = () => {
                     <div className="grid grid-cols-3 gap-3 mb-4">
                         <div className="text-center">
                             <p className="text-xs text-muted-foreground">Total Respect</p>
-                            <p className="font-cinzel font-bold text-lg text-primary">{family.total_respect.toLocaleString()}</p>
+                            <p className="font-cinzel font-bold text-lg text-primary">{members.reduce((sum, m) => sum + m.respect, 0).toLocaleString()}</p>
                         </div>
                         <div className="text-center">
                             <p className="text-xs text-muted-foreground">Your Role</p>
