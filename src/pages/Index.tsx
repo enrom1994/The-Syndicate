@@ -50,6 +50,8 @@ const Index = () => {
   const [offlineEarnings, setOfflineEarnings] = useState<OfflineEarnings | null>(null);
   const [vipStatus, setVipStatus] = useState<VipStatus>({ isActive: false, daysRemaining: 0, hoursRemaining: 0 });
   const [protectionStatus, setProtectionStatus] = useState<ProtectionStatus>({ isActive: false, hoursRemaining: 0, minutesRemaining: 0 });
+  const [starterPackAvailable, setStarterPackAvailable] = useState(false);
+  const [starterPackTimer, setStarterPackTimer] = useState('');
 
   // Calculate protection status from player data
   useEffect(() => {
@@ -86,6 +88,34 @@ const Index = () => {
     };
     fetchVipStatus();
   }, [player?.id]);
+
+  // Calculate starter pack availability (24h window)
+  useEffect(() => {
+    if (!player?.created_at || (player as any)?.starter_pack_claimed) {
+      setStarterPackAvailable(false);
+      return;
+    }
+
+    const createdAt = new Date(player.created_at).getTime();
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+
+    const interval = setInterval(() => {
+      const remaining = twentyFourHours - (Date.now() - createdAt);
+      if (remaining <= 0) {
+        setStarterPackAvailable(false);
+        setStarterPackTimer('');
+        clearInterval(interval);
+      } else {
+        setStarterPackAvailable(true);
+        const hours = Math.floor(remaining / (1000 * 60 * 60));
+        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+        setStarterPackTimer(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [player?.created_at, (player as any)?.starter_pack_claimed]);
 
   useEffect(() => {
     if (!hasSeenIntro && onboardingComplete) {
@@ -251,6 +281,28 @@ const Index = () => {
                             ? `${protectionStatus.hoursRemaining}h ${protectionStatus.minutesRemaining}m`
                             : `${protectionStatus.minutesRemaining}m`}
                         </span>
+                      </motion.div>
+                    </Link>
+                  )}
+
+                  {/* Starter Pack Quicklink */}
+                  {starterPackAvailable && (
+                    <Link to="/shop">
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="flex items-center gap-2 px-3 py-2 bg-red-500/20 border border-red-500/50 rounded-lg hover:bg-red-500/30 transition-colors"
+                      >
+                        <span className="text-xl">🎁</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-bold text-red-400 leading-tight">LIMITED OFFER</p>
+                          <p className="text-xs font-cinzel text-foreground">Starter Pack • 1 TON</p>
+                        </div>
+                        <div className="flex items-center gap-1 bg-red-900/50 px-2 py-1 rounded">
+                          <Timer className="w-3 h-3 text-red-300" />
+                          <span className="text-[10px] font-mono text-red-200">{starterPackTimer}</span>
+                        </div>
                       </motion.div>
                     </Link>
                   )}
