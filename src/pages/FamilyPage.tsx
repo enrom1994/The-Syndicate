@@ -527,6 +527,25 @@ const FamilyPage = () => {
                     </Button>
                 </motion.div>
 
+                {/* Family Settings */}
+                {(myRole === 'Don' || myRole === 'Consigliere') && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.15 }}
+                        className="mb-4"
+                    >
+                        <Button
+                            variant="outline"
+                            className="w-full border-primary/30 text-primary hover:bg-primary/10"
+                            onClick={() => navigate('/family/settings')}
+                        >
+                            <Settings className="w-4 h-4 mr-2" />
+                            Family Settings
+                        </Button>
+                    </motion.div>
+                )}
+
                 {/* Members */}
                 <motion.div
                     initial={{ opacity: 0 }}

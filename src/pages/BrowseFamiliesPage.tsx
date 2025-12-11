@@ -30,9 +30,10 @@ interface FamilyCardProps {
     delay?: number;
     onJoin: () => void;
     isJoining: boolean;
+    userHasFamily: boolean;
 }
 
-const FamilyCard = ({ family, delay = 0, onJoin, isJoining }: FamilyCardProps) => (
+const FamilyCard = ({ family, delay = 0, onJoin, isJoining, userHasFamily }: FamilyCardProps) => (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -54,8 +55,8 @@ const FamilyCard = ({ family, delay = 0, onJoin, isJoining }: FamilyCardProps) =
                 </div>
             </div>
             <span className={`px-2 py-0.5 text-[10px] rounded-sm ${family.join_type === 'request'
-                    ? 'bg-yellow-500/20 text-yellow-400'
-                    : 'bg-green-500/20 text-green-400'
+                ? 'bg-yellow-500/20 text-yellow-400'
+                : 'bg-green-500/20 text-green-400'
                 }`}>
                 {family.join_type === 'request' ? 'Request-Only' : 'Open'}
             </span>
@@ -79,16 +80,75 @@ const FamilyCard = ({ family, delay = 0, onJoin, isJoining }: FamilyCardProps) =
         <Button
             className="w-full btn-gold text-xs"
             onClick={onJoin}
-            disabled={isJoining}
+            disabled={isJoining || userHasFamily}
         >
-            {isJoining ? (
+            {userHasFamily ? (
+                'Already in Family'
+            ) : isJoining ? (
                 <Loader2 className="w-4 h-4 mr-1 animate-spin" />
             ) : (
                 <UserPlus className="w-4 h-4 mr-1" />
             )}
-            {family.join_type === 'request' ? 'Request to Join' : 'Join Family'}
+            {!userHasFamily && (family.join_type === 'request' ? 'Request to Join' : 'Join Family')}
         </Button>
     </motion.div>
+);
+<motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5, delay }}
+    className="noir-card p-4"
+>
+    <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-sm bg-muted/50 flex items-center justify-center">
+                <Crown className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+                <h3 className="font-cinzel font-bold text-sm text-foreground">
+                    {family.tag ? `[${family.tag}] ` : ''}{family.name}
+                </h3>
+                <p className="text-[10px] text-muted-foreground">
+                    {family.member_count} members • Boss: {family.boss_name || 'Unknown'}
+                </p>
+            </div>
+        </div>
+        <span className={`px-2 py-0.5 text-[10px] rounded-sm ${family.join_type === 'request'
+            ? 'bg-yellow-500/20 text-yellow-400'
+            : 'bg-green-500/20 text-green-400'
+            }`}>
+            {family.join_type === 'request' ? 'Request-Only' : 'Open'}
+        </span>
+    </div>
+
+    <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
+        <div className="bg-muted/20 p-2 rounded-sm">
+            <span className="text-muted-foreground">Treasury</span>
+            <p className="font-cinzel font-bold text-primary">${family.treasury.toLocaleString()}</p>
+        </div>
+        <div className="bg-muted/20 p-2 rounded-sm">
+            <span className="text-muted-foreground">Min Level</span>
+            <p className="font-cinzel font-bold text-foreground">Lv. {family.min_level_required}</p>
+        </div>
+    </div>
+
+    {family.description && (
+        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{family.description}</p>
+    )}
+
+    <Button
+        className="w-full btn-gold text-xs"
+        onClick={onJoin}
+        disabled={isJoining}
+    >
+        {isJoining ? (
+            <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+        ) : (
+            <UserPlus className="w-4 h-4 mr-1" />
+        )}
+        {family.join_type === 'request' ? 'Request to Join' : 'Join Family'}
+    </Button>
+</motion.div>
 );
 
 const BrowseFamiliesPage = () => {
@@ -99,6 +159,7 @@ const BrowseFamiliesPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [families, setFamilies] = useState<Family[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [userHasFamily, setUserHasFamily] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
     const [isJoining, setIsJoining] = useState(false);
@@ -120,6 +181,18 @@ const BrowseFamiliesPage = () => {
     };
 
     useEffect(() => {
+        const checkFamily = async () => {
+            if (!player?.id) return;
+            try {
+                const { data } = await supabase.rpc('get_player_family', {
+                    target_player_id: player.id
+                });
+                setUserHasFamily(!!data?.has_family);
+            } catch (error) {
+                console.error('Failed to check family:', error);
+            }
+        };
+        checkFamily();
         loadFamilies();
     }, []);
 
@@ -259,6 +332,7 @@ const BrowseFamiliesPage = () => {
                                 delay={0.1 * index}
                                 onJoin={() => handleJoin(family)}
                                 isJoining={isJoining && selectedFamily?.id === family.id}
+                                userHasFamily={userHasFamily}
                             />
                         ))}
                     </div>
