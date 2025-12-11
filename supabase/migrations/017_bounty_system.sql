@@ -181,7 +181,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-    diamond_cost INTEGER := 1000;
+    diamond_cost INTEGER := 150;
     min_bounty BIGINT := 10000;
     max_active INTEGER := 2;
     placer_diamonds INTEGER;
@@ -219,7 +219,7 @@ BEGIN
     SELECT diamonds, cash INTO placer_diamonds, placer_cash FROM players WHERE id = placer_id;
     
     IF placer_diamonds < diamond_cost THEN
-        RETURN jsonb_build_object('success', false, 'message', 'You need 1000 diamonds to place a bounty.');
+        RETURN jsonb_build_object('success', false, 'message', 'You need 150 diamonds to place a bounty.');
     END IF;
     
     IF placer_cash < amount THEN
