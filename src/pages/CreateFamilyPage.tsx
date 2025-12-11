@@ -215,6 +215,51 @@ const CreateFamilyPage = () => {
                             />
                         </div>
 
+                        {/* Join Type */}
+                        <div>
+                            <label className="text-xs text-muted-foreground mb-2 block">
+                                Who Can Join?
+                            </label>
+                            <div className="space-y-2">
+                                <div
+                                    onClick={() => setJoinType('open')}
+                                    className={`p-3 rounded-sm border cursor-pointer transition-colors ${joinType === 'open'
+                                            ? 'bg-primary/10 border-primary/50'
+                                            : 'bg-muted/20 border-border/50 hover:border-border'
+                                        }`}
+                                >
+                                    <div className="flex items-start gap-2">
+                                        <div className={`w-4 h-4 rounded-full border-2 mt-0.5 flex items-center justify-center ${joinType === 'open' ? 'border-primary' : 'border-muted-foreground'
+                                            }`}>
+                                            {joinType === 'open' && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-sm font-semibold text-foreground">Open</p>
+                                            <p className="text-[10px] text-muted-foreground">Anyone who meets the level requirement can join</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div
+                                    onClick={() => setJoinType('request')}
+                                    className={`p-3 rounded-sm border cursor-pointer transition-colors ${joinType === 'request'
+                                            ? 'bg-primary/10 border-primary/50'
+                                            : 'bg-muted/20 border-border/50 hover:border-border'
+                                        }`}
+                                >
+                                    <div className="flex items-start gap-2">
+                                        <div className={`w-4 h-4 rounded-full border-2 mt-0.5 flex items-center justify-center ${joinType === 'request' ? 'border-primary' : 'border-muted-foreground'
+                                            }`}>
+                                            {joinType === 'request' && <div className="w-2 h-2 rounded-full bg-primary" />}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-sm font-semibold text-foreground">Request-Only</p>
+                                            <p className="text-[10px] text-muted-foreground">Players must request to join and be approved by leadership</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Cost Display */}
                         <div className="space-y-2">
                             <div className="flex items-center justify-between p-3 bg-muted/30 rounded-sm">
