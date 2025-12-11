@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Swords, Shield, Users, TrendingUp } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import { EnergyBar } from './SeasonBanner';
+import { EnergyBar, StaminaBar } from './SeasonBanner';
 import { GameIcon } from './GameIcon';
 import { useEnergyRegen } from '@/hooks/useEnergyRegen';
+import { useStaminaRegen } from '@/hooks/useStaminaRegen';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore } from '@/hooks/useGameStore';
 import { supabase } from '@/lib/supabase';
@@ -133,6 +134,13 @@ export const PlayerStats = () => {
     60000 // 1 minute per energy point
   );
 
+  // Stamina system with auto-regen - use player's actual stamina
+  const { stamina, formattedTime: staminaFormattedTime } = useStaminaRegen(
+    player?.stamina ?? 100,
+    player?.max_stamina ?? 100,
+    240000 // 4 minutes per stamina point
+  );
+
   // Calculate total crew from hired crew
   const totalCrewCount = hiredCrew.reduce((sum, c) => sum + c.quantity, 0);
 
@@ -258,6 +266,9 @@ export const PlayerStats = () => {
 
       {/* Energy Bar */}
       <EnergyBar energy={energy} maxEnergy={player?.max_energy ?? 100} regenTime={formattedTime} />
+
+      {/* Stamina Bar */}
+      <StaminaBar stamina={stamina} maxStamina={player?.max_stamina ?? 100} regenTime={staminaFormattedTime} />
 
       {/* XP Progress Bar */}
       <motion.div

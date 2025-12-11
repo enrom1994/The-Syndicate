@@ -101,3 +101,43 @@ export const EnergyBar = ({ energy, maxEnergy, regenTime = '2m 30s' }: EnergyBar
     );
 };
 
+interface StaminaBarProps {
+    stamina: number;
+    maxStamina: number;
+    regenTime?: string;
+}
+
+export const StaminaBar = ({ stamina, maxStamina, regenTime = '4m 00s' }: StaminaBarProps) => {
+    const staminaPercent = (stamina / maxStamina) * 100;
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.65 }}
+            className="mt-2 noir-card p-2.5"
+        >
+            <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-1.5">
+                    <img src="/images/icons/stamina.png" alt="Stamina" className="w-4 h-4 object-contain" />
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Stamina</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <span className="font-inter font-medium text-xs text-cyan-400">{stamina}/{maxStamina}</span>
+                    {stamina < maxStamina && (
+                        <span className="text-[10px] text-muted-foreground">+1 in {regenTime}</span>
+                    )}
+                </div>
+            </div>
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${staminaPercent}%` }}
+                    transition={{ duration: 1, delay: 0.85 }}
+                    className="h-full bg-gradient-to-r from-blue-500 via-cyan-500 to-cyan-400 rounded-full"
+                />
+            </div>
+        </motion.div>
+    );
+};
+
