@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Skull, X, Star, TrendingUp, TrendingDown } from 'lucide-react';
+import { Trophy, Skull, X, TrendingUp, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { GameIcon } from '@/components/GameIcon';
 
 interface CombatResultModalProps {
     open: boolean;
@@ -69,8 +68,8 @@ export const CombatResultModal = ({
                             animate={{ scale: 1, rotate: 0 }}
                             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
                             className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center mb-4 ${isVictory
-                                    ? 'bg-gradient-to-br from-yellow-500 to-orange-600'
-                                    : 'bg-gradient-to-br from-red-600 to-red-900'
+                                ? 'bg-gradient-to-br from-yellow-500 to-orange-600'
+                                : 'bg-gradient-to-br from-red-600 to-red-900'
                                 }`}
                         >
                             {isVictory ? (
@@ -88,7 +87,7 @@ export const CombatResultModal = ({
                             className={`font-cinzel text-2xl font-bold text-center mb-2 ${isVictory ? 'text-primary' : 'text-destructive'
                                 }`}
                         >
-                            {isVictory ? '🎉 VICTORY!' : '💀 DEFEAT'}
+                            {isVictory ? 'VICTORY!' : 'DEFEAT'}
                         </motion.h2>
 
                         <motion.p
@@ -121,7 +120,7 @@ export const CombatResultModal = ({
                                     <div className="grid grid-cols-2 gap-2">
                                         {cashGained > 0 && (
                                             <div className="flex items-center gap-2 bg-black/20 rounded p-2">
-                                                <GameIcon type="cash" className="w-4 h-4" />
+                                                <img src="/images/icons/cash.png" alt="" className="w-4 h-4" />
                                                 <span className="text-sm font-bold text-green-400">
                                                     +${cashGained.toLocaleString()}
                                                 </span>
@@ -129,7 +128,7 @@ export const CombatResultModal = ({
                                         )}
                                         {vaultStolen > 0 && (
                                             <div className="flex items-center gap-2 bg-black/20 rounded p-2">
-                                                <span className="text-sm">🔐</span>
+                                                <img src="/images/icons/thevault.png" alt="" className="w-4 h-4" />
                                                 <span className="text-sm font-bold text-yellow-400">
                                                     +${vaultStolen.toLocaleString()}
                                                 </span>
@@ -137,7 +136,7 @@ export const CombatResultModal = ({
                                         )}
                                         {respectGained > 0 && (
                                             <div className="flex items-center gap-2 bg-black/20 rounded p-2">
-                                                <Star className="w-4 h-4 text-orange-400" />
+                                                <img src="/images/icons/respect.png" alt="" className="w-4 h-4" />
                                                 <span className="text-sm font-bold text-orange-400">
                                                     +{respectGained}
                                                 </span>
@@ -155,7 +154,7 @@ export const CombatResultModal = ({
 
                                     {itemsStolen.length > 0 && (
                                         <div className="flex items-center gap-2 bg-black/20 rounded p-2">
-                                            <span className="text-sm">📦</span>
+                                            <img src="/images/icons/inventory.png" alt="" className="w-4 h-4" />
                                             <span className="text-sm text-purple-400">
                                                 {itemsStolen.join(', ')}
                                             </span>
@@ -175,7 +174,7 @@ export const CombatResultModal = ({
                                     <div className="grid grid-cols-2 gap-2">
                                         {cashLost > 0 && (
                                             <div className="flex items-center gap-2 bg-black/20 rounded p-2">
-                                                <GameIcon type="cash" className="w-4 h-4" />
+                                                <img src="/images/icons/cash.png" alt="" className="w-4 h-4" />
                                                 <span className="text-sm font-bold text-red-400">
                                                     -${cashLost.toLocaleString()}
                                                 </span>
@@ -183,7 +182,7 @@ export const CombatResultModal = ({
                                         )}
                                         {respectLost > 0 && (
                                             <div className="flex items-center gap-2 bg-black/20 rounded p-2">
-                                                <Star className="w-4 h-4 text-orange-400" />
+                                                <img src="/images/icons/respect.png" alt="" className="w-4 h-4" />
                                                 <span className="text-sm font-bold text-red-400">
                                                     -{respectLost}
                                                 </span>
@@ -191,7 +190,7 @@ export const CombatResultModal = ({
                                         )}
                                         {crewLost > 0 && (
                                             <div className="flex items-center gap-2 bg-black/20 rounded p-2 col-span-2">
-                                                <span className="text-sm">💀</span>
+                                                <Skull className="w-4 h-4 text-red-400" />
                                                 <span className="text-sm font-bold text-red-400">
                                                     Lost {crewLost} crew member{crewLost > 1 ? 's' : ''}
                                                 </span>

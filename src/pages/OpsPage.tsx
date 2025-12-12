@@ -1,10 +1,9 @@
 import { motion } from 'framer-motion';
-import { Swords, Target, Clock, Loader2, Skull, Users, Shield, DollarSign, AlertTriangle, Flame, Diamond, Star } from 'lucide-react';
+import { Swords, Target, Clock, Loader2, Skull, Users, Shield, AlertTriangle, Flame, Diamond, Star } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { CombatResultModal } from '@/components/CombatResultModal';
 import {
     AlertDialog,
@@ -17,7 +16,6 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { GameIcon } from '@/components/GameIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, JobDefinition } from '@/hooks/useGameStore';
 import { supabase } from '@/lib/supabase';
@@ -117,30 +115,42 @@ const PveTargetCard = ({
                 </span>
             </div>
 
+            {/* Rewards Grid */}
             <div className="grid grid-cols-3 gap-2 text-xs mb-3">
-                <div>
-                    <p className="text-muted-foreground">Cash</p>
-                    <p className="font-bold text-primary">${target.cash_reward.toLocaleString()}</p>
+                <div className="bg-green-500/10 border border-green-500/20 rounded p-2 text-center">
+                    <div className="flex items-center justify-center gap-1 mb-0.5">
+                        <img src="/images/icons/cash.png" alt="" className="w-3 h-3" />
+                        <span className="text-muted-foreground text-[10px]">Cash</span>
+                    </div>
+                    <p className="font-bold text-green-400">${target.cash_reward.toLocaleString()}</p>
                 </div>
-                <div>
-                    <p className="text-muted-foreground">XP</p>
-                    <p className="font-bold text-cyan-400 flex items-center gap-1">
+                <div className="bg-cyan-500/10 border border-cyan-500/20 rounded p-2 text-center">
+                    <div className="flex items-center justify-center gap-1 mb-0.5">
                         <img src="/images/icons/xp.png" alt="" className="w-3 h-3" />
-                        +{target.xp_reward}
-                    </p>
+                        <span className="text-muted-foreground text-[10px]">XP</span>
+                    </div>
+                    <p className="font-bold text-cyan-400">+{target.xp_reward}</p>
                 </div>
-                <div>
-                    <p className="text-muted-foreground">Respect</p>
+                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 text-center">
+                    <div className="flex items-center justify-center gap-1 mb-0.5">
+                        <img src="/images/icons/respect.png" alt="" className="w-3 h-3" />
+                        <span className="text-muted-foreground text-[10px]">Respect</span>
+                    </div>
                     <p className="font-bold text-yellow-400">+{target.respect_reward}</p>
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
-                <img src="/images/icons/stamina.png" alt="" className="w-3 h-3" />
-                -{target.stamina_cost} Stamina
-                <span className="mx-1">•</span>
-                <Shield className="w-3 h-3" />
-                Lv {target.required_level}+
+            {/* Requirements Row */}
+            <div className="flex items-center justify-center gap-3 mb-3 text-xs text-muted-foreground bg-muted/20 rounded p-2">
+                <div className="flex items-center gap-1">
+                    <img src="/images/icons/stamina.png" alt="" className="w-3.5 h-3.5" />
+                    <span>{target.stamina_cost}</span>
+                </div>
+                <span className="text-muted-foreground/50">•</span>
+                <div className="flex items-center gap-1">
+                    <Shield className="w-3.5 h-3.5" />
+                    <span>Lv {target.required_level}+</span>
+                </div>
             </div>
 
             <Button
@@ -274,31 +284,31 @@ const TargetCard = ({
                                     <div className="flex flex-wrap gap-1.5">
                                         {type.steals_cash && (
                                             <span className="flex items-center gap-1 bg-green-500/20 border border-green-500/40 px-2 py-1 rounded text-xs">
-                                                <span className="text-green-400">💰</span>
+                                                <img src="/images/icons/cash.png" alt="" className="w-3 h-3" />
                                                 <span className="text-green-300 font-medium">{type.cash_steal_percent}% Cash</span>
                                             </span>
                                         )}
                                         {type.steals_vault && (
                                             <span className="flex items-center gap-1 bg-yellow-500/20 border border-yellow-500/40 px-2 py-1 rounded text-xs">
-                                                <span className="text-yellow-400">🔐</span>
+                                                <img src="/images/icons/thevault.png" alt="" className="w-3 h-3" />
                                                 <span className="text-yellow-300 font-medium">{type.vault_steal_percent}% Vault</span>
                                             </span>
                                         )}
                                         {type.steals_contraband && (
                                             <span className="flex items-center gap-1 bg-purple-500/20 border border-purple-500/40 px-2 py-1 rounded text-xs">
-                                                <span className="text-purple-400">📦</span>
+                                                <img src="/images/icons/inventory.png" alt="" className="w-3 h-3" />
                                                 <span className="text-purple-300 font-medium">Items</span>
                                             </span>
                                         )}
                                         {type.steals_respect && (
                                             <span className="flex items-center gap-1 bg-orange-500/20 border border-orange-500/40 px-2 py-1 rounded text-xs">
-                                                <span className="text-orange-400">⭐</span>
+                                                <img src="/images/icons/respect.png" alt="" className="w-3 h-3" />
                                                 <span className="text-orange-300 font-medium">Respect</span>
                                             </span>
                                         )}
                                         {type.kills_crew && (
                                             <span className="flex items-center gap-1 bg-red-500/20 border border-red-500/40 px-2 py-1 rounded text-xs">
-                                                <span className="text-red-400">💀</span>
+                                                <Skull className="w-3 h-3 text-red-400" />
                                                 <span className="text-red-300 font-medium">Crew</span>
                                             </span>
                                         )}
@@ -394,32 +404,48 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, pla
                 )}
             </div>
 
-            {/* Rewards Display */}
-            <div className="flex items-center gap-4 mt-2 mb-3">
-                <div className="flex items-center gap-1 text-sm">
-                    <GameIcon type="cash" className="w-4 h-4" />
-                    <span className="font-bold text-green-400">${bonusCash.toLocaleString()}</span>
-                    {streakBonus > 0 && (
-                        <span className="text-xs text-orange-400">+{streakBonus}%</span>
-                    )}
+            {/* Rewards Grid */}
+            <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                <div className="bg-green-500/10 border border-green-500/20 rounded p-2 text-center">
+                    <div className="flex items-center justify-center gap-1 mb-0.5">
+                        <img src="/images/icons/cash.png" alt="" className="w-3 h-3" />
+                        <span className="text-muted-foreground text-[10px]">Cash</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1">
+                        <span className="font-bold text-green-400">${bonusCash.toLocaleString()}</span>
+                        {streakBonus > 0 && (
+                            <span className="text-[10px] text-orange-400">+{streakBonus}%</span>
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-1 text-sm">
-                    <img src="/images/icons/xp.png" alt="XP" className="w-4 h-4" />
-                    <span className="font-bold text-cyan-400">+{bonusXp} XP</span>
+                <div className="bg-cyan-500/10 border border-cyan-500/20 rounded p-2 text-center">
+                    <div className="flex items-center justify-center gap-1 mb-0.5">
+                        <img src="/images/icons/xp.png" alt="" className="w-3 h-3" />
+                        <span className="text-muted-foreground text-[10px]">XP</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-1">
+                        <span className="font-bold text-cyan-400">+{bonusXp}</span>
+                        {streakBonus > 0 && (
+                            <span className="text-[10px] text-orange-400">+{streakBonus}%</span>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* Requirements Section */}
-            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+            {/* Requirements Row */}
+            <div className="flex items-center justify-center gap-3 mb-3 text-xs text-muted-foreground bg-muted/20 rounded p-2">
                 <div className={`flex items-center gap-1 ${hasEnoughEnergy ? '' : 'text-red-400'}`}>
-                    <img src="/images/icons/energy.png" alt="" className="w-3 h-3" />
-                    <span>{job.energy_cost} Energy</span>
+                    <img src="/images/icons/energy.png" alt="" className="w-3.5 h-3.5" />
+                    <span>{job.energy_cost}</span>
                 </div>
-                {!meetsLevelReq && (
-                    <div className="flex items-center gap-1 text-red-400">
-                        <Star className="w-3 h-3" />
-                        <span>Requires Level {job.required_level}</span>
-                    </div>
+                {job.required_level > 1 && (
+                    <>
+                        <span className="text-muted-foreground/50">•</span>
+                        <div className={`flex items-center gap-1 ${meetsLevelReq ? '' : 'text-red-400'}`}>
+                            <Shield className="w-3.5 h-3.5" />
+                            <span>Lv {job.required_level}+</span>
+                        </div>
+                    </>
                 )}
             </div>
 
@@ -482,50 +508,65 @@ const HighStakesCard = ({ job, isProcessing, delay = 0, onExecute }: {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay }}
-            className="noir-card p-4 border-l-4 border-yellow-500"
+            className="noir-card p-4 border-2 border-yellow-500/50 bg-gradient-to-br from-yellow-900/10 to-orange-900/5"
         >
-            <div className="flex items-start justify-between mb-2">
-                <div>
-                    <div className="flex items-center gap-2">
-                        <Star className="w-4 h-4 text-yellow-500" />
-                        <h3 className="font-cinzel font-semibold text-sm text-foreground">{job.name}</h3>
+            {/* Premium Header */}
+            <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                        <div className="w-6 h-6 rounded bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center">
+                            <Star className="w-3.5 h-3.5 text-yellow-100" />
+                        </div>
+                        <h3 className="font-cinzel font-bold text-sm text-primary">{job.name}</h3>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">{job.description}</p>
+                    <p className="text-xs text-muted-foreground">{job.description}</p>
                 </div>
-                <div className="flex items-center gap-1 bg-yellow-500/20 px-2 py-1 rounded text-xs">
-                    <Diamond className="w-3 h-3 text-cyan-400" />
+                <div className="flex items-center gap-1.5 bg-gradient-to-r from-cyan-600/30 to-cyan-500/20 border border-cyan-500/40 px-2.5 py-1 rounded-full text-xs">
+                    <img src="/images/icons/diamond.png" alt="" className="w-4 h-4" />
                     <span className="text-cyan-400 font-bold">{job.entry_cost_diamonds}</span>
                 </div>
             </div>
 
+            {/* Rewards Grid with Enhanced Styling */}
             <div className="grid grid-cols-3 gap-2 text-xs mb-3">
-                <div className="bg-green-500/10 rounded p-2 text-center">
-                    <p className="text-muted-foreground">Reward</p>
+                <div className="bg-green-500/15 border border-green-500/30 rounded p-2 text-center">
+                    <div className="flex items-center justify-center gap-1 mb-0.5">
+                        <img src="/images/icons/cash.png" alt="" className="w-3 h-3" />
+                        <span className="text-muted-foreground text-[10px]">Reward</span>
+                    </div>
                     <p className="font-bold text-green-400">${job.cash_reward.toLocaleString()}</p>
                 </div>
-                <div className="bg-cyan-500/10 rounded p-2 text-center">
-                    <p className="text-muted-foreground">XP</p>
-                    <p className="font-bold text-cyan-400 flex items-center justify-center gap-1">
+                <div className="bg-cyan-500/15 border border-cyan-500/30 rounded p-2 text-center">
+                    <div className="flex items-center justify-center gap-1 mb-0.5">
                         <img src="/images/icons/xp.png" alt="" className="w-3 h-3" />
-                        +{job.xp_reward}
-                    </p>
+                        <span className="text-muted-foreground text-[10px]">XP</span>
+                    </div>
+                    <p className="font-bold text-cyan-400">+{job.xp_reward}</p>
                 </div>
-                <div className="bg-red-500/10 rounded p-2 text-center">
-                    <p className="text-muted-foreground">Success</p>
+                <div className="bg-red-500/15 border border-red-500/30 rounded p-2 text-center">
+                    <div className="flex items-center justify-center gap-1 mb-0.5">
+                        <Target className="w-3 h-3 text-red-400" />
+                        <span className="text-muted-foreground text-[10px]">Success</span>
+                    </div>
                     <p className="font-bold text-red-400">{job.success_rate}%</p>
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 mb-3 text-xs text-muted-foreground">
-                <img src="/images/icons/energy.png" alt="" className="w-3 h-3" />
-                -{job.energy_cost} Energy
-                <span className="mx-1">•</span>
-                <Shield className="w-3 h-3" />
-                Lv {job.required_level}+
+            {/* Requirements Row */}
+            <div className="flex items-center justify-center gap-3 mb-3 text-xs text-muted-foreground bg-muted/20 rounded p-2">
+                <div className="flex items-center gap-1">
+                    <img src="/images/icons/energy.png" alt="" className="w-3.5 h-3.5" />
+                    <span>{job.energy_cost}</span>
+                </div>
+                <span className="text-muted-foreground/50">•</span>
+                <div className="flex items-center gap-1">
+                    <Shield className="w-3.5 h-3.5" />
+                    <span>Lv {job.required_level}+</span>
+                </div>
             </div>
 
             <Button
-                className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-xs"
+                className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-xs font-bold"
                 onClick={onExecute}
                 disabled={isProcessing || !job.is_available || !job.player_meets_level}
             >
@@ -540,8 +581,8 @@ const HighStakesCard = ({ job, isProcessing, delay = 0, onExecute }: {
                     </>
                 ) : (
                     <>
-                        <Diamond className="w-4 h-4 mr-1" />
-                        Enter ({job.entry_cost_diamonds}💎)
+                        <img src="/images/icons/diamond.png" alt="" className="w-4 h-4 mr-1" />
+                        Enter ({job.entry_cost_diamonds})
                     </>
                 )}
             </Button>
