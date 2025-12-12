@@ -35,6 +35,7 @@ interface PlayerBounty {
     target_level: number;
     bounty_amount: number;
     placed_by: string;
+    placed_by_player_id?: string; // Added field
     expires_at: string;
     time_remaining: number;
 }
@@ -456,9 +457,9 @@ const BountyBoardPage = () => {
                                                 size="sm"
                                                 className="btn-gold text-[10px] mt-1"
                                                 onClick={() => handleHuntPlayer(bounty)}
-                                                disabled={isProcessing}
+                                                disabled={isProcessing || bounty.placed_by_player_id === player?.id}
                                             >
-                                                Hunt
+                                                {bounty.placed_by_player_id === player?.id ? 'Yours' : 'Hunt'}
                                             </Button>
                                         </div>
                                     </div>

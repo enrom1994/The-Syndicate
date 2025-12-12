@@ -37,11 +37,16 @@ const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
     const showProgress = task.requirement_target > 1 && !task.is_completed;
     const progressPercent = Math.min(100, (task.progress / task.requirement_target) * 100);
 
+    // Hide completed one-time tasks (no reset_hours)
+    if (task.is_completed && !task.reset_hours) {
+        return null;
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`noir-card p-4 ${task.is_completed ? 'opacity-60' : ''}`}
+            className={`noir-card p-4 ${task.is_completed ? 'opacity-60' : ''} ${task.can_claim ? 'ring-1 ring-primary/50' : ''}`}
         >
             <div className="flex items-start gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${task.is_completed
@@ -109,6 +114,19 @@ const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
                         </div>
                     )}
 
+                    {/* Show Claimed badge for completed recurring tasks */}
+                    {task.is_completed && task.reset_hours && (
+                        <div className="mt-3 flex items-center gap-2">
+                            <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-sm font-semibold">
+                                ✓ Claimed
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                                Resets {task.reset_hours === 24 ? 'tomorrow' : 'next week'}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Show action buttons for incomplete tasks */}
                     {!task.is_completed && (
                         <div className="flex gap-2 mt-3">
                             {task.link && (
@@ -127,7 +145,7 @@ const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
                             )}
                             <Button
                                 size="sm"
-                                className={`flex-1 text-xs ${task.can_claim ? 'btn-gold' : ''}`}
+                                className={`flex-1 text-xs ${task.can_claim ? 'btn-gold animate-pulse' : ''}`}
                                 disabled={isVerifying || !task.can_claim}
                                 onClick={() => onVerify(task.id)}
                             >
