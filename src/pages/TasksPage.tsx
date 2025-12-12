@@ -145,7 +145,7 @@ const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
                             )}
                             <Button
                                 size="sm"
-                                className={`flex-1 text-xs ${task.can_claim ? 'btn-gold animate-pulse' : ''}`}
+                                className={`flex-1 text-xs ${task.can_claim ? 'btn-gold' : ''}`}
                                 disabled={isVerifying || !task.can_claim}
                                 onClick={() => onVerify(task.id)}
                             >
