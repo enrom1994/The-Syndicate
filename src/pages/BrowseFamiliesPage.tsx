@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Users, Crown, Plus, Search, ArrowLeft, UserPlus, Loader2 } from 'lucide-react';
+import { Users, Crown, Plus, Search, ArrowLeft, UserPlus, Loader2, Hash } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/MainLayout';
@@ -10,6 +10,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Family {
     id: string;
@@ -55,8 +63,8 @@ const FamilyCard = ({ family, delay = 0, onJoin, isJoining, userInFamily }: Fami
                 </div>
             </div>
             <span className={`px-2 py-0.5 text-[10px] rounded-sm ${family.join_type === 'request'
-                    ? 'bg-yellow-500/20 text-yellow-400'
-                    : 'bg-green-500/20 text-green-400'
+                ? 'bg-yellow-500/20 text-yellow-400'
+                : 'bg-green-500/20 text-green-400'
                 }`}>
                 {family.join_type === 'request' ? 'Request-Only' : 'Open'}
             </span>
@@ -106,6 +114,9 @@ const BrowseFamiliesPage = () => {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
     const [isJoining, setIsJoining] = useState(false);
+    const [codeDialogOpen, setCodeDialogOpen] = useState(false);
+    const [inviteCode, setInviteCode] = useState('');
+    const [isJoiningByCode, setIsJoiningByCode] = useState(false);
 
     const loadFamilies = async (query?: string) => {
         try {
@@ -196,6 +207,49 @@ const BrowseFamiliesPage = () => {
         }
     };
 
+    const handleJoinByCode = async () => {
+        if (!player?.id || !inviteCode.trim()) return;
+
+        setIsJoiningByCode(true);
+
+        try {
+            const { data, error } = await supabase.rpc('join_family_by_code', {
+                player_id_input: player.id,
+                invite_code_input: inviteCode.trim().toUpperCase()
+            });
+
+            if (error) throw error;
+
+            if (data?.success) {
+                haptic.success();
+                toast({
+                    title: data.requires_approval ? 'Request Sent!' : 'Welcome!',
+                    description: data.message,
+                });
+                setCodeDialogOpen(false);
+                setInviteCode('');
+                if (!data.requires_approval) {
+                    navigate('/family');
+                }
+            } else {
+                toast({
+                    title: 'Cannot Join',
+                    description: data?.message || 'Failed to join family',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Join by code error:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to join family. Please check your code.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsJoiningByCode(false);
+        }
+    };
+
     return (
         <MainLayout>
             <div
@@ -245,20 +299,29 @@ const BrowseFamiliesPage = () => {
                     </div>
                 </motion.div>
 
-                {/* Create Family Button */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15 }}
-                    className="mb-4"
+                    className="mb-4 space-y-2"
                 >
-                    <Button
-                        className="w-full btn-gold"
-                        onClick={() => navigate('/family/create')}
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create Your Own Family
-                    </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button
+                            variant="outline"
+                            className="border-primary/30 text-primary hover:bg-primary/10"
+                            onClick={() => setCodeDialogOpen(true)}
+                        >
+                            <Hash className="w-4 h-4 mr-2" />
+                            Join by Code
+                        </Button>
+                        <Button
+                            className="btn-gold"
+                            onClick={() => navigate('/family/create')}
+                        >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Create Family
+                        </Button>
+                    </div>
                 </motion.div>
 
                 {/* Families List */}
@@ -302,6 +365,47 @@ const BrowseFamiliesPage = () => {
                 onConfirm={confirmJoin}
                 confirmText={selectedFamily?.join_type === 'request' ? 'Send Request' : 'Join'}
             />
+
+            {/* Join by Code Dialog */}
+            <Dialog open={codeDialogOpen} onOpenChange={setCodeDialogOpen}>
+                <DialogContent className="bg-card border-border">
+                    <DialogHeader>
+                        <DialogTitle className="font-cinzel">Join by Invite Code</DialogTitle>
+                        <DialogDescription>
+                            Enter the invite code shared by a family member
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <Input
+                            placeholder="Enter invite code (e.g., A3F8B2C1)"
+                            value={inviteCode}
+                            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                            className="bg-muted/30 border-border/50 font-mono text-center text-lg tracking-widest"
+                            maxLength={10}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && inviteCode.trim()) {
+                                    handleJoinByCode();
+                                }
+                            }}
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setCodeDialogOpen(false)}>Cancel</Button>
+                        <Button
+                            className="btn-gold"
+                            onClick={handleJoinByCode}
+                            disabled={isJoiningByCode || !inviteCode.trim()}
+                        >
+                            {isJoiningByCode ? (
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                                <Hash className="w-4 h-4 mr-2" />
+                            )}
+                            Join Family
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </MainLayout>
     );
 };

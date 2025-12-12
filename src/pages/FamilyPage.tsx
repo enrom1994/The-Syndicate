@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Crown, Star, Shield, Sword, User, Users, MoreVertical, Eye, ArrowUp, ArrowDown, UserMinus, Plus, LogOut, Settings, Loader2 } from 'lucide-react';
+import { Crown, Star, Shield, Sword, User, Users, MoreVertical, Eye, ArrowUp, ArrowDown, UserMinus, Plus, LogOut, Settings, Loader2, Copy, Share2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/MainLayout';
@@ -49,6 +49,7 @@ interface FamilyData {
     total_respect: number;
     is_recruiting: boolean;
     min_level_required: number;
+    invite_code?: string;
     created_at: string;
 }
 
@@ -674,38 +675,79 @@ const FamilyPage = () => {
                 variant={confirmAction.type === 'kick' ? 'destructive' : 'default'}
             />
 
-            {/* Invite Member Dialog */}
+            {/* Invite Member Dialog - Now shows shareable invite code */}
             <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
                 <DialogContent className="bg-card border-border">
                     <DialogHeader>
-                        <DialogTitle className="font-cinzel">Invite Member</DialogTitle>
+                        <DialogTitle className="font-cinzel">Invite Members</DialogTitle>
                         <DialogDescription>
-                            Enter the username of the player you want to invite
+                            Share your family's invite code with friends
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                        <Input
-                            placeholder="Enter username..."
-                            value={inviteUsername}
-                            onChange={(e) => setInviteUsername(e.target.value)}
-                            className="bg-muted/30 border-border/50"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' && inviteUsername.trim()) {
-                                    handleInvite();
+                        {/* Invite Code Display */}
+                        <div className="bg-muted/30 border border-primary/30 rounded-sm p-4">
+                            <p className="text-xs text-muted-foreground mb-2 text-center">Your Family Invite Code</p>
+                            <div className="flex items-center justify-center gap-2">
+                                <span className="font-mono text-2xl font-bold text-primary tracking-widest">
+                                    {(familyData?.family as any)?.invite_code || 'Loading...'}
+                                </span>
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8"
+                                    onClick={() => {
+                                        const code = (familyData?.family as any)?.invite_code;
+                                        if (code) {
+                                            navigator.clipboard.writeText(code);
+                                            haptic.success();
+                                            toast({ title: 'Copied!', description: 'Invite code copied to clipboard' });
+                                        }
+                                    }}
+                                >
+                                    <Copy className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Share Instructions */}
+                        <div className="text-center space-y-2">
+                            <p className="text-xs text-muted-foreground">
+                                Share this code with players you want to invite.
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                They can join using "Join by Code" on the Browse Families page.
+                            </p>
+                        </div>
+
+                        {/* Share Button (for mobile) */}
+                        <Button
+                            className="w-full btn-gold"
+                            onClick={async () => {
+                                const code = (familyData?.family as any)?.invite_code;
+                                const familyName = familyData?.family?.name;
+                                if (code && navigator.share) {
+                                    try {
+                                        await navigator.share({
+                                            title: `Join ${familyName}!`,
+                                            text: `Join my family in The Syndicate! Use invite code: ${code}`
+                                        });
+                                    } catch (err) {
+                                        // User cancelled or share failed
+                                    }
+                                } else if (code) {
+                                    navigator.clipboard.writeText(`Join my family in The Syndicate! Use invite code: ${code}`);
+                                    haptic.success();
+                                    toast({ title: 'Copied!', description: 'Invite message copied to clipboard' });
                                 }
                             }}
-                        />
+                        >
+                            <Share2 className="w-4 h-4 mr-2" />
+                            Share Invite
+                        </Button>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button>
-                        <Button
-                            className="btn-gold"
-                            onClick={handleInvite}
-                            disabled={isProcessing || !inviteUsername.trim()}
-                        >
-                            {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                            Send Invite
-                        </Button>
+                        <Button variant="outline" className="w-full" onClick={() => setInviteOpen(false)}>Close</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
