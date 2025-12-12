@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Settings, Crown, Edit, Users, Lock, Unlock, UserMinus, ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { Settings, Crown, Edit, Users, Lock, Unlock, UserMinus, ArrowLeft, Save, Loader2, Shield } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/MainLayout';
@@ -185,7 +185,8 @@ const FamilySettingsPage = () => {
                     new_tag: familyTag || null,
                     new_description: description || null,
                     new_is_recruiting: recruitmentStatus === 'open',
-                    new_min_level: minLevel
+                    new_min_level: minLevel,
+                    new_join_type: joinType
                 });
 
                 if (error) throw error;
@@ -360,7 +361,7 @@ const FamilySettingsPage = () => {
 
                     <div className="space-y-3">
                         <div>
-                            <label className="text-xs text-muted-foreground mb-2 block">Status</label>
+                            <label className="text-xs text-muted-foreground mb-2 block">Visibility</label>
                             <div className="grid grid-cols-2 gap-2">
                                 {recruitmentOptions.map((option) => (
                                     <button
@@ -378,10 +379,44 @@ const FamilySettingsPage = () => {
                             </div>
                             <p className="text-[10px] text-muted-foreground mt-2">
                                 {recruitmentStatus === 'open'
-                                    ? 'Players can browse and join your family'
-                                    : 'Your family is hidden from the browse list'}
+                                    ? 'Your family is visible and accepting new members'
+                                    : 'Your family is hidden - no one can join'}
                             </p>
                         </div>
+
+                        {/* Join Type - only show when recruiting */}
+                        {recruitmentStatus === 'open' && (
+                            <div>
+                                <label className="text-xs text-muted-foreground mb-2 block">Join Process</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={() => setJoinType('open')}
+                                        className={`p-3 rounded-sm text-xs flex flex-col items-center gap-1 transition-all ${joinType === 'open'
+                                            ? 'bg-green-500/20 border border-green-500 text-green-400'
+                                            : 'bg-muted/30 border border-border/50 text-muted-foreground'
+                                            }`}
+                                    >
+                                        <Users className="w-4 h-4" />
+                                        Open
+                                    </button>
+                                    <button
+                                        onClick={() => setJoinType('request')}
+                                        className={`p-3 rounded-sm text-xs flex flex-col items-center gap-1 transition-all ${joinType === 'request'
+                                            ? 'bg-yellow-500/20 border border-yellow-500 text-yellow-400'
+                                            : 'bg-muted/30 border border-border/50 text-muted-foreground'
+                                            }`}
+                                    >
+                                        <Shield className="w-4 h-4" />
+                                        Request Only
+                                    </button>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mt-2">
+                                    {joinType === 'open'
+                                        ? 'Anyone can join instantly'
+                                        : 'Players must request to join and await approval'}
+                                </p>
+                            </div>
+                        )}
 
                         <div>
                             <label className="text-xs text-muted-foreground mb-1 block">Minimum Level to Join</label>
