@@ -398,6 +398,99 @@ const FamilySettingsPage = () => {
                     </div>
                 </motion.div>
 
+                {/* Pending Join Requests */}
+                {(isBoss || joinType === 'request') && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.25 }}
+                        className="noir-card p-4 mb-4"
+                    >
+                        <div className="flex items-center justify-between mb-3">
+                            <h2 className="font-cinzel text-sm font-semibold text-foreground flex items-center gap-2">
+                                <Users className="w-4 h-4 text-primary" />
+                                Pending Requests
+                                {pendingRequests.length > 0 && (
+                                    <span className="bg-primary/20 text-primary text-xs px-2 py-0.5 rounded-full">
+                                        {pendingRequests.length}
+                                    </span>
+                                )}
+                            </h2>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={loadPendingRequests}
+                                disabled={loadingRequests}
+                                className="text-xs"
+                            >
+                                {loadingRequests ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                    'Refresh'
+                                )}
+                            </Button>
+                        </div>
+
+                        {loadingRequests ? (
+                            <div className="flex justify-center py-4">
+                                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : pendingRequests.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-4">
+                                No pending join requests
+                            </p>
+                        ) : (
+                            <div className="space-y-2">
+                                {pendingRequests.map((request) => (
+                                    <div
+                                        key={request.request_id}
+                                        className="bg-muted/30 rounded-sm p-3 border border-border/50"
+                                    >
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div>
+                                                <p className="font-semibold text-sm text-foreground">
+                                                    {request.player_name}
+                                                </p>
+                                                <p className="text-[10px] text-muted-foreground">
+                                                    Level {request.player_level} • {request.player_respect} Respect
+                                                </p>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                <Button
+                                                    size="sm"
+                                                    className="btn-gold text-xs px-3 h-7"
+                                                    onClick={() => handleProcessRequest(request.request_id, 'accept')}
+                                                    disabled={processingRequest === request.request_id}
+                                                >
+                                                    {processingRequest === request.request_id ? (
+                                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                                    ) : (
+                                                        'Accept'
+                                                    )}
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="text-xs px-3 h-7 border-destructive/50 text-destructive hover:bg-destructive/10"
+                                                    onClick={() => handleProcessRequest(request.request_id, 'reject')}
+                                                    disabled={processingRequest === request.request_id}
+                                                >
+                                                    Decline
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        {request.message && (
+                                            <p className="text-xs text-muted-foreground italic border-l-2 border-primary/30 pl-2 mt-2">
+                                                "{request.message}"
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+
                 {/* Actions */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
