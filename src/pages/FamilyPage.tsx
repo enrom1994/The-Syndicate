@@ -206,6 +206,12 @@ const FamilyPage = () => {
     const [selectedPlayer, setSelectedPlayer] = useState<Member | null>(null);
 
     const [leaveOpen, setLeaveOpen] = useState(false);
+    const [inviteCode, setInviteCode] = useState<string | null>(null);
+    const [loadingInviteCode, setLoadingInviteCode] = useState(false);
+
+    // Telegram Bot info for invite links
+    const BOT_USERNAME = 'The_Syndicate_Game_Bot';
+    const APP_SHORT_NAME = 'Syndicate';
 
     // Load family data
     const loadFamilyData = async () => {
@@ -240,6 +246,64 @@ const FamilyPage = () => {
     useEffect(() => {
         loadFamilyData();
     }, [player?.id]);
+
+    // Load family invite code when dialog opens
+    const loadInviteCode = async () => {
+        if (!player?.id || inviteCode) return;
+
+        setLoadingInviteCode(true);
+        try {
+            const { data, error } = await supabase.rpc('get_family_invite_info', {
+                player_id_input: player.id
+            });
+
+            if (error) throw error;
+
+            if (data?.success && data?.invite_code) {
+                setInviteCode(data.invite_code);
+            }
+        } catch (error) {
+            console.error('Failed to load invite code:', error);
+        } finally {
+            setLoadingInviteCode(false);
+        }
+    };
+
+    // Get family invite link (like referral link)
+    const getFamilyInviteLink = () => {
+        if (!inviteCode) return '';
+        return `https://t.me/${BOT_USERNAME}/${APP_SHORT_NAME}?startapp=family_${inviteCode}`;
+    };
+
+    // Handle Telegram share (like referrals)
+    const handleShareInvite = () => {
+        const link = getFamilyInviteLink();
+        if (!link) return;
+
+        haptic.light();
+
+        // Use Telegram WebApp share if available
+        const tg = (window as any).Telegram?.WebApp;
+        if (tg?.openTelegramLink) {
+            const familyName = familyData?.family?.name || 'our family';
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(`Join ${familyName} in The Syndicate! 🔫💰`)}`;
+            tg.openTelegramLink(shareUrl);
+        } else {
+            // Fallback to Web Share API
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Join The Syndicate',
+                    text: `Join ${familyData?.family?.name} in The Syndicate!`,
+                    url: link,
+                });
+            } else {
+                // Fallback to clipboard
+                navigator.clipboard.writeText(link);
+                haptic.success();
+                toast({ title: 'Copied!', description: 'Invite link copied to clipboard' });
+            }
+        }
+    };
 
     // Sort members by role hierarchy
     const sortedMembers = [...members].sort((a, b) =>
@@ -676,12 +740,15 @@ const FamilyPage = () => {
             />
 
             {/* Invite Member Dialog - Now shows shareable invite code */}
-            <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+            <Dialog open={inviteOpen} onOpenChange={(open) => {
+                setInviteOpen(open);
+                if (open) loadInviteCode();
+            }}>
                 <DialogContent className="bg-card border-border">
                     <DialogHeader>
                         <DialogTitle className="font-cinzel">Invite Members</DialogTitle>
                         <DialogDescription>
-                            Share your family's invite code with friends
+                            Share your family's invite link with friends
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
@@ -690,16 +757,16 @@ const FamilyPage = () => {
                             <p className="text-xs text-muted-foreground mb-2 text-center">Your Family Invite Code</p>
                             <div className="flex items-center justify-center gap-2">
                                 <span className="font-mono text-2xl font-bold text-primary tracking-widest">
-                                    {(familyData?.family as any)?.invite_code || 'Loading...'}
+                                    {loadingInviteCode ? 'Loading...' : (inviteCode || 'N/A')}
                                 </span>
                                 <Button
                                     size="icon"
                                     variant="ghost"
                                     className="h-8 w-8"
+                                    disabled={!inviteCode}
                                     onClick={() => {
-                                        const code = (familyData?.family as any)?.invite_code;
-                                        if (code) {
-                                            navigator.clipboard.writeText(code);
+                                        if (inviteCode) {
+                                            navigator.clipboard.writeText(inviteCode);
                                             haptic.success();
                                             toast({ title: 'Copied!', description: 'Invite code copied to clipboard' });
                                         }
@@ -713,37 +780,36 @@ const FamilyPage = () => {
                         {/* Share Instructions */}
                         <div className="text-center space-y-2">
                             <p className="text-xs text-muted-foreground">
-                                Share this code with players you want to invite.
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                They can join using "Join by Code" on the Browse Families page.
+                                Share this link with players you want to invite.
                             </p>
                         </div>
 
-                        {/* Share Button (for mobile) */}
+                        {/* Share Button - Uses Telegram share like referrals */}
                         <Button
                             className="w-full btn-gold"
-                            onClick={async () => {
-                                const code = (familyData?.family as any)?.invite_code;
-                                const familyName = familyData?.family?.name;
-                                if (code && navigator.share) {
-                                    try {
-                                        await navigator.share({
-                                            title: `Join ${familyName}!`,
-                                            text: `Join my family in The Syndicate! Use invite code: ${code}`
-                                        });
-                                    } catch (err) {
-                                        // User cancelled or share failed
-                                    }
-                                } else if (code) {
-                                    navigator.clipboard.writeText(`Join my family in The Syndicate! Use invite code: ${code}`);
+                            disabled={!inviteCode}
+                            onClick={handleShareInvite}
+                        >
+                            <Share2 className="w-4 h-4 mr-2" />
+                            Share via Telegram
+                        </Button>
+
+                        {/* Copy Link Button */}
+                        <Button
+                            variant="outline"
+                            className="w-full"
+                            disabled={!inviteCode}
+                            onClick={() => {
+                                const link = getFamilyInviteLink();
+                                if (link) {
+                                    navigator.clipboard.writeText(link);
                                     haptic.success();
-                                    toast({ title: 'Copied!', description: 'Invite message copied to clipboard' });
+                                    toast({ title: 'Copied!', description: 'Invite link copied to clipboard' });
                                 }
                             }}
                         >
-                            <Share2 className="w-4 h-4 mr-2" />
-                            Share Invite
+                            <Copy className="w-4 h-4 mr-2" />
+                            Copy Invite Link
                         </Button>
                     </div>
                     <DialogFooter>
