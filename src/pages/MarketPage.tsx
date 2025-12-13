@@ -36,11 +36,11 @@ const MarketItem = ({ name, description, price, stat, image, delay = 0, onBuy }:
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay }}
-        className="noir-card p-2"
+        className="noir-card p-4"
     >
         {/* Icon at Top - No Border */}
-        <div className="flex flex-col items-center mb-1.5">
-            <div className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center shrink-0 mb-1">
+        <div className="flex flex-col items-center mb-3">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center shrink-0 mb-2">
                 <img
                     src={image}
                     alt={name}
@@ -48,38 +48,38 @@ const MarketItem = ({ name, description, price, stat, image, delay = 0, onBuy }:
                     onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
-                        target.parentElement!.innerHTML = '<div class="w-6 h-6 text-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>';
+                        target.parentElement!.innerHTML = '<div class="w-12 h-12 text-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>';
                     }}
                 />
             </div>
 
             {/* Name and Stat Badge */}
-            <div className="text-center w-full mb-1">
-                <h3 className="font-cinzel font-bold text-[10px] sm:text-xs text-foreground mb-0.5">{name}</h3>
+            <div className="text-center w-full mb-2">
+                <h3 className="font-cinzel font-bold text-sm sm:text-base text-foreground mb-1">{name}</h3>
                 {stat && (
                     <div className="inline-block">
-                        <span className="text-[8px] sm:text-[9px] font-bold text-green-400 bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 rounded-sm whitespace-nowrap">
+                        <span className="text-[10px] sm:text-xs font-bold text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-sm whitespace-nowrap">
                             {stat}
                         </span>
                     </div>
                 )}
-                <p className="text-[8px] sm:text-[9px] text-muted-foreground leading-tight line-clamp-1 px-1 mt-0.5">{description}</p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug line-clamp-2 px-2 mt-1">{description}</p>
             </div>
         </div>
 
         {/* Price Display */}
-        <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded p-1 mb-1.5">
-            <div className="flex items-center justify-center gap-0.5 text-[8px] text-muted-foreground mb-0.5">
-                <img src="/images/icons/cash.png" alt="$" className="w-2 h-2" />
+        <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-md p-2 mb-3">
+            <div className="flex items-center justify-center gap-0.5 text-[10px] sm:text-xs text-muted-foreground mb-0.5">
+                <img src="/images/icons/cash.png" alt="$" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                 <span className="font-medium">Price</span>
             </div>
-            <p className="font-cinzel font-bold text-[9px] sm:text-[10px] text-primary text-center">${price.toLocaleString()}</p>
+            <p className="font-cinzel font-bold text-sm sm:text-base text-primary text-center">${price.toLocaleString()}</p>
         </div>
 
         {/* Buy Button - Centered & Compact */}
         <div className="flex justify-center">
-            <Button className="btn-gold text-[9px] h-6 px-3" onClick={onBuy}>
-                <ShoppingBag className="w-3 h-3 mr-0.5" />
+            <Button className="btn-gold text-xs h-9 px-6" onClick={onBuy}>
+                <ShoppingBag className="w-4 h-4 mr-1" />
                 Buy
             </Button>
         </div>
