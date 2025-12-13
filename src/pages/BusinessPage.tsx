@@ -636,14 +636,30 @@ const BusinessPage = () => {
                                 {recipes
                                     .sort((a, b) => (a.business_level || 0) - (b.business_level || 0)) // Sort by business level
                                     .map((recipe, index) => {
-                                        // Map output item names to icon images
-                                        const itemIcons: Record<string, string> = {
+                                        // Map output item names to contraband icon images
+                                        const contrabandIcons: Record<string, string> = {
                                             'Bootleg Whiskey': '/images/icons/bootlegwhiskey.png',
                                             'Smuggled Weapons': '/images/icons/smuggledweapons.png',
                                             'Cocaine Stash': '/images/icons/cocainestash.png',
                                             'Forged Documents': '/images/icons/forgeddocuments.png',
+                                            'Counterfeit Bills': '/images/icons/counterfeitbills.png',
+                                            'Cuban Cigars': '/images/icons/cubancigars.png',
+                                            'Morphine Vials': '/images/icons/morphinevials.png',
+                                            'Stolen Jewelry': '/images/icons/stolenjewelry.png',
+                                            'Whiskey Crate': '/images/icons/whiskeycrate.png',
                                         };
-                                        const itemIcon = itemIcons[recipe.output_item_name] || '/images/icons/package.png';
+                                        const contrabandIcon = contrabandIcons[recipe.output_item_name] || '/images/icons/package.png';
+
+                                        // Map business names to their icons
+                                        const businessIcons: Record<string, string> = {
+                                            'Speakeasy': '/images/icons/speakeasy.png',
+                                            'Smuggling Route': '/images/icons/smugglingroute.png',
+                                            'Nightclub': '/images/icons/nightclub.png',
+                                            'Loan Sharking': '/images/icons/loansharking.png',
+                                            'Protection Racket': '/images/icons/protectionracket.png',
+                                            'Numbers Racket': '/images/icons/numbersracket.png',
+                                        };
+                                        const businessIcon = businessIcons[recipe.business_name] || '/images/icons/business.png';
 
                                         return (
                                             <motion.div
@@ -651,68 +667,76 @@ const BusinessPage = () => {
                                                 initial={{ opacity: 0, y: 20 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 transition={{ duration: 0.5, delay: 0.1 * index }}
-                                                className={`noir-card p-2 ${!recipe.owns_business ? 'opacity-50' : ''}`}
+                                                className={`noir-card p-2 relative overflow-hidden ${!recipe.owns_business ? 'opacity-50' : ''}`}
                                             >
-                                                {/* Icon at Top - No Border */}
-                                                <div className="flex flex-col items-center mb-1.5">
-                                                    <div className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center shrink-0 mb-1">
-                                                        <img
-                                                            src={itemIcon}
-                                                            alt={recipe.output_item_name}
-                                                            className="w-full h-full object-contain drop-shadow-lg"
-                                                            onError={(e) => {
-                                                                const target = e.target as HTMLImageElement;
-                                                                target.style.display = 'none';
-                                                                target.parentElement!.innerHTML = '<div class="w-12 h-12 text-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>';
-                                                            }}
-                                                        />
+                                                {/* Business + Contraband Icons Side by Side */}
+                                                <div className="flex flex-col items-center mb-1.5 relative z-10">
+                                                    <div className="flex items-center justify-center gap-2 mb-1">
+                                                        {/* Business Icon */}
+                                                        <div className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center">
+                                                            <img
+                                                                src={businessIcon}
+                                                                alt={recipe.business_name}
+                                                                className="w-full h-full object-contain drop-shadow-lg"
+                                                            />
+                                                        </div>
+                                                        {/* Arrow or Plus */}
+                                                        <span className="text-primary text-lg font-bold">→</span>
+                                                        {/* Contraband Icon */}
+                                                        <div className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center">
+                                                            <img
+                                                                src={contrabandIcon}
+                                                                alt={recipe.output_item_name}
+                                                                className="w-full h-full object-contain drop-shadow-lg"
+                                                            />
+                                                        </div>
                                                     </div>
 
                                                     {/* Name and Level */}
                                                     <div className="text-center w-full">
-                                                        <div className="flex items-center justify-center gap-2 mb-1">
-                                                            <h3 className="font-cinzel font-bold text-sm sm:text-base text-foreground">{recipe.business_name}</h3>
+                                                        <div className="flex items-center justify-center gap-1 mb-0.5">
+                                                            <h3 className="font-cinzel font-bold text-[10px] sm:text-xs text-foreground">{recipe.business_name}</h3>
                                                             {recipe.owns_business && (
-                                                                <span className="text-[10px] sm:text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-sm whitespace-nowrap">
+                                                                <span className="text-[8px] sm:text-[9px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded-sm whitespace-nowrap">
                                                                     Lv {recipe.business_level}
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <p className="text-[11px] sm:text-xs text-muted-foreground">Produces: <span className="text-primary font-medium">{recipe.output_item_name}</span></p>
+                                                        <p className="text-[8px] sm:text-[9px] text-muted-foreground">Produces: <span className="text-primary font-medium">{recipe.output_item_name}</span></p>
                                                     </div>
                                                 </div>
 
-                                                {/* Stats Grid */}
-                                                <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3">
+                                                {/* Stats Grid - Match Business Cards */}
+                                                <div className="grid grid-cols-3 gap-1 mb-1.5">
                                                     {/* Crew Cost */}
-                                                    <div className={`bg-gradient-to-br ${recipe.crew_owned >= recipe.crew_required ? 'from-green-500/10 to-green-600/5 border-green-500/20' : 'from-red-500/10 to-red-600/5 border-red-500/20'} border rounded-md p-2`}>
-                                                        <div className="flex items-center justify-center gap-0.5 text-[10px] sm:text-xs text-muted-foreground mb-0.5">
-                                                            <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                                    <div className={`bg-gradient-to-br ${recipe.crew_owned >= recipe.crew_required ? 'from-green-500/10 to-green-600/5 border-green-500/20' : 'from-red-500/10 to-red-600/5 border-red-500/20'} border rounded p-1`}>
+                                                        <div className="flex items-center justify-center gap-0.5 text-[8px] text-muted-foreground mb-0.5">
+                                                            <Users className="w-2 h-2" />
                                                             <span className="font-medium">Crew</span>
                                                         </div>
-                                                        <p className={`font-cinzel font-bold text-xs sm:text-sm ${recipe.crew_owned >= recipe.crew_required ? 'text-green-400' : 'text-red-400'} text-center`}>
+                                                        <p className={`font-cinzel font-bold text-[9px] sm:text-[10px] ${recipe.crew_owned >= recipe.crew_required ? 'text-green-400' : 'text-red-400'} text-center`}>
                                                             {recipe.crew_owned}/{recipe.crew_required}
                                                         </p>
-                                                        <p className="text-[9px] sm:text-[10px] text-muted-foreground text-center">{recipe.crew_name}</p>
+                                                        <p className="text-[7px] text-muted-foreground text-center">{recipe.crew_name}</p>
                                                     </div>
 
                                                     {/* Output */}
-                                                    <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 rounded-md p-2">
-                                                        <div className="flex items-center justify-center gap-0.5 text-[10px] sm:text-xs text-purple-400/80 mb-0.5">
-                                                            <Package className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                                                            <span className="font-medium">Output</span>
+                                                    <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 rounded p-1">
+                                                        <div className="flex items-center justify-center gap-0.5 text-[8px] text-purple-400/80 mb-0.5">
+                                                            <Package className="w-2 h-2" />
+                                                            <span className="font-medium">Out</span>
                                                         </div>
-                                                        <p className="font-cinzel font-bold text-xs sm:text-sm text-purple-400 text-center">{recipe.output_quantity}x</p>
-                                                        <p className="text-[9px] sm:text-[10px] text-muted-foreground text-center">+Lv bonus</p>
+                                                        <p className="font-cinzel font-bold text-[9px] sm:text-[10px] text-purple-400 text-center">{recipe.output_quantity}x</p>
+                                                        <p className="text-[7px] text-muted-foreground text-center">+Lv</p>
                                                     </div>
 
                                                     {/* Cooldown */}
-                                                    <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/5 border border-yellow-500/20 rounded-md p-2">
-                                                        <div className="flex items-center justify-center gap-0.5 text-[10px] sm:text-xs text-muted-foreground mb-0.5">
-                                                            <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                                                            <span className="font-medium">Cooldown</span>
+                                                    <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/5 border border-yellow-500/20 rounded p-1">
+                                                        <div className="flex items-center justify-center gap-0.5 text-[8px] text-muted-foreground mb-0.5">
+                                                            <Clock className="w-2 h-2" />
+                                                            <span className="font-medium">CD</span>
                                                         </div>
-                                                        <p className="font-cinzel font-bold text-xs sm:text-sm text-foreground text-center">{recipe.cooldown_hours}h</p>
+                                                        <p className="font-cinzel font-bold text-[9px] sm:text-[10px] text-foreground text-center">{recipe.cooldown_hours}h</p>
                                                     </div>
                                                 </div>
 
@@ -727,7 +751,7 @@ const BusinessPage = () => {
                                                         onClick={() => handleProduce(recipe.id)}
                                                     >
                                                         {producingRecipeId === recipe.id ? (
-                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                            <Loader2 className="w-3 h-3 animate-spin" />
                                                         ) : !recipe.owns_business ? (
                                                             'Need Business'
                                                         ) : recipe.crew_owned < recipe.crew_required ? (
@@ -735,7 +759,7 @@ const BusinessPage = () => {
                                                         ) : recipe.last_produced_at && !recipe.can_produce ? (
                                                             'On Cooldown'
                                                         ) : (
-                                                            <><Factory className="w-4 h-4 mr-1" /> Produce</>
+                                                            <><Factory className="w-3 h-3 mr-0.5" /> Produce</>
                                                         )}
                                                     </Button>
                                                 </div>
