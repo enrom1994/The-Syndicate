@@ -75,9 +75,9 @@ const BusinessCard = ({
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 pointer-events-none animate-pulse" />
             )}
 
-            {/* Header: Large Image + Name + Level */}
-            <div className="flex items-start gap-4 mb-4 relative z-10">
-                <div className="w-20 h-20 rounded-md bg-gradient-to-br from-muted/40 to-muted/20 flex items-center justify-center shrink-0 overflow-hidden border border-primary/20 shadow-lg">
+            {/* Header: Image + Name + Level - Mobile Optimized */}
+            <div className="flex items-start gap-3 mb-3 relative z-10">
+                <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-md bg-gradient-to-br from-muted/40 to-muted/20 flex items-center justify-center shrink-0 overflow-hidden border border-primary/20 shadow-lg">
                     <img
                         src={image}
                         alt={name}
@@ -85,51 +85,51 @@ const BusinessCard = ({
                         onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
-                            target.parentElement!.innerHTML = '<div class="w-10 h-10 text-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-4V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v3H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/></svg></div>';
+                            target.parentElement!.innerHTML = '<div class="w-8 h-8 text-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-4V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v3H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/></svg></div>';
                         }}
                     />
                 </div>
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                        <h3 className="font-cinzel font-bold text-base text-foreground truncate">{name}</h3>
+                <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="flex items-center justify-between gap-1.5 mb-0.5">
+                        <h3 className="font-cinzel font-bold text-sm sm:text-base text-foreground truncate">{name}</h3>
                         {owned && (
-                            <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-sm whitespace-nowrap">
+                            <span className="text-[10px] sm:text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-sm whitespace-nowrap shrink-0">
                                 Lv {level}/{maxLevel}
                             </span>
                         )}
                     </div>
-                    <p className="text-xs text-muted-foreground leading-tight line-clamp-2">{description}</p>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug line-clamp-2">{description}</p>
                 </div>
             </div>
 
-            {/* Stats Grid with Icons */}
-            <div className={`grid ${owned ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mb-3`}>
+            {/* Stats Grid with Icons - Mobile Optimized */}
+            <div className={`grid ${owned ? 'grid-cols-3' : 'grid-cols-2'} gap-1.5 sm:gap-2 mb-3`}>
                 {/* Income */}
-                <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-md p-2.5">
-                    <div className="flex items-center gap-1 text-xs text-green-400/80 mb-1">
-                        <img src="/images/icons/cash.png" alt="$" className="w-3 h-3" />
+                <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-md p-2">
+                    <div className="flex items-center gap-0.5 text-[10px] sm:text-xs text-green-400/80 mb-0.5">
+                        <img src="/images/icons/cash.png" alt="$" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                         <span className="font-medium">Income</span>
                     </div>
-                    <p className="font-cinzel font-bold text-sm text-green-400">${income.toLocaleString()}<span className="text-[10px] text-green-400/60">/hr</span></p>
+                    <p className="font-cinzel font-bold text-xs sm:text-sm text-green-400">${income.toLocaleString()}<span className="text-[9px] sm:text-[10px] text-green-400/60">/hr</span></p>
                 </div>
 
                 {/* Cooldown */}
-                <div className={`bg-gradient-to-br ${canCollect && owned ? 'from-primary/10 to-primary/5 border-primary/30' : 'from-yellow-500/10 to-orange-500/5 border-yellow-500/20'} border rounded-md p-2.5`}>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
-                        <Clock className="w-3 h-3" />
+                <div className={`bg-gradient-to-br ${canCollect && owned ? 'from-primary/10 to-primary/5 border-primary/30' : 'from-yellow-500/10 to-orange-500/5 border-yellow-500/20'} border rounded-md p-2`}>
+                    <div className="flex items-center gap-0.5 text-[10px] sm:text-xs text-muted-foreground mb-0.5">
+                        <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                         <span className="font-medium">Cooldown</span>
                     </div>
-                    <p className={`font-cinzel font-bold text-sm ${canCollect && owned ? 'text-primary' : 'text-foreground'}`}>{cooldown}</p>
+                    <p className={`font-cinzel font-bold text-xs sm:text-sm ${canCollect && owned ? 'text-primary' : 'text-foreground'}`}>{cooldown}</p>
                 </div>
 
                 {/* Daily Income (owned only) */}
                 {owned && (
-                    <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 rounded-md p-2.5">
-                        <div className="flex items-center gap-1 text-xs text-cyan-400/80 mb-1">
-                            <TrendingUp className="w-3 h-3" />
+                    <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 rounded-md p-2">
+                        <div className="flex items-center gap-0.5 text-[10px] sm:text-xs text-cyan-400/80 mb-0.5">
+                            <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                             <span className="font-medium">Daily</span>
                         </div>
-                        <p className="font-cinzel font-bold text-sm text-cyan-400">${(income * 24).toLocaleString()}</p>
+                        <p className="font-cinzel font-bold text-xs sm:text-sm text-cyan-400">${(income * 24).toLocaleString()}</p>
                     </div>
                 )}
             </div>
@@ -248,10 +248,13 @@ const getTimeRemainingMinutes = (lastCollected: string, cooldownMinutes: number)
     return Math.max(0, cooldownMinutes - minutesPassed);
 };
 
-const calculateRushCost = (timeRemainingMinutes: number, totalCooldownMinutes: number): number => {
+const calculateRushCost = (timeRemainingMinutes: number, totalCooldownMinutes: number, incomePerHour: number): number => {
     if (timeRemainingMinutes <= 0) return 0;
-    // Formula: (timeRemaining / totalCooldown) * 10, minimum 1 diamond
-    return Math.max(1, Math.ceil((timeRemainingMinutes / totalCooldownMinutes) * 10));
+    // Calculate income-based max cost (matches backend logic)
+    // Low income (~1000/hr) = max 5 diamonds, High income (~100000/hr) = max 30 diamonds
+    const incomeBasedMaxCost = Math.min(30, 5 + Math.floor(incomePerHour / 5000));
+    // Formula: (timeRemaining / totalCooldown) * incomeBasedMaxCost, minimum 1 diamond
+    return Math.max(1, Math.ceil((timeRemainingMinutes / totalCooldownMinutes) * incomeBasedMaxCost));
 };
 
 const BusinessPage = () => {
@@ -352,7 +355,8 @@ const BusinessPage = () => {
         const owned = ownedBusinessMap.get(def.id);
         const cooldownMinutes = owned?.collect_cooldown_minutes || def.collect_cooldown_minutes;
         const timeRemaining = owned ? getTimeRemainingMinutes(owned.last_collected, cooldownMinutes) : 0;
-        const rushCost = owned ? calculateRushCost(timeRemaining, cooldownMinutes) : 0;
+        const incomePerHour = owned ? owned.income_per_hour : def.base_income_per_hour;
+        const rushCost = owned ? calculateRushCost(timeRemaining, cooldownMinutes, incomePerHour) : 0;
 
         return {
             ...def,

@@ -48,9 +48,18 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', 'Business is ready to collect. No rush needed!');
     END IF;
     
-    -- Calculate dynamic diamond cost
-    -- Formula: (time_remaining / cooldown) * 10, minimum 1 diamond
-    diamond_cost := GREATEST(1, CEIL((time_remaining_minutes / cooldown_minutes::NUMERIC) * 10));
+    -- Calculate income-based max cost (scale with business value)
+    -- Low income (~1000/hr) = max 5 diamonds, High income (~100000/hr) = max 30 diamonds
+    -- Formula: 5 + (income / 5000), capped at 30
+    DECLARE
+        income_based_max_cost INTEGER;
+    BEGIN
+        income_based_max_cost := LEAST(30, 5 + (business_record.base_income_per_hour / 5000));
+    END;
+    
+    -- Calculate dynamic diamond cost based on time AND income
+    -- Formula: (time_remaining / cooldown) * income_based_max_cost, minimum 1 diamond
+    diamond_cost := GREATEST(1, CEIL((time_remaining_minutes / cooldown_minutes::NUMERIC) * income_based_max_cost));
     
     -- Check diamonds
     IF player_record.diamonds < diamond_cost THEN
