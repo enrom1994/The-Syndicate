@@ -651,11 +651,11 @@ const BusinessPage = () => {
                                                 initial={{ opacity: 0, y: 20 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 transition={{ duration: 0.5, delay: 0.1 * index }}
-                                                className={`noir-card p-4 ${!recipe.owns_business ? 'opacity-50' : ''}`}
+                                                className={`noir-card p-2 ${!recipe.owns_business ? 'opacity-50' : ''}`}
                                             >
                                                 {/* Icon at Top - No Border */}
-                                                <div className="flex flex-col items-center mb-3">
-                                                    <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center shrink-0 mb-2">
+                                                <div className="flex flex-col items-center mb-1.5">
+                                                    <div className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center shrink-0 mb-1">
                                                         <img
                                                             src={itemIcon}
                                                             alt={recipe.output_item_name}
@@ -719,7 +719,7 @@ const BusinessPage = () => {
                                                 {/* Produce Button - Centered & Compact */}
                                                 <div className="flex justify-center">
                                                     <Button
-                                                        className="btn-gold text-xs h-9 px-6"
+                                                        className="btn-gold text-[9px] h-6 px-3"
                                                         disabled={
                                                             !recipe.can_produce ||
                                                             producingRecipeId === recipe.id
