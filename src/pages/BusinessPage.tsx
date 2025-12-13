@@ -633,74 +633,115 @@ const BusinessPage = () => {
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                {recipes.map((recipe, index) => (
-                                    <motion.div
-                                        key={recipe.id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.5, delay: 0.1 * index }}
-                                        className={`noir-card p-4 ${!recipe.owns_business ? 'opacity-50' : ''}`}
-                                    >
-                                        <div className="flex items-center justify-between mb-3">
-                                            <div>
-                                                <h3 className="font-cinzel font-semibold text-sm text-foreground">{recipe.business_name}</h3>
-                                                <p className="text-xs text-muted-foreground">Produces: {recipe.output_item_name}</p>
-                                            </div>
-                                            {recipe.owns_business && (
-                                                <span className="text-xs text-primary">Lv. {recipe.business_level}</span>
-                                            )}
-                                        </div>
+                                {recipes
+                                    .sort((a, b) => (a.business_level || 0) - (b.business_level || 0)) // Sort by business level
+                                    .map((recipe, index) => {
+                                        // Map output item names to icon images
+                                        const itemIcons: Record<string, string> = {
+                                            'Bootleg Whiskey': '/images/icons/bootlegwhiskey.png',
+                                            'Smuggled Weapons': '/images/icons/smuggledweapons.png',
+                                            'Cocaine Stash': '/images/icons/cocainestash.png',
+                                            'Forged Documents': '/images/icons/forgeddocuments.png',
+                                        };
+                                        const itemIcon = itemIcons[recipe.output_item_name] || '/images/icons/package.png';
 
-                                        <div className="grid grid-cols-3 gap-2 mb-3">
-                                            <div className="bg-muted/20 rounded-sm p-2 text-center">
-                                                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
-                                                    <Users className="w-3 h-3" />
-                                                    <span>Crew Cost</span>
-                                                </div>
-                                                <p className={`font-cinzel font-bold text-sm ${recipe.crew_owned >= recipe.crew_required ? 'text-green-400' : 'text-red-400'}`}>
-                                                    {recipe.crew_owned}/{recipe.crew_required}
-                                                </p>
-                                                <p className="text-[10px] text-muted-foreground">{recipe.crew_name}</p>
-                                            </div>
-                                            <div className="bg-muted/20 rounded-sm p-2 text-center">
-                                                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
-                                                    <Package className="w-3 h-3" />
-                                                    <span>Output</span>
-                                                </div>
-                                                <p className="font-cinzel font-bold text-sm text-primary">{recipe.output_quantity}x</p>
-                                                <p className="text-[10px] text-muted-foreground">+Lv bonus</p>
-                                            </div>
-                                            <div className="bg-muted/20 rounded-sm p-2 text-center">
-                                                <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground mb-1">
-                                                    <Clock className="w-3 h-3" />
-                                                    <span>Cooldown</span>
-                                                </div>
-                                                <p className="font-cinzel font-bold text-sm text-foreground">{recipe.cooldown_hours}h</p>
-                                            </div>
-                                        </div>
+                                        return (
+                                            <motion.div
+                                                key={recipe.id}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.5, delay: 0.1 * index }}
+                                                className={`noir-card p-4 ${!recipe.owns_business ? 'opacity-50' : ''}`}
+                                            >
+                                                {/* Icon at Top - No Border */}
+                                                <div className="flex flex-col items-center mb-3">
+                                                    <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center shrink-0 mb-2">
+                                                        <img
+                                                            src={itemIcon}
+                                                            alt={recipe.output_item_name}
+                                                            className="w-full h-full object-contain drop-shadow-lg"
+                                                            onError={(e) => {
+                                                                const target = e.target as HTMLImageElement;
+                                                                target.style.display = 'none';
+                                                                target.parentElement!.innerHTML = '<div class="w-12 h-12 text-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div>';
+                                                            }}
+                                                        />
+                                                    </div>
 
-                                        <Button
-                                            className="w-full btn-gold text-xs"
-                                            disabled={
-                                                !recipe.can_produce ||
-                                                producingRecipeId === recipe.id
-                                            }
-                                            onClick={() => handleProduce(recipe.id)}
-                                        >
-                                            {producingRecipeId === recipe.id ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : !recipe.owns_business ? (
-                                                'Need Business'
-                                            ) : recipe.crew_owned < recipe.crew_required ? (
-                                                `Need ${recipe.crew_required - recipe.crew_owned} more ${recipe.crew_name}`
-                                            ) : recipe.last_produced_at && !recipe.can_produce ? (
-                                                'On Cooldown'
-                                            ) : (
-                                                <><Factory className="w-4 h-4 mr-1" /> Produce</>
-                                            )}
-                                        </Button>
-                                    </motion.div>
-                                ))}
+                                                    {/* Name and Level */}
+                                                    <div className="text-center w-full">
+                                                        <div className="flex items-center justify-center gap-2 mb-1">
+                                                            <h3 className="font-cinzel font-bold text-sm sm:text-base text-foreground">{recipe.business_name}</h3>
+                                                            {recipe.owns_business && (
+                                                                <span className="text-[10px] sm:text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-sm whitespace-nowrap">
+                                                                    Lv {recipe.business_level}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[11px] sm:text-xs text-muted-foreground">Produces: <span className="text-primary font-medium">{recipe.output_item_name}</span></p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Stats Grid */}
+                                                <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-3">
+                                                    {/* Crew Cost */}
+                                                    <div className={`bg-gradient-to-br ${recipe.crew_owned >= recipe.crew_required ? 'from-green-500/10 to-green-600/5 border-green-500/20' : 'from-red-500/10 to-red-600/5 border-red-500/20'} border rounded-md p-2`}>
+                                                        <div className="flex items-center justify-center gap-0.5 text-[10px] sm:text-xs text-muted-foreground mb-0.5">
+                                                            <Users className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                                            <span className="font-medium">Crew</span>
+                                                        </div>
+                                                        <p className={`font-cinzel font-bold text-xs sm:text-sm ${recipe.crew_owned >= recipe.crew_required ? 'text-green-400' : 'text-red-400'} text-center`}>
+                                                            {recipe.crew_owned}/{recipe.crew_required}
+                                                        </p>
+                                                        <p className="text-[9px] sm:text-[10px] text-muted-foreground text-center">{recipe.crew_name}</p>
+                                                    </div>
+
+                                                    {/* Output */}
+                                                    <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20 rounded-md p-2">
+                                                        <div className="flex items-center justify-center gap-0.5 text-[10px] sm:text-xs text-purple-400/80 mb-0.5">
+                                                            <Package className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                                            <span className="font-medium">Output</span>
+                                                        </div>
+                                                        <p className="font-cinzel font-bold text-xs sm:text-sm text-purple-400 text-center">{recipe.output_quantity}x</p>
+                                                        <p className="text-[9px] sm:text-[10px] text-muted-foreground text-center">+Lv bonus</p>
+                                                    </div>
+
+                                                    {/* Cooldown */}
+                                                    <div className="bg-gradient-to-br from-yellow-500/10 to-orange-500/5 border border-yellow-500/20 rounded-md p-2">
+                                                        <div className="flex items-center justify-center gap-0.5 text-[10px] sm:text-xs text-muted-foreground mb-0.5">
+                                                            <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                                                            <span className="font-medium">Cooldown</span>
+                                                        </div>
+                                                        <p className="font-cinzel font-bold text-xs sm:text-sm text-foreground text-center">{recipe.cooldown_hours}h</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Produce Button - Centered & Compact */}
+                                                <div className="flex justify-center">
+                                                    <Button
+                                                        className="btn-gold text-xs h-9 px-6"
+                                                        disabled={
+                                                            !recipe.can_produce ||
+                                                            producingRecipeId === recipe.id
+                                                        }
+                                                        onClick={() => handleProduce(recipe.id)}
+                                                    >
+                                                        {producingRecipeId === recipe.id ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : !recipe.owns_business ? (
+                                                            'Need Business'
+                                                        ) : recipe.crew_owned < recipe.crew_required ? (
+                                                            `Need ${recipe.crew_required - recipe.crew_owned} ${recipe.crew_name}`
+                                                        ) : recipe.last_produced_at && !recipe.can_produce ? (
+                                                            'On Cooldown'
+                                                        ) : (
+                                                            <><Factory className="w-4 h-4 mr-1" /> Produce</>
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
                             </div>
                         )}
                     </TabsContent>
