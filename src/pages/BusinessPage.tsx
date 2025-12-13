@@ -652,12 +652,13 @@ const BusinessPage = () => {
 
                                         // Map business names to their icons
                                         const businessIcons: Record<string, string> = {
-                                            'Speakeasy': '/images/icons/speakeasy.png',
-                                            'Smuggling Route': '/images/icons/smugglingroute.png',
-                                            'Nightclub': '/images/icons/nightclub.png',
-                                            'Loan Sharking': '/images/icons/loansharking.png',
-                                            'Protection Racket': '/images/icons/protectionracket.png',
-                                            'Numbers Racket': '/images/icons/numbersracket.png',
+                                            'Speakeasy': '/images/businesses/speakeasy.png',
+                                            'Smuggling Route': '/images/businesses/smugglingroute.png',
+                                            'Nightclub': '/images/businesses/nightclub.png',
+                                            'Loan Sharking': '/images/businesses/loansharking.png',
+                                            'Protection Racket': '/images/businesses/protectionracket.png',
+                                            'Black Market': '/images/businesses/blackmarket.png',
+                                            'Casino': '/images/businesses/casino.png',
                                         };
                                         const businessIcon = businessIcons[recipe.business_name] || '/images/icons/business.png';
 
