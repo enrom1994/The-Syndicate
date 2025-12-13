@@ -68,7 +68,7 @@ const BusinessCard = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay }}
-            className="noir-card p-4 relative overflow-hidden"
+            className="noir-card p-2 relative overflow-hidden"
         >
             {/* Glow effect when ready to collect */}
             {canCollect && owned && (
@@ -76,8 +76,8 @@ const BusinessCard = ({
             )}
 
             {/* Icon at Top - No Border */}
-            <div className="flex flex-col items-center mb-3 relative z-10">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center shrink-0 mb-2">
+            <div className="flex flex-col items-center mb-1.5 relative z-10">
+                <div className="w-10 sm:w-12 h-10 sm:h-12 flex items-center justify-center shrink-0 mb-1">
                     <img
                         src={image}
                         alt={name}
@@ -85,61 +85,61 @@ const BusinessCard = ({
                         onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.style.display = 'none';
-                            target.parentElement!.innerHTML = '<div class="w-12 h-12 text-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-4V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v3H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/></svg></div>';
+                            target.parentElement!.innerHTML = '<div class="w-6 h-6 text-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-4V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v3H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/></svg></div>';
                         }}
                     />
                 </div>
 
                 {/* Name and Level */}
                 <div className="text-center w-full">
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                        <h3 className="font-cinzel font-bold text-sm sm:text-base text-foreground">{name}</h3>
+                    <div className="flex items-center justify-center gap-1 mb-0.5">
+                        <h3 className="font-cinzel font-bold text-[10px] sm:text-xs text-foreground">{name}</h3>
                         {owned && (
-                            <span className="text-[10px] sm:text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-sm whitespace-nowrap">
+                            <span className="text-[8px] sm:text-[9px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded-sm whitespace-nowrap">
                                 Lv {level}/{maxLevel}
                             </span>
                         )}
                     </div>
-                    <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug line-clamp-2 px-2">{description}</p>
+                    <p className="text-[8px] sm:text-[9px] text-muted-foreground leading-tight line-clamp-1 px-1">{description}</p>
                 </div>
             </div>
 
-            {/* Stats Grid with Icons - Mobile Optimized */}
-            <div className={`grid ${owned ? 'grid-cols-3' : 'grid-cols-2'} gap-1.5 sm:gap-2 mb-3`}>
+            {/* Stats Grid with Icons - Compact */}
+            <div className={`grid ${owned ? 'grid-cols-3' : 'grid-cols-2'} gap-1 mb-1.5`}>
                 {/* Income */}
-                <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-md p-2">
-                    <div className="flex items-center justify-center gap-0.5 text-[10px] sm:text-xs text-green-400/80 mb-0.5">
-                        <img src="/images/icons/cash.png" alt="$" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                        <span className="font-medium">Income</span>
+                <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded p-1">
+                    <div className="flex items-center justify-center gap-0.5 text-[8px] text-green-400/80 mb-0.5">
+                        <img src="/images/icons/cash.png" alt="$" className="w-2 h-2" />
+                        <span className="font-medium">Inc</span>
                     </div>
-                    <p className="font-cinzel font-bold text-xs sm:text-sm text-green-400 text-center">${income.toLocaleString()}<span className="text-[9px] sm:text-[10px] text-green-400/60">/hr</span></p>
+                    <p className="font-cinzel font-bold text-[9px] sm:text-[10px] text-green-400 text-center">${income.toLocaleString()}<span className="text-[7px] text-green-400/60">/hr</span></p>
                 </div>
 
                 {/* Cooldown */}
-                <div className={`bg-gradient-to-br ${canCollect && owned ? 'from-primary/10 to-primary/5 border-primary/30' : 'from-yellow-500/10 to-orange-500/5 border-yellow-500/20'} border rounded-md p-2`}>
-                    <div className="flex items-center justify-center gap-0.5 text-[10px] sm:text-xs text-muted-foreground mb-0.5">
-                        <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                        <span className="font-medium">Cooldown</span>
+                <div className={`bg-gradient-to-br ${canCollect && owned ? 'from-primary/10 to-primary/5 border-primary/30' : 'from-yellow-500/10 to-orange-500/5 border-yellow-500/20'} border rounded p-1`}>
+                    <div className="flex items-center justify-center gap-0.5 text-[8px] text-muted-foreground mb-0.5">
+                        <Clock className="w-2 h-2" />
+                        <span className="font-medium">CD</span>
                     </div>
-                    <p className={`font-cinzel font-bold text-xs sm:text-sm ${canCollect && owned ? 'text-primary' : 'text-foreground'} text-center`}>{cooldown}</p>
+                    <p className={`font-cinzel font-bold text-[9px] sm:text-[10px] ${canCollect && owned ? 'text-primary' : 'text-foreground'} text-center`}>{cooldown}</p>
                 </div>
 
                 {/* Daily Income (owned only) */}
                 {owned && (
-                    <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 rounded-md p-2">
-                        <div className="flex items-center justify-center gap-0.5 text-[10px] sm:text-xs text-cyan-400/80 mb-0.5">
-                            <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                            <span className="font-medium">Daily</span>
+                    <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 rounded p-1">
+                        <div className="flex items-center justify-center gap-0.5 text-[8px] text-cyan-400/80 mb-0.5">
+                            <TrendingUp className="w-2 h-2" />
+                            <span className="font-medium">Day</span>
                         </div>
-                        <p className="font-cinzel font-bold text-xs sm:text-sm text-cyan-400 text-center">${(income * 24).toLocaleString()}</p>
+                        <p className="font-cinzel font-bold text-[9px] sm:text-[10px] text-cyan-400 text-center">${(income * 24).toLocaleString()}</p>
                     </div>
                 )}
             </div>
 
             {/* Progress Bar (owned only) */}
             {owned && (
-                <div className="mb-3">
-                    <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                <div className="mb-1.5">
+                    <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
                         <motion.div
                             className={`h-full rounded-full ${canCollect ? 'bg-gradient-to-r from-primary to-primary/80' : 'bg-gradient-to-r from-yellow-500 to-orange-500'}`}
                             initial={{ width: 0 }}
@@ -148,65 +148,65 @@ const BusinessCard = ({
                         />
                     </div>
                     {!canCollect && cooldownRemaining && (
-                        <p className="text-[10px] text-muted-foreground mt-1 text-center">Ready in {cooldownRemaining}</p>
+                        <p className="text-[7px] text-muted-foreground mt-0.5 text-center">{cooldownRemaining}</p>
                     )}
                 </div>
             )}
 
             {/* Buttons Section - Centered & Compact */}
             {owned ? (
-                <div className="space-y-2">
-                    {/* Main Action Button - Not Full Width */}
+                <div className="space-y-1">
+                    {/* Main Action Button */}
                     <div className="flex justify-center">
                         <Button
-                            className="btn-gold text-xs h-9 px-6"
+                            className="btn-gold text-[9px] h-6 px-3"
                             disabled={level >= maxLevel || isProcessing}
                             onClick={onUpgrade}
                         >
                             {isProcessing ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <Loader2 className="w-3 h-3 animate-spin" />
                             ) : level >= maxLevel ? (
-                                '⭐ MAX LEVEL'
+                                '⭐ MAX'
                             ) : (
                                 <>
-                                    <ArrowUp className="w-4 h-4 mr-1" />
-                                    Upgrade — ${upgradeCost.toLocaleString()}
+                                    <ArrowUp className="w-3 h-3 mr-0.5" />
+                                    ${upgradeCost.toLocaleString()}
                                 </>
                             )}
                         </Button>
                     </div>
 
-                    {/* Collect + Rush - Centered */}
-                    <div className="flex gap-2 justify-center">
+                    {/* Collect + Rush */}
+                    <div className="flex gap-1 justify-center">
                         <Button
                             variant="outline"
-                            className={`text-xs h-9 px-4 ${canCollect ? 'border-primary text-primary hover:bg-primary/10' : ''}`}
+                            className={`text-[9px] h-6 px-2 ${canCollect ? 'border-primary text-primary hover:bg-primary/10' : ''}`}
                             disabled={isProcessing || !canCollect}
                             onClick={onCollect}
                         >
                             {isProcessing ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <Loader2 className="w-3 h-3 animate-spin" />
                             ) : (
                                 <>
-                                    <img src="/images/icons/cash.png" alt="$" className="w-4 h-4 mr-1" />
-                                    {canCollect ? 'Collect' : cooldownRemaining || 'Wait'}
+                                    <img src="/images/icons/cash.png" alt="$" className="w-3 h-3 mr-0.5" />
+                                    {canCollect ? 'Get' : 'Wait'}
                                 </>
                             )}
                         </Button>
 
-                        {/* Rush Collect Button - only show when on cooldown */}
+                        {/* Rush Collect Button */}
                         {!canCollect && onRushCollect && (
                             <Button
                                 variant="outline"
-                                className="text-xs h-9 px-3 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 group"
+                                className="text-[9px] h-6 px-2 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 group"
                                 disabled={isRushing}
                                 onClick={onRushCollect}
                             >
                                 {isRushing ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <Loader2 className="w-3 h-3 animate-spin" />
                                 ) : (
-                                    <div className="flex items-center gap-1">
-                                        <img src="/images/icons/diamond.png" alt="💎" className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                    <div className="flex items-center gap-0.5">
+                                        <img src="/images/icons/diamond.png" alt="💎" className="w-3 h-3 group-hover:scale-110 transition-transform" />
                                         <span className="font-bold">{rushCost}</span>
                                     </div>
                                 )}
@@ -216,13 +216,13 @@ const BusinessCard = ({
                 </div>
             ) : (
                 <div className="flex justify-center">
-                    <Button className="btn-gold text-xs h-9 px-6" onClick={onBuy} disabled={isProcessing}>
+                    <Button className="btn-gold text-[9px] h-6 px-3" onClick={onBuy} disabled={isProcessing}>
                         {isProcessing ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <Loader2 className="w-3 h-3 animate-spin" />
                         ) : (
                             <>
-                                <Briefcase className="w-4 h-4 mr-1" />
-                                Buy — ${upgradeCost.toLocaleString()}
+                                <Briefcase className="w-3 h-3 mr-0.5" />
+                                ${upgradeCost.toLocaleString()}
                             </>
                         )}
                     </Button>

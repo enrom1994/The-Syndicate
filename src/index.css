@@ -153,6 +153,7 @@
     @apply relative overflow-hidden rounded-sm;
     background: var(--gradient-card);
     box-shadow: var(--shadow-card);
+    background-color: hsla(0, 0%, 7%, 0.92); /* Add transparency */
   }
 
   .noir-card::before {
