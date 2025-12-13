@@ -21,11 +21,14 @@ interface BusinessCardProps {
     upgradeCost: number;
     cooldown: string;
     cooldownRemaining?: string;
+    cooldownMinutes?: number;
+    timeRemainingMinutes?: number;
     owned: boolean;
     canCollect: boolean;
     delay?: number;
     isProcessing?: boolean;
     isRushing?: boolean;
+    rushCost?: number;
     onBuy: () => void;
     onUpgrade: () => void;
     onCollect: () => void;
@@ -42,147 +45,186 @@ const BusinessCard = ({
     upgradeCost,
     cooldown,
     cooldownRemaining,
+    cooldownMinutes,
+    timeRemainingMinutes,
     owned,
     canCollect,
     delay = 0,
     isProcessing = false,
     isRushing = false,
+    rushCost = 5,
     onBuy,
     onUpgrade,
     onCollect,
     onRushCollect
-}: BusinessCardProps) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay }}
-        className="noir-card p-4"
-    >
-        {/* Header: Image + Name + Level */}
-        <div className="flex items-start gap-3 mb-3">
-            <div className="w-16 h-16 rounded-sm bg-muted/30 flex items-center justify-center shrink-0 overflow-hidden">
-                <img
-                    src={image}
-                    alt={name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                        target.parentElement!.innerHTML = '<div class="w-8 h-8 text-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-4V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v3H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/></svg></div>';
-                    }}
-                />
-            </div>
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-cinzel font-semibold text-sm text-foreground truncate">{name}</h3>
-                    {owned && (
-                        <span className="text-xs text-primary font-medium whitespace-nowrap">Lv. {level}/{maxLevel}</span>
-                    )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{description}</p>
-            </div>
-        </div>
+}: BusinessCardProps) => {
+    // Calculate progress percentage for cooldown bar
+    const progressPercent = cooldownMinutes && timeRemainingMinutes !== undefined
+        ? Math.max(0, Math.min(100, ((cooldownMinutes - timeRemainingMinutes) / cooldownMinutes) * 100))
+        : 0;
 
-        {/* Stats Grid - 3 columns for owned, 2 for unowned */}
-        <div className={`grid ${owned ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mb-4`}>
-            <div className="bg-muted/20 rounded-sm p-2">
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <DollarSign className="w-3 h-3" />
-                    <span>Income</span>
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay }}
+            className="noir-card p-4 relative overflow-hidden"
+        >
+            {/* Glow effect when ready to collect */}
+            {canCollect && owned && (
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 pointer-events-none animate-pulse" />
+            )}
+
+            {/* Header: Large Image + Name + Level */}
+            <div className="flex items-start gap-4 mb-4 relative z-10">
+                <div className="w-20 h-20 rounded-md bg-gradient-to-br from-muted/40 to-muted/20 flex items-center justify-center shrink-0 overflow-hidden border border-primary/20 shadow-lg">
+                    <img
+                        src={image}
+                        alt={name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.parentElement!.innerHTML = '<div class="w-10 h-10 text-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7h-4V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v3H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/></svg></div>';
+                        }}
+                    />
                 </div>
-                <p className="font-cinzel font-bold text-sm text-primary">${income.toLocaleString()}/hr</p>
-            </div>
-            <div className="bg-muted/20 rounded-sm p-2">
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="w-3 h-3" />
-                    <span>Cooldown</span>
-                </div>
-                <p className="font-cinzel font-bold text-sm text-foreground">{cooldown}</p>
-            </div>
-            {owned && (
-                <div className="bg-muted/20 rounded-sm p-2">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <TrendingUp className="w-3 h-3" />
-                        <span>Daily</span>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                        <h3 className="font-cinzel font-bold text-base text-foreground truncate">{name}</h3>
+                        {owned && (
+                            <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-sm whitespace-nowrap">
+                                Lv {level}/{maxLevel}
+                            </span>
+                        )}
                     </div>
-                    <p className="font-cinzel font-bold text-sm text-green-400">${(income * 24).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground leading-tight line-clamp-2">{description}</p>
+                </div>
+            </div>
+
+            {/* Stats Grid with Icons */}
+            <div className={`grid ${owned ? 'grid-cols-3' : 'grid-cols-2'} gap-2 mb-3`}>
+                {/* Income */}
+                <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-md p-2.5">
+                    <div className="flex items-center gap-1 text-xs text-green-400/80 mb-1">
+                        <img src="/images/icons/cash.png" alt="$" className="w-3 h-3" />
+                        <span className="font-medium">Income</span>
+                    </div>
+                    <p className="font-cinzel font-bold text-sm text-green-400">${income.toLocaleString()}<span className="text-[10px] text-green-400/60">/hr</span></p>
+                </div>
+
+                {/* Cooldown */}
+                <div className={`bg-gradient-to-br ${canCollect && owned ? 'from-primary/10 to-primary/5 border-primary/30' : 'from-yellow-500/10 to-orange-500/5 border-yellow-500/20'} border rounded-md p-2.5`}>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                        <Clock className="w-3 h-3" />
+                        <span className="font-medium">Cooldown</span>
+                    </div>
+                    <p className={`font-cinzel font-bold text-sm ${canCollect && owned ? 'text-primary' : 'text-foreground'}`}>{cooldown}</p>
+                </div>
+
+                {/* Daily Income (owned only) */}
+                {owned && (
+                    <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/5 border border-cyan-500/20 rounded-md p-2.5">
+                        <div className="flex items-center gap-1 text-xs text-cyan-400/80 mb-1">
+                            <TrendingUp className="w-3 h-3" />
+                            <span className="font-medium">Daily</span>
+                        </div>
+                        <p className="font-cinzel font-bold text-sm text-cyan-400">${(income * 24).toLocaleString()}</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Progress Bar (owned only) */}
+            {owned && (
+                <div className="mb-4">
+                    <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                        <motion.div
+                            className={`h-full rounded-full ${canCollect ? 'bg-gradient-to-r from-primary to-primary/80' : 'bg-gradient-to-r from-yellow-500 to-orange-500'}`}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${progressPercent}%` }}
+                            transition={{ duration: 0.5, delay: delay + 0.2 }}
+                        />
+                    </div>
+                    {!canCollect && cooldownRemaining && (
+                        <p className="text-[10px] text-muted-foreground mt-1 text-center">Ready in {cooldownRemaining}</p>
+                    )}
                 </div>
             )}
-        </div>
 
-        {/* Buttons Section */}
-        {owned ? (
-            <div className="space-y-2">
-                {/* Row 1: Upgrade Button */}
-                <Button
-                    className="w-full btn-gold text-xs h-9"
-                    disabled={level >= maxLevel || isProcessing}
-                    onClick={onUpgrade}
-                >
-                    {isProcessing ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : level >= maxLevel ? (
-                        'MAX LEVEL'
-                    ) : (
-                        <>
-                            <ArrowUp className="w-4 h-4 mr-1" />
-                            Upgrade — ${upgradeCost.toLocaleString()}
-                        </>
-                    )}
-                </Button>
-
-                {/* Row 2: Collect + Rush side by side */}
-                <div className="flex gap-2">
+            {/* Buttons Section */}
+            {owned ? (
+                <div className="space-y-2">
+                    {/* Row 1: Upgrade Button */}
                     <Button
-                        variant="outline"
-                        className={`flex-1 text-xs h-9 ${canCollect ? 'border-primary text-primary hover:bg-primary/10' : ''}`}
-                        disabled={isProcessing || !canCollect}
-                        onClick={onCollect}
+                        className="w-full btn-gold text-xs h-9"
+                        disabled={level >= maxLevel || isProcessing}
+                        onClick={onUpgrade}
                     >
                         {isProcessing ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : level >= maxLevel ? (
+                            '⭐ MAX LEVEL'
                         ) : (
                             <>
-                                <DollarSign className="w-4 h-4 mr-1" />
-                                {canCollect ? 'Collect Now' : cooldownRemaining || 'Waiting...'}
+                                <ArrowUp className="w-4 h-4 mr-1" />
+                                Upgrade — ${upgradeCost.toLocaleString()}
                             </>
                         )}
                     </Button>
 
-                    {/* Rush Collect Button - only show when on cooldown */}
-                    {!canCollect && onRushCollect && (
+                    {/* Row 2: Collect + Rush side by side */}
+                    <div className="flex gap-2">
                         <Button
                             variant="outline"
-                            className="text-xs h-9 px-3 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
-                            disabled={isRushing}
-                            onClick={onRushCollect}
+                            className={`flex-1 text-xs h-9 ${canCollect ? 'border-primary text-primary hover:bg-primary/10' : ''}`}
+                            disabled={isProcessing || !canCollect}
+                            onClick={onCollect}
                         >
-                            {isRushing ? (
+                            {isProcessing ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
                                 <>
-                                    <img src="/images/icons/diamond.png" alt="💎" className="w-4 h-4 mr-1" />
-                                    5
+                                    <img src="/images/icons/cash.png" alt="$" className="w-4 h-4 mr-1" />
+                                    {canCollect ? 'Collect Now' : cooldownRemaining || 'Waiting...'}
                                 </>
                             )}
                         </Button>
-                    )}
+
+                        {/* Rush Collect Button - only show when on cooldown */}
+                        {!canCollect && onRushCollect && (
+                            <Button
+                                variant="outline"
+                                className="text-xs h-9 px-3 border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 group"
+                                disabled={isRushing}
+                                onClick={onRushCollect}
+                            >
+                                {isRushing ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <div className="flex items-center gap-1">
+                                        <img src="/images/icons/diamond.png" alt="💎" className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                        <span className="font-bold">{rushCost}</span>
+                                    </div>
+                                )}
+                            </Button>
+                        )}
+                    </div>
                 </div>
-            </div>
-        ) : (
-            <Button className="w-full btn-gold text-xs h-9" onClick={onBuy} disabled={isProcessing}>
-                {isProcessing ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                    <>
-                        <Briefcase className="w-4 h-4 mr-1" />
-                        Buy for ${upgradeCost.toLocaleString()}
-                    </>
-                )}
-            </Button>
-        )}
-    </motion.div>
-);
+            ) : (
+                <Button className="w-full btn-gold text-xs h-9" onClick={onBuy} disabled={isProcessing}>
+                    {isProcessing ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        <>
+                            <Briefcase className="w-4 h-4 mr-1" />
+                            Buy for ${upgradeCost.toLocaleString()}
+                        </>
+                    )}
+                </Button>
+            )}
+        </motion.div>
+    );
+};
 
 const formatCooldown = (minutes: number): string => {
     if (minutes < 60) return `${minutes}m`;
@@ -197,6 +239,19 @@ const canCollectFromBusiness = (lastCollected: string, cooldownMinutes: number):
     const now = new Date();
     const minutesPassed = (now.getTime() - lastCollectedDate.getTime()) / (1000 * 60);
     return minutesPassed >= cooldownMinutes;
+};
+
+const getTimeRemainingMinutes = (lastCollected: string, cooldownMinutes: number): number => {
+    const lastDate = new Date(lastCollected);
+    const now = new Date();
+    const minutesPassed = (now.getTime() - lastDate.getTime()) / (1000 * 60);
+    return Math.max(0, cooldownMinutes - minutesPassed);
+};
+
+const calculateRushCost = (timeRemainingMinutes: number, totalCooldownMinutes: number): number => {
+    if (timeRemainingMinutes <= 0) return 0;
+    // Formula: (timeRemaining / totalCooldown) * 10, minimum 1 diamond
+    return Math.max(1, Math.ceil((timeRemainingMinutes / totalCooldownMinutes) * 10));
 };
 
 const BusinessPage = () => {
@@ -295,6 +350,10 @@ const BusinessPage = () => {
     // Combine definitions with owned status
     const allBusinesses = businessDefinitions.map(def => {
         const owned = ownedBusinessMap.get(def.id);
+        const cooldownMinutes = owned?.collect_cooldown_minutes || def.collect_cooldown_minutes;
+        const timeRemaining = owned ? getTimeRemainingMinutes(owned.last_collected, cooldownMinutes) : 0;
+        const rushCost = owned ? calculateRushCost(timeRemaining, cooldownMinutes) : 0;
+
         return {
             ...def,
             owned: !!owned,
@@ -304,7 +363,9 @@ const BusinessPage = () => {
             playerBusinessId: owned?.id,
             canCollect: owned ? canCollectFromBusiness(owned.last_collected, owned.collect_cooldown_minutes) : false,
             lastCollected: owned?.last_collected,
-            cooldownMinutes: owned?.collect_cooldown_minutes || def.collect_cooldown_minutes,
+            cooldownMinutes,
+            timeRemainingMinutes: timeRemaining,
+            rushCost,
         };
     });
 
@@ -530,11 +591,14 @@ const BusinessPage = () => {
                                             upgradeCost={business.upgrade_cost}
                                             cooldown={formatCooldown(business.collect_cooldown_minutes)}
                                             cooldownRemaining={getCooldownRemaining(business.lastCollected, business.cooldownMinutes)}
+                                            cooldownMinutes={business.cooldownMinutes}
+                                            timeRemainingMinutes={business.timeRemainingMinutes}
                                             owned={business.owned}
                                             canCollect={business.canCollect}
                                             delay={0.1 * index}
                                             isProcessing={isProcessing && pendingAction?.businessId === business.id}
                                             isRushing={rushingId === business.playerBusinessId}
+                                            rushCost={business.rushCost}
                                             onBuy={() => handleAction('buy', business.name, business.id, business.base_purchase_cost)}
                                             onUpgrade={() => handleAction('upgrade', business.name, business.id, business.upgrade_cost, business.playerBusinessId)}
                                             onCollect={() => handleAction('collect', business.name, business.id, 0, business.playerBusinessId)}
