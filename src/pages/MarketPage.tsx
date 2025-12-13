@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ShoppingBag, Store, Loader2, Minus, Plus } from 'lucide-react';
+import { ShoppingBag, Store, Loader2, Minus, Plus, Sparkles } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -36,30 +36,50 @@ const MarketItem = ({ name, description, price, stat, image, delay = 0, onBuy }:
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay }}
-        className="noir-card p-3"
+        className="noir-card p-4"
     >
-        {/* Row 1: Image, Name, Price */}
-        <div className="flex items-center gap-2">
-            <div className="w-12 h-12 rounded-sm overflow-hidden shrink-0 bg-muted/30">
+        {/* Icon at Top - No Border */}
+        <div className="flex flex-col items-center mb-3">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center shrink-0 mb-2">
                 <img
                     src={image}
                     alt={name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain drop-shadow-lg"
+                    onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.parentElement!.innerHTML = '<div class="w-12 h-12 text-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg></div>';
+                    }}
                 />
             </div>
-            <div className="flex-1 min-w-0">
-                <h3 className="font-cinzel font-semibold text-sm text-foreground truncate">{name}</h3>
-                {stat && <p className="text-xs text-primary mt-0.5">{stat}</p>}
-            </div>
-            <div className="text-right shrink-0">
-                <p className="font-cinzel font-bold text-sm text-primary">${price.toLocaleString()}</p>
+
+            {/* Name and Stat Badge */}
+            <div className="text-center w-full mb-2">
+                <h3 className="font-cinzel font-bold text-sm sm:text-base text-foreground mb-1">{name}</h3>
+                {stat && (
+                    <div className="inline-block">
+                        <span className="text-[10px] sm:text-xs font-bold text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-sm whitespace-nowrap">
+                            {stat}
+                        </span>
+                    </div>
+                )}
+                <p className="text-[11px] sm:text-xs text-muted-foreground leading-snug line-clamp-2 px-2 mt-1">{description}</p>
             </div>
         </div>
 
-        {/* Row 2: Description + Buy Button */}
-        <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-muted/20">
-            <p className="text-xs text-muted-foreground line-clamp-1 flex-1">{description}</p>
-            <Button size="sm" className="btn-gold text-xs px-4 py-1 h-7 shrink-0" onClick={onBuy}>
+        {/* Price Display */}
+        <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-md p-2 mb-3">
+            <div className="flex items-center justify-center gap-0.5 text-[10px] sm:text-xs text-muted-foreground mb-0.5">
+                <img src="/images/icons/cash.png" alt="$" className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                <span className="font-medium">Price</span>
+            </div>
+            <p className="font-cinzel font-bold text-sm sm:text-base text-primary text-center">${price.toLocaleString()}</p>
+        </div>
+
+        {/* Buy Button - Centered & Compact */}
+        <div className="flex justify-center">
+            <Button className="btn-gold text-xs h-9 px-6" onClick={onBuy}>
+                <ShoppingBag className="w-4 h-4 mr-1" />
                 Buy
             </Button>
         </div>
@@ -181,14 +201,38 @@ const MarketPage = () => {
                                 <p className="text-xs text-muted-foreground">Illegal goods & rare items</p>
                             </div>
                         </div>
-                        <Button
-                            size="sm"
-                            className="btn-gold h-auto px-3 py-1.5 text-xs flex items-center gap-1.5 shadow-[0_0_12px_rgba(212,175,55,0.6)] hover:shadow-[0_0_20px_rgba(212,175,55,0.8)] transition-shadow"
-                            onClick={() => navigate('/shop')}
+
+                        {/* Prominent Animated Shop Button */}
+                        <motion.div
+                            animate={{
+                                scale: [1, 1.05, 1],
+                                boxShadow: [
+                                    '0 0 20px rgba(212,175,55,0.3)',
+                                    '0 0 30px rgba(212,175,55,0.6)',
+                                    '0 0 20px rgba(212,175,55,0.3)'
+                                ]
+                            }}
+                            transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: "easeInOut"
+                            }}
+                            className="rounded-lg overflow-hidden"
                         >
-                            <Store className="w-4 h-4" />
-                            Shop
-                        </Button>
+                            <Button
+                                className="btn-gold h-auto px-4 sm:px-5 py-2.5 sm:py-3 text-sm sm:text-base font-bold flex items-center gap-2 relative overflow-hidden group"
+                                onClick={() => navigate('/shop')}
+                            >
+                                <motion.div
+                                    animate={{ rotate: [0, 10, 0, -10, 0] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                >
+                                    <img src="/images/icons/diamond.png" alt="💎" className="w-5 h-5 sm:w-6 sm:h-6" />
+                                </motion.div>
+                                <span className="relative z-10">Diamond Shop</span>
+                                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </Button>
+                        </motion.div>
                     </div>
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
