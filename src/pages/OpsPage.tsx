@@ -126,18 +126,12 @@ const PveTargetCard = ({
                 </div>
                 <div className="bg-cyan-500/10 border border-cyan-500/20 rounded p-2 text-center">
                     <div className="flex items-center justify-center gap-1 mb-0.5">
-                        <img src="/images/icons/xp.png" alt="" className="w-3 h-3" />
-                        <span className="text-muted-foreground text-[10px]">XP</span>
-                    </div>
-                    <p className="font-bold text-cyan-400">+{target.xp_reward}</p>
-                </div>
-                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-2 text-center">
-                    <div className="flex items-center justify-center gap-1 mb-0.5">
                         <img src="/images/icons/respect.png" alt="" className="w-3 h-3" />
                         <span className="text-muted-foreground text-[10px]">Respect</span>
                     </div>
-                    <p className="font-bold text-yellow-400">+{target.respect_reward}</p>
+                    <p className="font-bold text-cyan-400">+{target.xp_reward + target.respect_reward}</p>
                 </div>
+                {/* Removed old respect reward column - respect is now combined above */}
             </div>
 
             {/* Requirements Row */}
@@ -378,7 +372,8 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, pla
     const { inventory, itemDefinitions } = useGameStore();
 
     const bonusCash = streakBonus > 0 ? Math.round(job.cash_reward * (1 + streakBonus / 100)) : job.cash_reward;
-    const bonusXp = streakBonus > 0 ? Math.round(job.experience_reward * (1 + streakBonus / 100)) : job.experience_reward;
+    // Calculate Respect bonus with streak (XP deprecated, respect only)
+    const bonusRespect = streakBonus > 0 ? Math.round((job.experience_reward + (job.respect_reward || 0)) * (1 + streakBonus / 100)) : (job.experience_reward + (job.respect_reward || 0));
 
     // Check item requirements
     let meetsItemReq = true;
@@ -447,11 +442,11 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, pla
                 </div>
                 <div className="bg-cyan-500/10 border border-cyan-500/20 rounded p-2 text-center">
                     <div className="flex items-center justify-center gap-1 mb-0.5">
-                        <img src="/images/icons/xp.png" alt="" className="w-3 h-3" />
-                        <span className="text-muted-foreground text-[10px]">XP</span>
+                        <img src="/images/icons/respect.png" alt="" className="w-3 h-3" />
+                        <span className="text-muted-foreground text-[10px]">Respect</span>
                     </div>
                     <div className="flex items-center justify-center gap-1">
-                        <span className="font-bold text-cyan-400">+{bonusXp}</span>
+                        <span className="font-bold text-cyan-400">+{bonusRespect}</span>
                         {streakBonus > 0 && (
                             <span className="text-[10px] text-orange-400">+{streakBonus}%</span>
                         )}
@@ -481,8 +476,8 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, pla
                 {/* Item Requirement (New) */}
                 {job.required_item_id && job.required_item_quantity && (
                     <div className={`flex items-center justify-between text-xs px-2 py-1.5 rounded border ${meetsItemReq
-                            ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
-                            : 'bg-red-500/10 border-red-500/30 text-red-400'
+                        ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
+                        : 'bg-red-500/10 border-red-500/30 text-red-400'
                         }`}>
                         <span className="flex items-center gap-1">
                             <img src="/images/icons/inventory.png" alt="" className="w-3 h-3" />
@@ -586,8 +581,8 @@ const HighStakesCard = ({ job, isProcessing, delay = 0, onExecute }: {
                 </div>
                 <div className="bg-cyan-500/15 border border-cyan-500/30 rounded p-2 text-center">
                     <div className="flex items-center justify-center gap-1 mb-0.5">
-                        <img src="/images/icons/xp.png" alt="" className="w-3 h-3" />
-                        <span className="text-muted-foreground text-[10px]">XP</span>
+                        <img src="/images/icons/respect.png" alt="" className="w-3 h-3" />
+                        <span className="text-muted-foreground text-[10px]">Respect</span>
                     </div>
                     <p className="font-bold text-cyan-400">+{job.xp_reward}</p>
                 </div>

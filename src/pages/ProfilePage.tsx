@@ -174,18 +174,17 @@ const ProfilePage = () => {
     const username = user?.username ? `@${user.username}` : '';
     const fullName = `${firstName} ${lastName}`.trim();
 
-    // Level badge (synced with RankBadge component)
-    const getLevelTitle = (lvl: number) => {
-        if (lvl >= 100) return { title: 'Godfather', color: 'text-purple-400' };
-        if (lvl >= 75) return { title: 'Boss', color: 'text-primary' };
-        if (lvl >= 50) return { title: 'Underboss', color: 'text-slate-300' };
-        if (lvl >= 30) return { title: 'Caporegime', color: 'text-blue-400' };
-        if (lvl >= 15) return { title: 'Soldier', color: 'text-slate-400' };
-        if (lvl >= 5) return { title: 'Enforcer', color: 'text-amber-600' };
-        return { title: 'Street Thug', color: 'text-zinc-400' };
+    // Rank badge based on RESPECT (XP/Level deprecated)
+    const getRespectTitle = (respectVal: number) => {
+        if (respectVal >= 10000) return { title: 'Godfather', color: 'text-purple-400', tier: 5 };
+        if (respectVal >= 5000) return { title: 'Boss', color: 'text-primary', tier: 4 };
+        if (respectVal >= 2500) return { title: 'Underboss', color: 'text-slate-300', tier: 3 };
+        if (respectVal >= 1000) return { title: 'Caporegime', color: 'text-blue-400', tier: 2 };
+        if (respectVal >= 250) return { title: 'Soldier', color: 'text-slate-400', tier: 1 };
+        return { title: 'Street Thug', color: 'text-zinc-400', tier: 0 };
     };
 
-    const levelInfo = getLevelTitle(level);
+    const rankInfo = getRespectTitle(respect);
 
     // Format numbers
     const formatCash = (n: number) => {
@@ -225,8 +224,10 @@ const ProfilePage = () => {
                             <h1 className="font-cinzel text-lg font-bold text-foreground">{fullName}</h1>
                             {username && <p className="text-xs text-muted-foreground">{username}</p>}
                             <div className="flex items-center gap-2 mt-1">
-                                <span className={`text-xs font-semibold ${levelInfo.color}`}>{levelInfo.title}</span>
-                                <span className="text-[10px] text-muted-foreground">• Level {level}</span>
+                                <span className={`text-xs font-semibold ${rankInfo.color}`}>{rankInfo.title}</span>
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                    • <img src="/images/icons/respect.png" alt="respect" className="w-3 h-3" /> {respect.toLocaleString()}
+                                </span>
                             </div>
                         </div>
                     </div>

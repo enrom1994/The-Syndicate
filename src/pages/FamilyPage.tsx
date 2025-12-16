@@ -129,7 +129,7 @@ const MemberCard = ({ member, myRole, isMe, delay = 0, onAction }: MemberCardPro
                 <p className={`font-cinzel font-semibold text-sm truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>
                     {displayName} {isMe && <span className="text-xs font-inter">(You)</span>}
                 </p>
-                <p className="text-xs text-muted-foreground">{member.role} • Lv.{member.level}</p>
+                <p className="text-xs text-muted-foreground">{member.role} • <img src="/images/icons/respect.png" alt="" className="w-3 h-3 inline" /> {member.respect.toLocaleString()}</p>
             </div>
             <div className="text-right shrink-0">
                 <p className="text-xs text-muted-foreground">Contributed</p>
@@ -180,8 +180,9 @@ const MemberCard = ({ member, myRole, isMe, delay = 0, onAction }: MemberCardPro
                         )}
                     </DropdownMenuContent>
                 </DropdownMenu>
-            )}
-        </motion.div>
+            )
+            }
+        </motion.div >
     );
 };
 
