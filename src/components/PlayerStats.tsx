@@ -72,15 +72,14 @@ const formatCash = (value: number): string => {
   return `$${value.toLocaleString()}`;
 };
 
-// Get rank title based on level (synced with RankBadge component)
-const getRankTitle = (level: number): string => {
-  if (level >= 100) return 'Godfather';
-  if (level >= 75) return 'Boss';
-  if (level >= 50) return 'Underboss';
-  if (level >= 30) return 'Caporegime';
-  if (level >= 15) return 'Soldier';
-  if (level >= 5) return 'Enforcer';
-  return 'Street Thug';
+// Get rank title based on RESPECT (XP/Level deprecated)
+const getRespectRank = (respect: number): { title: string; nextThreshold: number; currentThreshold: number } => {
+  if (respect >= 10000) return { title: 'Godfather', nextThreshold: 10000, currentThreshold: 10000 };  // Max rank
+  if (respect >= 5000) return { title: 'Boss', nextThreshold: 10000, currentThreshold: 5000 };
+  if (respect >= 2500) return { title: 'Underboss', nextThreshold: 5000, currentThreshold: 2500 };
+  if (respect >= 1000) return { title: 'Caporegime', nextThreshold: 2500, currentThreshold: 1000 };
+  if (respect >= 250) return { title: 'Soldier', nextThreshold: 1000, currentThreshold: 250 };
+  return { title: 'Street Thug', nextThreshold: 250, currentThreshold: 0 };
 };
 
 export const PlayerStats = () => {
@@ -159,13 +158,13 @@ export const PlayerStats = () => {
   const weaponAttack = inventory
     .filter(i => i.category === 'weapon' && i.assigned_quantity > 0)
     .reduce((sum, i) => sum + (i.attack_bonus * i.assigned_quantity), 0);
-  const totalAttack = baseAttack + crewAttack + weaponAttack;
-
-  // Calculate XP progress
-  const level = player?.level ?? 1;
-  const experience = player?.experience ?? 0;
-  const xpNeeded = level * 1000; // Simple formula: level * 1000 XP per level
-  const xpProgress = Math.min((experience / xpNeeded) * 100, 100);
+  // Calculate Respect-based rank progression (XP deprecated)
+  const respect = player?.respect ?? 0;
+  const rankInfo = getRespectRank(respect);
+  const respectProgress = rankInfo.nextThreshold > rankInfo.currentThreshold
+    ? ((respect - rankInfo.currentThreshold) / (rankInfo.nextThreshold - rankInfo.currentThreshold)) * 100
+    : 100;  // Max rank
+  const respectToNext = rankInfo.nextThreshold - respect;
 
   // Calculate Net Worth (cash + bank + business values)
   const cash = player?.cash ?? 0;
@@ -236,12 +235,12 @@ export const PlayerStats = () => {
         <StatCard
           icon={<img src="/images/icons/respect.png" alt="Rank" className="w-10 h-10 object-contain" />}
           label="Rank"
-          value={getRankTitle(level)}
+          value={rankInfo.title}
           delay={0.4}
         />
       </div>
 
-      {/* Respect Bar */}
+      {/* Respect Progress Bar */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -252,17 +251,23 @@ export const PlayerStats = () => {
           <div className="flex items-center gap-1.5">
             <img src="/images/icons/respect.png" alt="Respect" className="w-4 h-4 object-contain" />
             <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Respect</span>
+            <span className="text-[10px] font-bold text-primary bg-primary/20 px-1 py-0.5 rounded">{rankInfo.title}</span>
           </div>
-          <span className="font-inter font-medium text-xs text-primary">{(player?.respect ?? 0).toLocaleString()}</span>
+          <span className="font-inter font-medium text-xs text-primary">{respect.toLocaleString()}</span>
         </div>
         <div className="h-1.5 rounded-full bg-muted overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
-            animate={{ width: `${Math.min((player?.respect ?? 0) / 100, 100)}%` }}
+            animate={{ width: `${respectProgress}%` }}
             transition={{ duration: 1, delay: 0.7 }}
             className="h-full bg-gradient-gold rounded-full"
           />
         </div>
+        {respectToNext > 0 && (
+          <p className="text-[9px] text-muted-foreground mt-1">
+            {respectToNext.toLocaleString()} to next rank
+          </p>
+        )}
       </motion.div>
 
       {/* Energy & Stamina Bars - Side by Side */}
@@ -270,36 +275,6 @@ export const PlayerStats = () => {
         <EnergyBar energy={energy} maxEnergy={player?.max_energy ?? 100} regenTime={formattedTime} />
         <StaminaBar stamina={stamina} maxStamina={player?.max_stamina ?? 100} regenTime={staminaFormattedTime} />
       </div>
-
-      {/* XP Progress Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.6 }}
-        className="mt-2 noir-card p-2.5"
-      >
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-1.5">
-            <img src="/images/icons/xp.png" alt="XP" className="w-4 h-4 object-contain" />
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Level Progress</span>
-            <span className="text-[10px] font-bold text-primary bg-primary/20 px-1 py-0.5 rounded">Lv.{level}</span>
-          </div>
-          <span className="font-inter font-medium text-[10px] text-muted-foreground">
-            {experience.toLocaleString()} / {xpNeeded.toLocaleString()} XP
-          </span>
-        </div>
-        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${xpProgress}%` }}
-            transition={{ duration: 1, delay: 0.8 }}
-            className="h-full bg-gradient-to-r from-primary via-yellow-500 to-primary rounded-full"
-          />
-        </div>
-        <p className="text-[9px] text-muted-foreground mt-1">
-          {(xpNeeded - experience).toLocaleString()} XP to Level {level + 1}
-        </p>
-      </motion.div>
 
       {/* Quick Actions placeholder */}
       <motion.div
