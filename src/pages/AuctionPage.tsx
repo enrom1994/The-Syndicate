@@ -230,7 +230,7 @@ const AuctionPage = () => {
     // Get item image from name (same as MarketPage)
     const getItemImage = (itemName: string) => {
         const slug = itemName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        return `/images/blackmarket/${slug}.png`;
+        return `/images/icons/${slug}.png`;
     };
 
     const myListings = listings.filter(l => l.is_my_listing);

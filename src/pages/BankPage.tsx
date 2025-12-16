@@ -258,9 +258,9 @@ const BankPage = () => {
     // Get item image path
     const getItemImage = (item: InventoryItem) => {
         const slug = item.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (item.category === 'weapon') return `/images/blackmarket/${slug}.png`;
-        if (item.category === 'equipment') return `/images/blackmarket/${slug}.png`;
-        if (item.category === 'contraband') return `/images/blackmarket/${slug}.png`;
+        if (item.category === 'weapon') return `/images/icons/${slug}.png`;
+        if (item.category === 'equipment') return `/images/icons/${slug}.png`;
+        if (item.category === 'contraband') return `/images/icons/${slug}.png`;
         return `/images/icons/inventory.png`;
     };
 

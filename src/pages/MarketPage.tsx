@@ -173,9 +173,9 @@ const MarketPage = () => {
         const slug = item.name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
         // Manual overrides for known missing assets
-        if (slug === 'goldenrevolver') return '/images/blackmarket/goldenrevolver.png';
+        if (slug === 'goldenrevolver') return '/images/icons/goldenrevolver.png';
 
-        return `/images/blackmarket/${slug}.png`;
+        return `/images/icons/${slug}.png`;
     };
 
     return (
