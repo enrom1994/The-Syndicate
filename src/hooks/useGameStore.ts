@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
+// RPC helper available for gradual adoption - provides retry logic and consistent error handling
+// import { callRpc, callActionRpc } from '@/lib/rpcHelper';
 
 // Types
 export interface InventoryItem {
@@ -389,9 +391,13 @@ export const useGameStore = create<GameState>((set, get) => ({
         const equipmentSlots = crew
             .filter(c => c.type === 'Bodyguard')
             .reduce((sum, c) => sum + c.quantity, 0);
-        // Count currently equipped
-        const equippedWeapons = inventory.filter(i => i.category === 'weapon' && i.is_equipped).length;
-        const equippedEquipment = inventory.filter(i => i.category === 'equipment' && i.is_equipped).length;
+        // Count currently equipped (using assigned_quantity - the new system)
+        const equippedWeapons = inventory
+            .filter(i => i.category === 'weapon' && i.assigned_quantity > 0)
+            .reduce((sum, i) => sum + i.assigned_quantity, 0);
+        const equippedEquipment = inventory
+            .filter(i => i.category === 'equipment' && i.assigned_quantity > 0)
+            .reduce((sum, i) => sum + i.assigned_quantity, 0);
 
         return { weaponSlots, equipmentSlots, equippedWeapons, equippedEquipment };
     },
@@ -980,8 +986,10 @@ export const useGameStore = create<GameState>((set, get) => ({
         if (result.success) {
             await loadInventory();
             return true;
-            return false;
         }
+
+        console.error('Sell item failed:', result.message);
+        return false;
     },
 
     contributeItemToFamily: async (itemId, quantity) => {
