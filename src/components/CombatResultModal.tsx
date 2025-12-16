@@ -209,6 +209,13 @@ export const CombatResultModal = ({
                                 </div>
                             )}
 
+                            {/* Insurance Copy Line - shown under losses when insurance protected defender */}
+                            {insuranceActivated && (
+                                <p className="text-xs text-cyan-400/80 text-center mt-2">
+                                    Insurance prevented additional losses.
+                                </p>
+                            )}
+
                             {/* No results message */}
                             {!hasGains && !hasLosses && (
                                 <div className="bg-muted/20 rounded-lg p-4 text-center">

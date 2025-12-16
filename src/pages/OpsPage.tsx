@@ -678,6 +678,7 @@ const OpsPage = () => {
         xpGained?: number;
         itemsStolen?: string[];
         crewLost?: number;
+        insuranceActivated?: boolean;
     }>({ open: false, result: 'victory', targetName: '', cashGained: 0, cashLost: 0, respectGained: 0, respectLost: 0 });
 
     // PvP confirm dialog
@@ -881,7 +882,8 @@ const OpsPage = () => {
                         respectLost: 0,
                         xpGained: 0, // PvP doesn't give XP currently
                         itemsStolen: data.contraband_stolen > 0 ? [`${data.contraband_stolen} Contraband`] : [],
-                        crewLost: 0 // Attacker won, no crew lost
+                        crewLost: 0, // Attacker won, no crew lost
+                        insuranceActivated: data.insurance_applied || false
                     });
                 } else {
                     haptic.error();
@@ -1271,6 +1273,7 @@ const OpsPage = () => {
                 xpGained={combatResult.xpGained}
                 itemsStolen={combatResult.itemsStolen}
                 crewLost={combatResult.crewLost}
+                insuranceActivated={combatResult.insuranceActivated}
             />
 
             {/* Job Chain Continue Dialog */}
