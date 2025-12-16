@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useGameStore } from '@/hooks/useGameStore';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/use-toast';
@@ -51,6 +53,7 @@ interface FamilyData {
     min_level_required: number;
     invite_code?: string;
     created_at: string;
+    inventory?: Record<string, number>; // { item_id: quantity }
 }
 
 interface PlayerFamilyResponse {
@@ -186,6 +189,7 @@ const FamilyPage = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const { player, refetchPlayer } = useAuth();
+    const { itemDefinitions } = useGameStore();
 
     const [isLoading, setIsLoading] = useState(true);
     const [familyData, setFamilyData] = useState<PlayerFamilyResponse | null>(null);
@@ -611,42 +615,109 @@ const FamilyPage = () => {
                     </motion.div>
                 )}
 
-                {/* Members */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                >
-                    <div className="flex items-center justify-between mb-3">
-                        <h2 className="font-cinzel text-sm font-semibold text-foreground flex items-center gap-2">
-                            <Users className="w-4 h-4 text-primary" />
-                            Members
-                        </h2>
-                        {canInvite(myRole) && (
-                            <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-xs text-primary"
-                                onClick={() => setInviteOpen(true)}
-                            >
-                                <Plus className="w-4 h-4 mr-1" />
-                                Invite
-                            </Button>
-                        )}
-                    </div>
-                    <div className="noir-card p-4 space-y-2">
-                        {sortedMembers.map((member, index) => (
-                            <MemberCard
-                                key={member.player_id}
-                                member={member}
-                                myRole={myRole}
-                                isMe={member.player_id === player?.id}
-                                delay={0.05 * index}
-                                onAction={handleMemberAction}
-                            />
-                        ))}
-                    </div>
-                </motion.div>
+                {/* Tabs: Members & Armory */}
+                <Tabs defaultValue="members" className="w-full">
+                    <TabsList className="w-full grid grid-cols-2 mb-4">
+                        <TabsTrigger value="members" className="font-cinzel text-xs">Members</TabsTrigger>
+                        <TabsTrigger value="armory" className="font-cinzel text-xs">Armory</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="members" className="mt-0">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <h2 className="font-cinzel text-sm font-semibold text-foreground flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-primary" />
+                                    Members
+                                </h2>
+                                {canInvite(myRole) && (
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className="text-xs text-primary"
+                                        onClick={() => setInviteOpen(true)}
+                                    >
+                                        <Plus className="w-4 h-4 mr-1" />
+                                        Invite
+                                    </Button>
+                                )}
+                            </div>
+                            <div className="noir-card p-4 space-y-2">
+                                {sortedMembers.map((member, index) => (
+                                    <MemberCard
+                                        key={member.player_id}
+                                        member={member}
+                                        myRole={myRole}
+                                        isMe={member.player_id === player?.id}
+                                        delay={0.05 * index}
+                                        onAction={handleMemberAction}
+                                    />
+                                ))}
+                            </div>
+                        </motion.div>
+                    </TabsContent>
+
+                    <TabsContent value="armory" className="mt-0">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <h2 className="font-cinzel text-sm font-semibold text-foreground flex items-center gap-2">
+                                    <Shield className="w-4 h-4 text-primary" />
+                                    Family Armory
+                                </h2>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-xs text-secondary"
+                                    onClick={() => navigate('/inventory')}
+                                >
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Contribute Item
+                                </Button>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                {family.inventory && Object.keys(family.inventory).length > 0 ? (
+                                    Object.entries(family.inventory).map(([itemId, qty]) => {
+                                        const itemDef = itemDefinitions.find(d => d.id === itemId);
+                                        if (!itemDef || qty <= 0) return null;
+                                        return (
+                                            <div key={itemId} className="noir-card p-3 border-l-2 border-primary/30">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div className="w-8 h-8 rounded bg-muted/50 flex items-center justify-center">
+                                                        {itemDef.image_url ? (
+                                                            <img src={itemDef.image_url} className="w-6 h-6 object-contain" />
+                                                        ) : (
+                                                            <Shield className="w-4 h-4 text-muted-foreground" />
+                                                        )}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="font-cinzel text-xs font-bold truncate">{itemDef.name}</p>
+                                                        <p className="text-[10px] text-muted-foreground">{itemDef.category}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-between items-end border-t border-muted/20 pt-2">
+                                                    <span className="text-[10px] text-muted-foreground">In Stock</span>
+                                                    <span className="font-cinzel font-bold text-primary">x{qty}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="col-span-2 text-center py-8 text-muted-foreground text-sm">
+                                        Armory is empty. Contribute items to help your family.
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </TabsContent>
+                </Tabs>
 
                 {/* Leave Family Button */}
                 {myRole !== 'Boss' && (

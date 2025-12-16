@@ -42,12 +42,14 @@ interface InventoryItemProps {
     onAssign: () => void;
     onMoveToSafe: () => void;
     onMoveFromSafe: () => void;
+
     onSell?: () => void;
+    onContribute?: () => void;
     delay?: number;
 }
 
 const InventoryItemComponent = ({
-    item, isProcessing, onAssign, onMoveToSafe, onMoveFromSafe, onSell, delay = 0
+    item, isProcessing, onAssign, onMoveToSafe, onMoveFromSafe, onSell, onContribute, delay = 0
 }: InventoryItemProps) => {
     const FallbackIcon = item.category === 'weapon' ? Sword : item.category === 'equipment' ? Shield : FlaskConical;
     const hasAssigned = item.assigned_quantity > 0;
@@ -166,10 +168,23 @@ const InventoryItemComponent = ({
                                 Sell
                             </Button>
                         )}
+                        {onContribute && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2 text-xs text-blue-500 hover:text-blue-400"
+                                onClick={onContribute}
+                                disabled={isProcessing || item.assigned_quantity > 0}
+                                title={item.assigned_quantity > 0 ? 'Unassign first' : 'Contribute to Family'}
+                            >
+                                <Users className="w-3 h-3 mr-1" />
+                                Family
+                            </Button>
+                        )}
                     </>
                 )}
             </div>
-        </motion.div>
+        </motion.div >
     );
 };
 
@@ -220,7 +235,9 @@ const InventoryPage = () => {
         sellItem: sellItem_action,
         moveToSafe,
         moveFromSafe,
+
         getAssignmentLimits,
+        contributeItemToFamily,
     } = useGameStore();
 
     const [activeTab, setActiveTab] = useState('weapons');
@@ -237,7 +254,14 @@ const InventoryPage = () => {
     const [sellDialogOpen, setSellDialogOpen] = useState(false);
     const [sellItem, setSellItem] = useState<InventoryItemType | null>(null);
     const [sellQuantity, setSellQuantity] = useState(1);
+
     const [isSelling, setIsSelling] = useState(false);
+
+    // Contribute dialog state
+    const [contributeDialogOpen, setContributeDialogOpen] = useState(false);
+    const [contributeItem, setContributeItem] = useState<InventoryItemType | null>(null);
+    const [contributeQuantity, setContributeQuantity] = useState(1);
+    const [isContributing, setIsContributing] = useState(false);
 
     // Load assignment limits on mount
     useEffect(() => {
@@ -396,6 +420,45 @@ const InventoryPage = () => {
         }
     };
 
+    const openContributeDialog = (item: InventoryItemType) => {
+        setContributeItem(item);
+        setContributeQuantity(1);
+        setContributeDialogOpen(true);
+    };
+
+    const handleContribute = async () => {
+        if (!contributeItem) return;
+
+        setIsContributing(true);
+        try {
+            const success = await contributeItemToFamily(contributeItem.id, contributeQuantity);
+            if (success) {
+                toast({
+                    title: 'Contributed!',
+                    description: `Sent ${contributeQuantity}x ${contributeItem.name} to family treasury.`,
+                });
+                await refetchPlayer();
+            } else {
+                toast({
+                    title: 'Failed',
+                    description: 'Could not contribute item',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Contribution error:', error);
+            toast({
+                title: 'Error',
+                description: 'An unexpected error occurred.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsContributing(false);
+            setContributeDialogOpen(false);
+            setContributeItem(null);
+        }
+    };
+
     // Calculate max assignable for dialog
     const getMaxAssignable = (): number => {
         if (!selectedItem || !limits) return 0;
@@ -533,6 +596,7 @@ const InventoryPage = () => {
                                             onMoveToSafe={() => handleMoveToSafe(item)}
                                             onMoveFromSafe={() => handleMoveFromSafe(item)}
                                             onSell={() => openSellDialog(item)}
+                                            onContribute={() => openContributeDialog(item)}
                                         />
                                     ))
                                 )}
@@ -552,6 +616,7 @@ const InventoryPage = () => {
                                             onMoveToSafe={() => handleMoveToSafe(item)}
                                             onMoveFromSafe={() => handleMoveFromSafe(item)}
                                             onSell={() => openSellDialog(item)}
+                                            onContribute={() => openContributeDialog(item)}
                                         />
                                     ))
                                 )}
@@ -571,6 +636,7 @@ const InventoryPage = () => {
                                             onMoveToSafe={() => handleMoveToSafe(item)}
                                             onMoveFromSafe={() => handleMoveFromSafe(item)}
                                             onSell={() => handleSellContraband(item)}
+                                            onContribute={() => openContributeDialog(item)}
                                         />
                                     ))
                                 )}
@@ -835,8 +901,124 @@ const InventoryPage = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Contribute Dialog */}
+            <AlertDialog open={contributeDialogOpen} onOpenChange={setContributeDialogOpen}>
+                <AlertDialogContent className="noir-card border-border/50 max-w-sm">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-cinzel text-foreground">
+                            Contribute {contributeItem?.name}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Help your family by stocking the armory.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    {contributeItem && (
+                        <div className="py-4 space-y-4">
+                            <div className="bg-muted/20 p-3 rounded-lg space-y-2">
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-muted-foreground">Item</span>
+                                    <span className="text-foreground font-bold">{contributeItem.name}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-muted-foreground">Owned</span>
+                                    <span className="text-foreground font-bold">{contributeItem.quantity}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-muted-foreground">Contribute Quantity</span>
+                                    <span className="text-primary font-bold">{contributeQuantity}</span>
+                                </div>
+                            </div>
+
+                            {/* Quantity Selector */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">Quantity:</span>
+                                    <span className="font-cinzel font-bold text-lg text-primary">{contributeQuantity}</span>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setContributeQuantity(Math.max(1, contributeQuantity - 1))}
+                                        disabled={contributeQuantity <= 1}
+                                    >
+                                        <Minus className="w-3 h-3" />
+                                    </Button>
+                                    <Slider
+                                        value={[contributeQuantity]}
+                                        onValueChange={(v) => setContributeQuantity(v[0])}
+                                        max={contributeItem.quantity - contributeItem.assigned_quantity}
+                                        min={1}
+                                        step={1}
+                                        className="flex-1"
+                                    />
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setContributeQuantity(Math.min(contributeItem.quantity - contributeItem.assigned_quantity, contributeQuantity + 1))}
+                                        disabled={contributeQuantity >= contributeItem.quantity - contributeItem.assigned_quantity}
+                                    >
+                                        <Plus className="w-3 h-3" />
+                                    </Button>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 text-xs"
+                                        onClick={() => setContributeQuantity(1)}
+                                    >
+                                        1
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 text-xs"
+                                        onClick={() => setContributeQuantity(Math.floor((contributeItem.quantity - contributeItem.assigned_quantity) / 2) || 1)}
+                                    >
+                                        Half
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex-1 text-xs"
+                                        onClick={() => setContributeQuantity(contributeItem.quantity - contributeItem.assigned_quantity)}
+                                    >
+                                        All
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isContributing}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleContribute}
+                            className="btn-gold"
+                            disabled={isContributing || !contributeItem}
+                        >
+                            {isContributing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Contribute'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </MainLayout>
     );
 };
 
 export default InventoryPage;
+
+{/* Contribute Dialog should be rendered here but I cannot easily append outside the layout which ends at line 838.
+Actually the layout ends at 838? 839 is closing brace.
+I should insert the dialog BEFORE the closing of MainLayout (which is line 838).
+But I am replacing existing text.
+My target content was line 839.
+Let's wait. I need to insert it INSIDE MainLayout.
+Line 837 is `</AlertDialog>`. Line 838 `</MainLayout>`.
+I will target line 837.
+*/}

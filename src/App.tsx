@@ -38,22 +38,48 @@ const queryClient = new QueryClient();
 
 import { useDeepLink } from "@/hooks/useDeepLink";
 
+import { toast } from "sonner";
+
 // Syncs auth state with game store and loads initial data
 const GameInitializer = () => {
   const { player, isAuthenticated } = useAuth();
-  const { setPlayerId, loadAllData, reset } = useGameStore();
+  const { setPlayerId, loadAllData, checkPendingUpkeep, reset } = useGameStore();
 
   useEffect(() => {
-    if (isAuthenticated && player?.id) {
-      setPlayerId(player.id);
-      loadAllData();
-    } else {
-      reset();
-    }
-  }, [isAuthenticated, player?.id, setPlayerId, loadAllData, reset]);
+    const initializeGame = async () => {
+      if (isAuthenticated && player?.id) {
+        setPlayerId(player.id);
+
+        // Show upkeep deduction notifications on login
+        const upkeepResult = await checkPendingUpkeep();
+        if (upkeepResult && upkeepResult.hours_processed > 0) {
+          if (upkeepResult.total_deducted > 0) {
+            toast.info(`💰 Crew Upkeep: -$${upkeepResult.total_deducted.toLocaleString()}`, {
+              description: `${upkeepResult.hours_processed} hour(s) of upkeep paid`,
+              duration: 5000,
+            });
+          }
+          if (upkeepResult.crew_lost > 0) {
+            toast.warning(`⚠️ ${upkeepResult.crew_lost} Crew Left!`, {
+              description: "Couldn't afford full upkeep costs",
+              duration: 6000,
+            });
+          }
+        }
+
+        // Load the rest of the game data (upkeep already processed)
+        await loadAllData();
+      } else {
+        reset();
+      }
+    };
+
+    initializeGame();
+  }, [isAuthenticated, player?.id, setPlayerId, loadAllData, checkPendingUpkeep, reset]);
 
   return null;
 };
+
 
 const DeepLinkHandler = () => {
   useDeepLink();

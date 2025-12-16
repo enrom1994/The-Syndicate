@@ -374,12 +374,36 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, pla
     playerLevel?: number;
     playerEnergy?: number;
 }) => {
+    // Access store directly to check inventory for requirements
+    const { inventory, itemDefinitions } = useGameStore();
+
     const bonusCash = streakBonus > 0 ? Math.round(job.cash_reward * (1 + streakBonus / 100)) : job.cash_reward;
     const bonusXp = streakBonus > 0 ? Math.round(job.experience_reward * (1 + streakBonus / 100)) : job.experience_reward;
 
+    // Check item requirements
+    let meetsItemReq = true;
+    let requiredItemName = '';
+    let ownedItemQty = 0;
+
+    if (job.required_item_id && job.required_item_quantity) {
+        // Find required item definition to get name/icon (optional, backend usually sends ID)
+        // We might need to look up name if only ID is provided
+        const itemDef = itemDefinitions.find(d => d.id === job.required_item_id);
+        requiredItemName = itemDef?.name || 'Unknown Item';
+
+        // Check inventory for this item_id (inventory stores specific instances, but we need total quantity of that item definition)
+        // Wait, inventory item.item_id maps to item_definition.id
+        const invItem = inventory.find(i => i.item_id === job.required_item_id);
+        ownedItemQty = invItem ? invItem.quantity : 0;
+
+        if (ownedItemQty < job.required_item_quantity) {
+            meetsItemReq = false;
+        }
+    }
+
     const meetsLevelReq = playerLevel >= job.required_level;
     const hasEnoughEnergy = playerEnergy >= job.energy_cost;
-    const canExecute = meetsLevelReq && hasEnoughEnergy && !isProcessing;
+    const canExecute = meetsLevelReq && hasEnoughEnergy && meetsItemReq && !isProcessing;
 
     return (
         <motion.div
@@ -393,15 +417,18 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, pla
                     <h3 className="font-cinzel font-semibold text-sm text-foreground">{job.name}</h3>
                     <p className="text-xs text-muted-foreground">{job.description}</p>
                 </div>
-                {/* Required Level Badge */}
-                {job.required_level > 1 && (
-                    <div className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${meetsLevelReq
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-red-500/20 text-red-400'
-                        }`}>
-                        Lv {job.required_level}
-                    </div>
-                )}
+
+                <div className="flex flex-col items-end gap-1">
+                    {/* Required Level Badge */}
+                    {job.required_level > 1 && (
+                        <div className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${meetsLevelReq
+                            ? 'bg-green-500/20 text-green-400'
+                            : 'bg-red-500/20 text-red-400'
+                            }`}>
+                            Lv {job.required_level}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Rewards Grid */}
@@ -433,19 +460,38 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, pla
             </div>
 
             {/* Requirements Row */}
-            <div className="flex items-center justify-center gap-3 mb-3 text-xs text-muted-foreground bg-muted/20 rounded p-2">
-                <div className={`flex items-center gap-1 ${hasEnoughEnergy ? '' : 'text-red-400'}`}>
-                    <img src="/images/icons/energy.png" alt="" className="w-3.5 h-3.5" />
-                    <span>{job.energy_cost}</span>
+            <div className="flex flex-col gap-2 mb-3">
+                {/* Basic Requirements (Energy/Level) */}
+                <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground bg-muted/20 rounded p-2">
+                    <div className={`flex items-center gap-1 ${hasEnoughEnergy ? '' : 'text-red-400'}`}>
+                        <img src="/images/icons/energy.png" alt="" className="w-3.5 h-3.5" />
+                        <span>{job.energy_cost}</span>
+                    </div>
+                    {job.required_level > 1 && (
+                        <>
+                            <span className="text-muted-foreground/50">•</span>
+                            <div className={`flex items-center gap-1 ${meetsLevelReq ? '' : 'text-red-400'}`}>
+                                <Shield className="w-3.5 h-3.5" />
+                                <span>Lv {job.required_level}+</span>
+                            </div>
+                        </>
+                    )}
                 </div>
-                {job.required_level > 1 && (
-                    <>
-                        <span className="text-muted-foreground/50">•</span>
-                        <div className={`flex items-center gap-1 ${meetsLevelReq ? '' : 'text-red-400'}`}>
-                            <Shield className="w-3.5 h-3.5" />
-                            <span>Lv {job.required_level}+</span>
-                        </div>
-                    </>
+
+                {/* Item Requirement (New) */}
+                {job.required_item_id && job.required_item_quantity && (
+                    <div className={`flex items-center justify-between text-xs px-2 py-1.5 rounded border ${meetsItemReq
+                            ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
+                            : 'bg-red-500/10 border-red-500/30 text-red-400'
+                        }`}>
+                        <span className="flex items-center gap-1">
+                            <img src="/images/icons/inventory.png" alt="" className="w-3 h-3" />
+                            Requires: {requiredItemName}
+                        </span>
+                        <span className="font-bold">
+                            {ownedItemQty}/{job.required_item_quantity}
+                        </span>
+                    </div>
                 )}
             </div>
 
@@ -461,6 +507,8 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, pla
                     `Requires Level ${job.required_level}`
                 ) : !hasEnoughEnergy ? (
                     'Not Enough Energy'
+                ) : !meetsItemReq ? (
+                    `Need ${job.required_item_quantity}x ${requiredItemName}`
                 ) : (
                     'Execute Job'
                 )}

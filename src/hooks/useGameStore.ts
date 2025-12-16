@@ -112,6 +112,8 @@ export interface JobDefinition {
     success_rate: number;
     cooldown_minutes: number;
     required_level: number;
+    required_item_id?: string;
+    required_item_quantity?: number;
 }
 
 export interface BusinessDefinition {
@@ -152,6 +154,7 @@ export interface ItemDefinition {
     sell_price: number;
     buy_price: number;
     is_purchasable: boolean;
+    image_url?: string;
 }
 
 // Referral Types
@@ -249,6 +252,7 @@ interface GameState {
     buyItem: (itemId: string, quantity?: number) => Promise<boolean>;
     assignEquipment: (inventoryId: string, quantity: number) => Promise<{ success: boolean; message: string }>;
     sellItem: (inventoryId: string, quantity?: number) => Promise<boolean>;
+    contributeItemToFamily: (itemId: string, quantity: number) => Promise<boolean>;
 
     // Safe storage actions
     getSafeInfo: () => Promise<SafeInfo | null>;
@@ -333,6 +337,9 @@ interface GameState {
     // Starter Pack system
     buyStarterPack: () => Promise<{ success: boolean; message: string; rewards?: any }>;
     repairBusiness: (playerBusinessId: string) => Promise<{ success: boolean; message: string; cost?: number }>;
+
+    // Economy Safety: Lazy Upkeep
+    checkPendingUpkeep: () => Promise<{ success: boolean; hours_processed: number; total_deducted: number; crew_lost: number; message: string } | null>;
 
     // Clear on logout
     reset: () => void;
@@ -652,6 +659,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     },
 
     // Load all data for current player
+    // Note: checkPendingUpkeep is called separately in App.tsx before this to enable toast feedback
     loadAllData: async () => {
         const { loadInventory, loadBusinesses, loadCrew, loadAchievements, loadTasks, loadDefinitions } = get();
 
@@ -663,6 +671,34 @@ export const useGameStore = create<GameState>((set, get) => ({
             loadAchievements(),
             loadTasks(),
         ]);
+    },
+
+    // Economy Safety: Check and apply pending crew upkeep on login
+    checkPendingUpkeep: async () => {
+        const { playerId } = get();
+        if (!playerId) return null;
+
+        try {
+            const { data, error } = await supabase.rpc('apply_pending_upkeep', {
+                player_id_input: playerId,
+            });
+
+            if (error) {
+                console.error('Failed to check pending upkeep:', error);
+                return null;
+            }
+
+            // Only log/toast if there was actual activity
+            if (data && data.hours_processed > 0) {
+                console.log('Lazy Upkeep Applied:', data);
+                // Toast notifications will be triggered by the caller (HomePage/AuthContext)
+            }
+
+            return data as { success: boolean; hours_processed: number; total_deducted: number; crew_lost: number; message: string };
+        } catch (error) {
+            console.error('Error checking pending upkeep:', error);
+            return null;
+        }
     },
 
     // Currency actions using RPCs
@@ -944,8 +980,33 @@ export const useGameStore = create<GameState>((set, get) => ({
         if (result.success) {
             await loadInventory();
             return true;
+            return false;
+        }
+    },
+
+    contributeItemToFamily: async (itemId, quantity) => {
+        const { playerId, loadInventory } = get();
+        if (!playerId) return false;
+
+        const { data, error } = await supabase.rpc('contribute_item_to_family', {
+            player_id_input: playerId,
+            item_id_input: itemId,
+            quantity_input: quantity
+        });
+
+        if (error) {
+            console.error('Failed to contribute item to family:', error);
+            return false;
+        }
+
+        const result = data as { success: boolean; message: string };
+
+        if (result.success) {
+            await loadInventory();
+            // Trigger family refresh if possible, or let FamilyPage handle it
+            return true;
         } else {
-            console.error('Sell item failed:', result.message);
+            console.error('Contribute item failed:', result.message);
             return false;
         }
     },

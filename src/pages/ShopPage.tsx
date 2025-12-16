@@ -119,7 +119,7 @@ const ShopPage = () => {
     const [activeTab, setActiveTab] = useState('diamonds');
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [pendingPurchase, setPendingPurchase] = useState<{
-        type: 'diamonds' | 'booster' | 'protection';
+        type: 'diamonds' | 'booster' | 'protection' | 'insurance';
         name: string;
         price: string;
         boosterId?: string;
@@ -127,6 +127,7 @@ const ShopPage = () => {
         tonAmount?: number;
         diamondsToCredit?: number;
         protectionMinutes?: number;
+        insuranceType?: 'basic' | 'premium';
     } | null>(null);
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [vipStatus, setVipStatus] = useState<{
@@ -155,7 +156,27 @@ const ShopPage = () => {
         fetchVipStatus();
     }, [player?.id]);
 
-    // Calculate if starter pack is available (account < 24h old)
+    // Insurance state
+    const [insuranceStatus, setInsuranceStatus] = useState<{
+        basic: number;
+        premium: number;
+    }>({ basic: 0, premium: 0 });
+
+    // Fetch insurance status
+    useEffect(() => {
+        const fetchInsuranceStatus = async () => {
+            if (!player?.id) return;
+            const { data } = await supabase.rpc('get_player_insurance', {
+                player_id_input: player.id
+            });
+            if (data) {
+                const basic = data?.find((i: any) => i.insurance_type === 'basic')?.claims_remaining || 0;
+                const premium = data?.find((i: any) => i.insurance_type === 'premium')?.claims_remaining || 0;
+                setInsuranceStatus({ basic, premium });
+            }
+        };
+        fetchInsuranceStatus();
+    }, [player?.id]);
     const [starterPackAvailable, setStarterPackAvailable] = useState(false);
     const [timeRemaining, setTimeRemaining] = useState('');
 
@@ -205,6 +226,11 @@ const ShopPage = () => {
         { id: 'basic', name: 'Basic Protection', price: '0.05 TON', description: 'Immune from PvP for 1 hour', duration: '1 hour', durationMinutes: 60 },
         { id: 'standard', name: 'Standard Protection', price: '0.35 TON', description: 'Immune + Stealth mode', duration: '6 hours', durationMinutes: 360 },
         { id: 'premium', name: 'Premium Protection', price: '1.5 TON', description: 'All protections + Attack boost', duration: '24 hours', durationMinutes: 1440 },
+    ];
+
+    const insurancePacks = [
+        { id: 'basic', type: 'basic' as const, name: 'Basic Insurance', price: '2 TON', tonAmount: 2, description: 'Reduce PvP losses by 30%', coverage: '$50K max', claims: 1, mitigation: 30 },
+        { id: 'premium', type: 'premium' as const, name: 'Premium Insurance', price: '5 TON', tonAmount: 5, description: 'Reduce PvP losses by 50%', coverage: '$200K max', claims: 3, mitigation: 50 },
     ];
 
     const handleBuyDiamonds = (name: string, price: string, tonAmount: number, diamonds: number) => {
@@ -282,6 +308,21 @@ const ShopPage = () => {
             name: 'Mobster Starter Pack',
             price: '1 TON',
             tonAmount: 1,
+        });
+        setConfirmOpen(true);
+    };
+
+    const handleBuyInsurance = (pack: typeof insurancePacks[0]) => {
+        if (!tonConnectUI.wallet) {
+            tonConnectUI.openModal();
+            return;
+        }
+        setPendingPurchase({
+            type: 'insurance',
+            name: pack.name,
+            price: pack.price,
+            tonAmount: pack.tonAmount,
+            insuranceType: pack.type,
         });
         setConfirmOpen(true);
     };
@@ -450,6 +491,47 @@ const ShopPage = () => {
 
                 // Hide the starter pack card
                 setStarterPackAvailable(false);
+            } else if (pendingPurchase.type === 'insurance' && pendingPurchase.tonAmount && pendingPurchase.insuranceType) {
+                // Send TON transaction for Insurance
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 600,
+                    messages: [
+                        {
+                            address: TON_RECEIVING_ADDRESS,
+                            amount: toNanoTon(pendingPurchase.tonAmount).toString(),
+                        }
+                    ]
+                };
+
+                await tonConnectUI.sendTransaction(transaction);
+
+                // Call purchase_insurance RPC
+                const { data, error } = await supabase.rpc('purchase_insurance', {
+                    player_id_input: player.id,
+                    insurance_type_input: pendingPurchase.insuranceType
+                });
+
+                if (error) throw error;
+                if (!data?.success) throw new Error(data?.message || 'Failed to purchase');
+
+                haptic.success();
+
+                // Refresh insurance status
+                const { data: insData } = await supabase.rpc('get_player_insurance', {
+                    player_id_input: player.id
+                });
+                if (insData) {
+                    const basic = (insData as any[])?.find((i: any) => i.insurance_type === 'basic')?.claims_remaining || 0;
+                    const premium = (insData as any[])?.find((i: any) => i.insurance_type === 'premium')?.claims_remaining || 0;
+                    setInsuranceStatus({ basic, premium });
+                }
+
+                await refetchPlayer();
+
+                toast({
+                    title: '🛡️ Insurance Purchased!',
+                    description: data.message,
+                });
             }
         } catch (error) {
             console.error('Purchase error:', error);
@@ -681,6 +763,58 @@ const ShopPage = () => {
                         <p className="text-xs text-muted-foreground text-center">
                             VIP duration stacks - buy again to extend your time!
                         </p>
+
+                        {/* Insurance Section */}
+                        <div className="mt-6 pt-4 border-t border-muted/30">
+                            <h3 className="font-cinzel font-bold text-sm text-foreground mb-3 flex items-center gap-2">
+                                <Shield className="w-4 h-4 text-blue-400" />
+                                Loss Insurance
+                            </h3>
+                            <p className="text-[10px] text-muted-foreground mb-3">
+                                Reduces cash stolen in PvP when you have no shield active
+                            </p>
+
+                            <div className="space-y-2">
+                                {insurancePacks.map((pack, index) => (
+                                    <motion.div
+                                        key={pack.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.5, delay: 0.1 * index }}
+                                        className="noir-card p-3"
+                                    >
+                                        <div className="flex items-start justify-between">
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="font-cinzel font-semibold text-xs text-foreground">{pack.name}</h4>
+                                                    {insuranceStatus[pack.type] > 0 && (
+                                                        <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[9px] rounded">
+                                                            {insuranceStatus[pack.type]} claim{insuranceStatus[pack.type] > 1 ? 's' : ''}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-[10px] text-muted-foreground mt-1">{pack.description}</p>
+                                                <div className="flex items-center gap-3 mt-1">
+                                                    <span className="text-[9px] text-amber-400">{pack.coverage}</span>
+                                                    <span className="text-[9px] text-muted-foreground">• {pack.claims} claim{pack.claims > 1 ? 's' : ''}</span>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                className="btn-gold text-[10px] shrink-0"
+                                                onClick={() => handleBuyInsurance(pack)}
+                                                disabled={processingId === pack.id}
+                                            >
+                                                {processingId === pack.id ? (
+                                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                                ) : (
+                                                    pack.price
+                                                )}
+                                            </Button>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </div>
                     </TabsContent>
                 </Tabs>
             </div>
