@@ -158,6 +158,8 @@ export const PlayerStats = () => {
   const weaponAttack = inventory
     .filter(i => i.category === 'weapon' && i.assigned_quantity > 0)
     .reduce((sum, i) => sum + (i.attack_bonus * i.assigned_quantity), 0);
+  const totalAttack = baseAttack + crewAttack + weaponAttack;
+
   // Calculate Respect-based rank progression (XP deprecated)
   const respect = player?.respect ?? 0;
   const rankInfo = getRespectRank(respect);
