@@ -255,12 +255,12 @@ const BankPage = () => {
     const setMaxDeposit = () => setDepositAmount(walletCash.toString());
     const setMaxWithdraw = () => setWithdrawAmount(bankedCash.toString());
 
-    // Get item image path
+    // Get item image path based on category
     const getItemImage = (item: InventoryItem) => {
         const slug = item.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (item.category === 'weapon') return `/images/icons/${slug}.png`;
-        if (item.category === 'equipment') return `/images/icons/${slug}.png`;
-        if (item.category === 'contraband') return `/images/icons/${slug}.png`;
+        if (item.category === 'weapon') return `/images/weapons/${slug}.png`;
+        if (item.category === 'equipment') return `/images/equipment/${slug}.png`;
+        if (item.category === 'contraband') return `/images/contraband/${slug}.png`;
         return `/images/icons/inventory.png`;
     };
 

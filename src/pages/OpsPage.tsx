@@ -323,7 +323,7 @@ const TargetCard = ({
                                             {type.requires_consumables && type.consumable_item_name && (
                                                 <span className="flex items-center gap-1 bg-cyan-500/20 border border-cyan-500/30 px-2 py-0.5 rounded text-xs">
                                                     <img
-                                                        src={`/images/icons/${type.consumable_item_name.toLowerCase().replace(/\s+/g, '')}.png`}
+                                                        src={`/images/contraband/${type.consumable_item_name.toLowerCase().replace(/\s+/g, '')}.png`}
                                                         alt=""
                                                         className="w-3 h-3"
                                                         onError={(e) => {

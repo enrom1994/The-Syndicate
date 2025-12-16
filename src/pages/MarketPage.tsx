@@ -166,16 +166,16 @@ const MarketPage = () => {
     // If DB doesn't have image paths, we might need a helper.
     // Let's assume DB has 'image_url' or we map by name slug.
 
-    // Helper to get image
-    // Helper to get image
+    // Helper to get image based on category
     const getImage = (item: ItemDefinition) => {
         // Clean slug: remove non-alphanumeric (fixes "Sawed-Off" -> "sawedoff")
         const slug = item.name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-        // Manual overrides for known missing assets
-        if (slug === 'goldenrevolver') return '/images/icons/goldenrevolver.png';
-
-        return `/images/icons/${slug}.png`;
+        // Route to category-specific folder
+        if (item.category === 'weapon') return `/images/weapons/${slug}.png`;
+        if (item.category === 'equipment') return `/images/equipment/${slug}.png`;
+        if (item.category === 'contraband') return `/images/contraband/${slug}.png`;
+        return `/images/icons/inventory.png`;
     };
 
     return (

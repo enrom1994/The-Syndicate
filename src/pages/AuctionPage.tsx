@@ -227,10 +227,10 @@ const AuctionPage = () => {
         return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
     };
 
-    // Get item image from name (same as MarketPage)
+    // Get item image from name - Auction is exclusively for contraband
     const getItemImage = (itemName: string) => {
         const slug = itemName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        return `/images/icons/${slug}.png`;
+        return `/images/contraband/${slug}.png`;
     };
 
     const myListings = listings.filter(l => l.is_my_listing);

@@ -638,15 +638,15 @@ const BusinessPage = () => {
                                     .map((recipe, index) => {
                                         // Map output item names to contraband icon images
                                         const contrabandIcons: Record<string, string> = {
-                                            'Bootleg Whiskey': '/images/icons/bootlegwhiskey.png',
-                                            'Smuggled Weapons': '/images/icons/smuggledweapons.png',
-                                            'Cocaine Stash': '/images/icons/cocainestash.png',
-                                            'Forged Documents': '/images/icons/forgeddocuments.png',
-                                            'Counterfeit Bills': '/images/icons/counterfeitbills.png',
-                                            'Cuban Cigars': '/images/icons/cubancigars.png',
-                                            'Morphine Vials': '/images/icons/morphinevials.png',
-                                            'Stolen Jewelry': '/images/icons/stolenjewelry.png',
-                                            'Whiskey Crate': '/images/icons/whiskeycrate.png',
+                                            'Bootleg Whiskey': '/images/contraband/bootlegwhiskey.png',
+                                            'Smuggled Weapons': '/images/contraband/smuggledweapons.png',
+                                            'Cocaine Stash': '/images/contraband/cocainestash.png',
+                                            'Forged Documents': '/images/contraband/forgeddocuments.png',
+                                            'Counterfeit Bills': '/images/contraband/counterfeitbills.png',
+                                            'Cuban Cigars': '/images/contraband/cubancigars.png',
+                                            'Morphine Vials': '/images/contraband/morphinevials.png',
+                                            'Stolen Jewelry': '/images/contraband/stolenjewelry.png',
+                                            'Whiskey Crate': '/images/contraband/whiskeycrate.png',
                                         };
                                         const contrabandIcon = contrabandIcons[recipe.output_item_name] || '/images/icons/package.png';
 
