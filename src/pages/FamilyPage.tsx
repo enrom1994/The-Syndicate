@@ -591,6 +591,32 @@ const FamilyPage = () => {
                             <p className="font-cinzel font-bold text-lg text-foreground">${family.treasury.toLocaleString()}</p>
                         </div>
                     </div>
+
+                    {/* Power Breakdown */}
+                    <div className="border-t border-border/30 pt-3 mb-3">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Family Power</p>
+                        <div className="grid grid-cols-3 gap-2">
+                            <div className="bg-muted/20 rounded-lg p-2 text-center">
+                                <p className="text-[10px] text-purple-400 uppercase">Contraband</p>
+                                <p className="font-bold text-sm text-purple-300">
+                                    {Object.values(family.inventory || {}).reduce((a, b) => a + (b as number), 0)}
+                                </p>
+                            </div>
+                            <div className="bg-muted/20 rounded-lg p-2 text-center">
+                                <p className="text-[10px] text-red-400 uppercase">Attack</p>
+                                <p className="font-bold text-sm text-red-300">
+                                    {members.reduce((sum, m) => sum + (m.level * 2), 0)}
+                                </p>
+                            </div>
+                            <div className="bg-muted/20 rounded-lg p-2 text-center">
+                                <p className="text-[10px] text-blue-400 uppercase">Defense</p>
+                                <p className="font-bold text-sm text-blue-300">
+                                    {members.reduce((sum, m) => sum + m.level, 0)}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <Button className="w-full btn-gold text-xs" onClick={() => setContributeOpen(true)} disabled={isProcessing}>
                         <GameIcon type="cash" className="w-4 h-4 mr-2" />
                         Contribute to Treasury

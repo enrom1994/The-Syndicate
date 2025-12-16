@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Skull, X, TrendingUp, TrendingDown } from 'lucide-react';
+import { Trophy, Skull, X, TrendingUp, TrendingDown, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface CombatResultModalProps {
@@ -10,11 +10,12 @@ interface CombatResultModalProps {
     cashGained?: number;
     cashLost?: number;
     respectGained?: number;
-    respectLost?: number;
+    respectLost?: number; // Kept for future use but not displayed
     xpGained?: number;
     vaultStolen?: number;
     itemsStolen?: string[];
     crewLost?: number;
+    insuranceActivated?: boolean; // New: show when insurance protected the player
 }
 
 export const CombatResultModal = ({
@@ -30,11 +31,13 @@ export const CombatResultModal = ({
     vaultStolen = 0,
     itemsStolen = [],
     crewLost = 0,
+    insuranceActivated = false,
 }: CombatResultModalProps) => {
     const isVictory = result === 'victory';
 
     const hasGains = cashGained > 0 || respectGained > 0 || xpGained > 0 || vaultStolen > 0 || itemsStolen.length > 0;
-    const hasLosses = cashLost > 0 || respectLost > 0 || crewLost > 0;
+    // Note: respectLost not shown in UI per design decision (show gains only)
+    const hasLosses = cashLost > 0 || crewLost > 0;
 
     return (
         <AnimatePresence>
@@ -101,6 +104,19 @@ export const CombatResultModal = ({
                                 : `${targetName}'s defenses were too strong.`
                             }
                         </motion.p>
+
+                        {/* Insurance Activated Badge */}
+                        {insuranceActivated && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.45 }}
+                                className="flex items-center justify-center gap-2 bg-cyan-500/20 border border-cyan-500/40 rounded-lg px-3 py-2 mb-4"
+                            >
+                                <Shield className="w-4 h-4 text-cyan-400" />
+                                <span className="text-sm font-semibold text-cyan-400">Insurance Protected You!</span>
+                            </motion.div>
+                        )}
 
                         {/* Results Grid */}
                         <motion.div
@@ -180,14 +196,7 @@ export const CombatResultModal = ({
                                                 </span>
                                             </div>
                                         )}
-                                        {respectLost > 0 && (
-                                            <div className="flex items-center gap-2 bg-black/20 rounded p-2">
-                                                <img src="/images/icons/respect.png" alt="" className="w-4 h-4" />
-                                                <span className="text-sm font-bold text-red-400">
-                                                    -{respectLost}
-                                                </span>
-                                            </div>
-                                        )}
+                                        {/* Respect loss hidden per UX decision - show gains only */}
                                         {crewLost > 0 && (
                                             <div className="flex items-center gap-2 bg-black/20 rounded p-2 col-span-2">
                                                 <Skull className="w-4 h-4 text-red-400" />

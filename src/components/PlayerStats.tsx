@@ -216,60 +216,60 @@ export const PlayerStats = () => {
       </motion.div>
 
       <div className="grid grid-cols-2 gap-2">
+        {/* Respect/Rank FIRST - Primary progression */}
+        <StatCard
+          icon={<img src="/images/icons/respect.png" alt="Rank" className="w-10 h-10 object-contain" />}
+          label="Rank"
+          value={rankInfo.title}
+          delay={0.25}
+        />
         <StatCard
           icon={<img src="/images/icons/cash.png" alt="Cash" className="w-10 h-10 object-contain" />}
           label="Cash"
           value={formatCash(player?.cash ?? 0)}
-          delay={0.25}
+          delay={0.3}
         />
         <StatCard
           icon={<img src="/images/icons/diamond.png" alt="Diamonds" className="w-10 h-10 object-contain" />}
           label="Diamonds"
           value={player?.diamonds ?? 0}
-          delay={0.3}
+          delay={0.35}
         />
         <StatCard
           icon={<img src="/images/icons/moneybag.png" alt="Net Worth" className="w-10 h-10 object-contain" />}
           label="Net Worth"
           value={formatCash(netWorth)}
-          delay={0.35}
-        />
-        <StatCard
-          icon={<img src="/images/icons/respect.png" alt="Rank" className="w-10 h-10 object-contain" />}
-          label="Rank"
-          value={rankInfo.title}
           delay={0.4}
         />
       </div>
 
-      {/* Respect Progress Bar */}
+      {/* Subtle Respect Info Bar - informational, not pressure-like */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.5 }}
-        className="mt-2 noir-card p-2.5"
+        className="mt-2 px-3 py-2 bg-muted/20 rounded-lg border border-muted/30"
       >
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-1.5">
-            <img src="/images/icons/respect.png" alt="Respect" className="w-4 h-4 object-contain" />
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Respect</span>
-            <span className="text-[10px] font-bold text-primary bg-primary/20 px-1 py-0.5 rounded">{rankInfo.title}</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img src="/images/icons/respect.png" alt="Respect" className="w-3.5 h-3.5 object-contain opacity-70" />
+            <span className="text-[10px] text-muted-foreground">{respect.toLocaleString()} Respect</span>
           </div>
-          <span className="font-inter font-medium text-xs text-primary">{respect.toLocaleString()}</span>
+          {respectToNext > 0 && (
+            <span className="text-[9px] text-muted-foreground/70">
+              {respectToNext.toLocaleString()} to {rankInfo.title === 'Godfather' ? 'max' : 'next rank'}
+            </span>
+          )}
         </div>
-        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        {/* Subtle progress indicator - thin and understated */}
+        <div className="h-0.5 rounded-full bg-muted/30 mt-1.5 overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${respectProgress}%` }}
             transition={{ duration: 1, delay: 0.7 }}
-            className="h-full bg-gradient-gold rounded-full"
+            className="h-full bg-primary/40 rounded-full"
           />
         </div>
-        {respectToNext > 0 && (
-          <p className="text-[9px] text-muted-foreground mt-1">
-            {respectToNext.toLocaleString()} to next rank
-          </p>
-        )}
       </motion.div>
 
       {/* Energy & Stamina Bars - Side by Side */}
