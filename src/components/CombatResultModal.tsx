@@ -93,6 +93,20 @@ export const CombatResultModal = ({
                             {isVictory ? 'VICTORY!' : 'DEFEAT'}
                         </motion.h2>
 
+                        {/* +1 Win Badge (PvP Victory) */}
+                        {isVictory && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.35 }}
+                                className="flex justify-center mb-2"
+                            >
+                                <span className="px-3 py-1 bg-primary/20 border border-primary/50 rounded-full text-xs font-bold text-primary">
+                                    +1 Win
+                                </span>
+                            </motion.div>
+                        )}
+
                         <motion.p
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}

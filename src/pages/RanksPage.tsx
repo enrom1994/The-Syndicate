@@ -242,6 +242,7 @@ const RanksPage = () => {
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground">Wins</p>
+                            <p className="text-[10px] text-muted-foreground/60">PvP Victories</p>
                             <p className="font-cinzel font-bold text-sm text-foreground">
                                 {player?.total_attacks_won ?? 0}
                             </p>
