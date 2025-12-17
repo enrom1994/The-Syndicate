@@ -195,7 +195,7 @@ export const ContributionDialog = ({
             for (const [itemId, quantity] of itemsToContribute) {
                 const { data, error } = await supabase.rpc('contribute_contraband_to_treasury', {
                     player_id_input: player.id,
-                    item_id_input: itemId,
+                    contraband_id_input: itemId,
                     quantity_input: quantity,
                 });
 

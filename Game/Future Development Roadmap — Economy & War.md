@@ -278,3 +278,257 @@ This is exactly how sustainable PvP economies are built.
 Treasury-funded War actions
 
 
+🕵️ FAMILY INTEL SYSTEM — FORMAL DESIGN SPEC
+1️⃣ PURPOSE & DESIGN INTENT
+
+The Intel System exists to:
+
+Add information asymmetry to Family conflict
+
+Make preparation matter more than raw stats
+
+Give the Family Armory a strategic purpose
+
+Create costly choices through visibility tradeoffs
+
+Gate Family Wars and advanced attacks behind preparation
+
+Intel is not power.
+Intel is knowledge at a cost.
+
+2️⃣ CORE CONCEPTS
+🔹 Intel (Resource)
+
+A family-level resource
+
+Generated via the Family Armory
+
+Spent, not passive
+
+Cannot be bought directly with money or premium currency
+
+Has a cap
+
+🔹 Visibility (Cost)
+
+Spending Intel increases Family Visibility
+
+Visibility represents how exposed your family is
+
+Visibility is:
+
+Bidirectional
+
+Temporary
+
+Non-exact
+
+Visibility creates counterplay
+
+3️⃣ FAMILY ARMORY → INTEL GENERATION
+Armory Role
+
+The Armory is not storage — it is an infrastructure.
+
+Armory items contribute to:
+
+Intel Generation Rate
+
+Intel Storage Cap
+
+Conceptual Examples (Flavor, Not Final Items)
+
+Informant Network
+
+Surveillance Gear
+
+Wiretaps
+
+Forged Dossiers
+
+Bribed Officials
+
+Generation Rules
+
+Intel generates slowly over time
+
+Each Armory item contributes diminishing returns
+
+Max generation rate is capped
+
+This prevents hoarding and snowballing.
+
+4️⃣ INTEL STORAGE & DECAY
+Intel Cap
+
+Families cannot stockpile unlimited Intel
+
+Cap scales modestly with Armory investment
+
+Intel Decay (Soft)
+
+If Intel is not spent, it decays slowly
+
+Decay is gentle (e.g. % over days, not hours)
+
+Encourages use, not hoarding
+
+5️⃣ INTEL SPEND — SCOUTING ACTIONS
+
+Intel is spent through explicit actions.
+
+🔍 Intel Actions Menu (Conceptual)
+Action	Intel Cost	Visibility Cost	Result
+Quick Glance	Low	Low	1 random family attribute
+Focused Recon	Medium	Medium	2 related attributes
+Deep Intel	High	High	Pattern-based insight
+War Prep	High	High	Unlocks war actions
+🎲 Randomness (Important)
+
+Early scouting returns randomized info
+
+Prevents surgical targeting
+
+Preserves uncertainty
+
+6️⃣ WHAT CAN BE REVEALED (ALLOWED)
+
+Intel reveals categories and ranges, never exact values.
+
+Possible Reveal Categories
+
+Crew composition (light / heavy)
+
+Defense focus (low / medium / high)
+
+Armory investment level
+
+Treasury activity (active / inactive)
+
+Recent PvP intensity (quiet / active)
+
+7️⃣ WHAT CAN NEVER BE REVEALED
+
+Hard rules — do not break these:
+
+❌ Exact STR / DEF values
+❌ Exact item lists
+❌ Online status
+❌ Shield / protection timers
+❌ Individual player stats
+❌ Real-time data
+
+If Intel ever removes risk, the system fails.
+
+8️⃣ VISIBILITY SYSTEM (CRITICAL)
+What Visibility Does
+
+When a family spends Intel:
+
+Their visibility increases
+
+Other families gain:
+
+Partial intel access
+
+Awareness of activity
+
+Visibility Effects (Conceptual)
+
+Family appears as:
+
+“Actively Gathering Intel”
+
+Opponents may:
+
+Perform counter-intel
+
+Prepare defenses
+
+Choose diplomacy or escalation
+
+Visibility fades over time if Intel spending stops.
+
+9️⃣ INTEL & FAMILY WARS (GATING MECHANISM)
+War Prerequisite
+
+A minimum Intel threshold is required to:
+
+Declare war
+
+Launch coordinated family attacks
+
+Intel is consumed to initiate war
+
+This ensures:
+
+No impulsive wars
+
+Clear escalation windows
+
+Time for counterplay
+
+🔟 BALANCE & ANTI-ABUSE MEASURES
+Anti-Snowball
+
+Intel caps
+
+Diminishing Armory returns
+
+Visibility scaling faster than Intel gain
+
+Anti-Griefing
+
+Intel costs apply even for failed scouting
+
+Visibility always increases on spend
+
+Small Family Viability
+
+Intel gain scales per-member
+
+Smaller families can outplay larger ones with smart spending
+
+1️⃣1️⃣ UI / UX PRINCIPLES (NO DESIGN YET)
+
+Intel shown as a resource bar
+
+Spend actions feel intentional
+
+Visibility is hinted, not numerically exposed
+
+Tooltips explain tradeoffs clearly
+
+Tone:
+
+Strategic. Risk-aware. Mafia-flavored.
+
+1️⃣2️⃣ SEASON & LONG-TERM INTEGRATION
+Season Interaction
+
+Intel resets each season
+
+Armory items persist
+
+Visibility does not carry over
+
+Long-Term Evolution (Later)
+
+Counter-intel actions
+
+Intel warfare
+
+False information (deception mechanics)
+
+Not for Season 1.
+
+FINAL DESIGN VERDICT
+
+✅ Fits your existing systems
+✅ Deepens Family gameplay
+✅ Enables meaningful Wars
+✅ Avoids pay-to-win
+✅ Creates stories, not spreadsheets
+
+This is a foundational war system, and you’ve designed it the right way:
+on paper first.
