@@ -101,7 +101,7 @@ const BoosterItem = ({ id, name, description, icon, price, duration, isProcessin
 const boosterTypes = [
     { id: '2x_income', name: '2x Income', description: 'Double business income', icon: <TrendingUp className="w-5 h-5 text-green-400" />, price: 50, duration_minutes: 1440 },
     { id: '2x_attack', name: '2x Attack', description: 'Double attack power', icon: <Zap className="w-5 h-5 text-red-400" />, price: 30, duration_minutes: 720 },
-    { id: 'shield', name: 'Shield', description: 'Immune to attacks', icon: <Shield className="w-5 h-5 text-blue-400" />, price: 100, duration_minutes: 360 },
+    { id: 'shield', name: 'Shield', description: 'Immune to attacks', icon: <Shield className="w-5 h-5 text-blue-400" />, price: 50, duration_minutes: 360 },
     { id: 'vip_pass', name: 'VIP Pass', description: 'All bonuses active', icon: <Crown className="w-5 h-5 text-primary" />, price: 200, duration_minutes: 1440 },
 ];
 
@@ -224,13 +224,13 @@ const ShopPage = () => {
 
     const protectionPacks = [
         { id: 'basic', name: 'Basic Protection', price: '0.05 TON', description: 'Immune from PvP for 1 hour', duration: '1 hour', durationMinutes: 60 },
-        { id: 'standard', name: 'Standard Protection', price: '0.35 TON', description: 'Immune + Stealth mode', duration: '6 hours', durationMinutes: 360 },
+        { id: 'standard', name: 'Standard Protection', price: '0.25 TON', description: 'Immune + Stealth mode', duration: '6 hours', durationMinutes: 360 },
         { id: 'premium', name: 'Premium Protection', price: '1.5 TON', description: 'All protections + Attack boost', duration: '24 hours', durationMinutes: 1440 },
     ];
 
     const insurancePacks = [
-        { id: 'basic', type: 'basic' as const, name: 'Basic Insurance', price: '2 TON', tonAmount: 2, description: 'Reduce PvP losses by 30%', coverage: '$50K max', claims: 1, mitigation: 30 },
-        { id: 'premium', type: 'premium' as const, name: 'Premium Insurance', price: '5 TON', tonAmount: 5, description: 'Reduce PvP losses by 50%', coverage: '$200K max', claims: 3, mitigation: 50 },
+        { id: 'basic', type: 'basic' as const, name: 'Basic Insurance', price: '2 TON', tonAmount: 2, description: 'Reduce PvP losses by 30%', coverage: '$50K max', claims: 3, mitigation: 30 },
+        { id: 'premium', type: 'premium' as const, name: 'Premium Insurance', price: '4 TON', tonAmount: 4, description: 'Reduce PvP losses by 50%', coverage: '$200K max', claims: 3, mitigation: 50 },
     ];
 
     const handleBuyDiamonds = (name: string, price: string, tonAmount: number, diamonds: number) => {
