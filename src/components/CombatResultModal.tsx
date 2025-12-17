@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Skull, X, TrendingUp, TrendingDown, Shield, Swords } from 'lucide-react';
+import { Skull, X, TrendingUp, TrendingDown, Shield, Swords } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
 
 interface CombatResultModalProps {
     open: boolean;
@@ -55,8 +56,8 @@ export const CombatResultModal = ({
 
                     {/* Radial glow effect */}
                     <div className={`absolute inset-0 ${isVictory
-                            ? 'bg-gradient-radial from-yellow-500/20 via-transparent to-transparent'
-                            : 'bg-gradient-radial from-red-500/20 via-transparent to-transparent'
+                        ? 'bg-gradient-radial from-yellow-500/20 via-transparent to-transparent'
+                        : 'bg-gradient-radial from-red-500/20 via-transparent to-transparent'
                         }`} />
 
                     <motion.div
@@ -69,8 +70,8 @@ export const CombatResultModal = ({
                     >
                         {/* Main Card */}
                         <div className={`noir-card overflow-hidden ${isVictory
-                                ? 'border-l-4 border-l-yellow-500 shadow-[0_0_40px_rgba(234,179,8,0.3)]'
-                                : 'border-l-4 border-l-red-500 shadow-[0_0_40px_rgba(239,68,68,0.2)]'
+                            ? 'border-l-4 border-l-yellow-500 shadow-[0_0_40px_rgba(234,179,8,0.3)]'
+                            : 'border-l-4 border-l-red-500 shadow-[0_0_40px_rgba(239,68,68,0.2)]'
                             }`}>
                             {/* Close Button */}
                             <button
@@ -82,8 +83,8 @@ export const CombatResultModal = ({
 
                             {/* Header Banner */}
                             <div className={`relative px-4 py-6 ${isVictory
-                                    ? 'bg-gradient-to-br from-yellow-600/30 via-orange-700/20 to-transparent'
-                                    : 'bg-gradient-to-br from-red-600/30 via-red-900/20 to-transparent'
+                                ? 'bg-gradient-to-br from-yellow-600/30 via-orange-700/20 to-transparent'
+                                : 'bg-gradient-to-br from-red-600/30 via-red-900/20 to-transparent'
                                 }`}>
                                 {/* Pattern overlay */}
                                 <div className="absolute inset-0 opacity-10" style={{
@@ -98,15 +99,16 @@ export const CombatResultModal = ({
                                     className="relative mx-auto mb-3"
                                 >
                                     <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center ${isVictory
-                                            ? 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-600 shadow-[0_0_30px_rgba(234,179,8,0.5)]'
-                                            : 'bg-gradient-to-br from-red-500 via-red-600 to-red-800 shadow-[0_0_30px_rgba(239,68,68,0.4)]'
+                                        ? 'bg-gradient-to-br from-yellow-400 via-yellow-500 to-orange-600 shadow-[0_0_30px_rgba(234,179,8,0.5)]'
+                                        : 'bg-gradient-to-br from-red-500 via-red-600 to-red-800 shadow-[0_0_30px_rgba(239,68,68,0.4)]'
                                         }`}>
                                         {isVictory ? (
-                                            <Trophy className="w-10 h-10 text-white drop-shadow-lg" />
+                                            <img src="/images/icons/trophy.png" alt="Victory" className="w-10 h-10 drop-shadow-lg" />
                                         ) : (
                                             <Skull className="w-10 h-10 text-white drop-shadow-lg" />
                                         )}
                                     </div>
+
 
                                     {/* Pulse ring */}
                                     <motion.div
@@ -310,8 +312,8 @@ export const CombatResultModal = ({
                                     <Button
                                         onClick={onClose}
                                         className={`w-full font-cinzel tracking-wider ${isVictory
-                                                ? 'btn-gold'
-                                                : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white'
+                                            ? 'btn-gold'
+                                            : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white'
                                             }`}
                                     >
                                         Continue
