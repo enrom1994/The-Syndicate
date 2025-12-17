@@ -57,7 +57,7 @@ State Management: useGameStore acts as a client-side cache, but "Read" operation
 #### 3. PvP Complexity
 *   **Risk**: Low/Medium. The logic is very complex (14 distinct steps in `perform_pvp_attack`).
 *   **Gap**: "Steal Percent" caps are hardcoded in SQL.
-*   **Update**: Insurance logic added more complexity (`107`), but isolated well.
+*   **Update (`111`)**: Shield blocks PvP entirely. Attacker loss flat (-4 to -8). Defender success +2. Insurance protects cash only.
 
 #### 4. Client Trust
 *   **Validation**: Generally good. RPCs check quantity > 0 and ownership.
