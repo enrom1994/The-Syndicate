@@ -1,15 +1,30 @@
 -- =====================================================
--- FIX CONTRABAND CONTRIBUTION AUTH & TABLES
+-- FIX CONTRABAND RPC - ROBUST CLEANUP
 -- =====================================================
--- 1. Remove strict auth.uid() check to prevent "Unauthorized" errors.
--- 2. Use CORRECT tables: player_inventory (not player_contraband) 
---    and item_definitions (not contraband_items).
+-- 1. Drops ALL overloads of contribute_contraband_to_treasury to prevent
+--    "Ambiguous function" or "Signatures do not match" errors.
+-- 2. Recreates the function using correct table names (player_inventory)
+--    and removing strict auth checks for accessibility.
 -- =====================================================
 
 SET search_path = public;
 
-DROP FUNCTION IF EXISTS contribute_contraband_to_treasury(UUID, UUID, INTEGER);
+-- Robustly drop all versions of the function to ensure a clean slate
+DO $$ 
+DECLARE 
+    func_record RECORD;
+BEGIN 
+    FOR func_record IN 
+        SELECT oid::regprocedure::text as signature 
+        FROM pg_proc 
+        WHERE proname = 'contribute_contraband_to_treasury'
+    LOOP 
+        EXECUTE 'DROP FUNCTION IF EXISTS ' || func_record.signature || ' CASCADE'; 
+    END LOOP; 
+END $$;
 
+-- Recreate function with correct signature matching frontend
+-- (player_id_input UUID, contraband_id_input UUID, quantity_input INTEGER)
 CREATE OR REPLACE FUNCTION contribute_contraband_to_treasury(
     player_id_input UUID,
     contraband_id_input UUID,
@@ -39,7 +54,7 @@ BEGIN
     END IF;
 
     -- Check if player owns the items
-    -- CORRECTED TABLE: player_inventory
+    -- Table: player_inventory
     SELECT quantity INTO owned_qty
     FROM player_inventory
     WHERE player_id = player_id_input AND item_id = contraband_id_input;
@@ -49,7 +64,7 @@ BEGIN
     END IF;
 
     -- Get item value
-    -- CORRECTED TABLE: item_definitions
+    -- Table: item_definitions
     SELECT base_price INTO item_value
     FROM item_definitions
     WHERE id = contraband_id_input AND category = 'contraband';
@@ -88,7 +103,6 @@ BEGIN
     net_contribution := total_value; 
     
     -- Deduct items
-    -- CORRECTED TABLE: player_inventory
     UPDATE player_inventory
     SET quantity = quantity - quantity_input
     WHERE player_id = player_id_input AND item_id = contraband_id_input;
