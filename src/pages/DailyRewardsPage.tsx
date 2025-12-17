@@ -298,19 +298,19 @@ const DailyRewardsPage = () => {
                 style={{ backgroundImage: 'url(/images/backgrounds/home.png)' }}
             />
 
-            <div className="relative z-10 py-6 px-4">
+            <div className="relative z-10 py-4 px-4 pb-20">
                 {/* Header */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="flex items-center gap-3 mb-6"
+                    className="flex items-center gap-3 mb-4"
                 >
-                    <img src="/images/icons/daily.png" alt="Daily" className="w-12 h-12 object-contain" />
+                    <img src="/images/icons/daily.png" alt="Daily" className="w-10 h-10 object-contain" />
                     <div className="flex-1">
-                        <h1 className="font-cinzel text-xl font-bold text-foreground">Daily Rewards</h1>
+                        <h1 className="font-cinzel text-lg font-bold text-foreground">Daily Rewards</h1>
                         <div className="flex items-center gap-2">
-                            <Flame className="w-4 h-4 text-orange-400" />
-                            <span className="text-sm font-bold text-orange-400">{status?.current_streak || 0} day streak</span>
+                            <Flame className="w-3.5 h-3.5 text-orange-400" />
+                            <span className="text-xs font-bold text-orange-400">{status?.current_streak || 0} day streak</span>
                         </div>
                     </div>
                 </motion.div>
@@ -322,32 +322,32 @@ const DailyRewardsPage = () => {
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -20 }}
-                            className="mb-4 p-4 bg-red-500/10 border border-red-500/30 rounded-lg"
+                            className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg"
                         >
                             <div className="flex items-start gap-3">
-                                <AlertTriangle className="w-6 h-6 text-red-400 shrink-0" />
-                                <div className="flex-1">
-                                    <h3 className="font-cinzel font-bold text-red-400 mb-1">
+                                <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-cinzel font-bold text-sm text-red-400 mb-1">
                                         Streak Lost! 😢
                                     </h3>
-                                    <p className="text-xs text-red-200/80 mb-2">
+                                    <p className="text-[11px] text-red-200/80 mb-2">
                                         You missed a day and lost your <strong>{status.lost_streak} day streak</strong>!
                                     </p>
-                                    <div className="flex items-center gap-2 text-xs text-red-200/60 mb-3">
+                                    <div className="flex items-center gap-2 text-[10px] text-red-200/60 mb-3">
                                         <Timer className="w-3 h-3" />
                                         <span>Restore available for {Math.floor(status.hours_to_restore)}h {Math.floor((status.hours_to_restore % 1) * 60)}m</span>
                                     </div>
                                     <div className="flex gap-2">
                                         <Button
-                                            className="btn-gold flex-1"
+                                            className="btn-gold flex-1 text-xs h-8"
                                             onClick={handleRestoreStreak}
                                             disabled={isRestoring}
                                         >
                                             {isRestoring ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                             ) : (
                                                 <>
-                                                    <GameIcon type="ton" className="w-4 h-4 mr-1" />
+                                                    <GameIcon type="ton" className="w-3.5 h-3.5 mr-1" />
                                                     0.5 TON - Restore
                                                 </>
                                             )}
@@ -355,7 +355,7 @@ const DailyRewardsPage = () => {
                                         <Button
                                             variant="ghost"
                                             onClick={() => setShowStreakSaver(false)}
-                                            className="text-xs"
+                                            className="text-[11px] h-8 px-3"
                                         >
                                             Skip
                                         </Button>
@@ -370,10 +370,10 @@ const DailyRewardsPage = () => {
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="mb-6"
+                    className="mb-4"
                 >
-                    <h2 className="font-cinzel text-sm font-semibold text-foreground mb-3">7-Day Cycle</h2>
-                    <div className="grid grid-cols-4 gap-2">
+                    <h2 className="font-cinzel text-xs font-semibold text-foreground mb-2.5 uppercase tracking-wide">7-Day Cycle</h2>
+                    <div className="grid grid-cols-3 gap-2.5">
                         {dailyRewards.slice(0, 7).map((reward) => (
                             <DayCard
                                 key={reward.day}
@@ -384,7 +384,6 @@ const DailyRewardsPage = () => {
                                 onClaim={handleClaim}
                             />
                         ))}
-                        {/* Day 7 special card takes full width on second row */}
                     </div>
                 </motion.div>
 
@@ -396,30 +395,30 @@ const DailyRewardsPage = () => {
                         transition={{ delay: 0.2 }}
                         className="mb-4"
                     >
-                        <div className="noir-card p-4">
+                        <div className="noir-card p-3.5">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-gradient-gold flex items-center justify-center">
-                                    <Star className="w-6 h-6 text-primary-foreground" />
+                                <div className="w-10 h-10 rounded-full bg-gradient-gold flex items-center justify-center shrink-0">
+                                    <Star className="w-5 h-5 text-primary-foreground" />
                                 </div>
-                                <div className="flex-1">
-                                    <p className="text-[10px] text-primary uppercase tracking-wider">Next Milestone</p>
-                                    <h3 className="font-cinzel font-bold text-foreground">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[9px] text-primary uppercase tracking-wider font-semibold">Next Milestone</p>
+                                    <h3 className="font-cinzel font-bold text-sm text-foreground">
                                         Day {status.next_milestone.days}
                                     </h3>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-[11px] text-muted-foreground">
                                         {status.next_milestone.description}: +{status.next_milestone.reward_amount} {status.next_milestone.reward_type}
                                     </p>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-lg font-bold text-primary">
+                                <div className="text-right shrink-0">
+                                    <p className="text-base font-bold text-primary font-cinzel">
                                         {status.next_milestone.days - status.current_streak}
                                     </p>
-                                    <p className="text-[10px] text-muted-foreground">days left</p>
+                                    <p className="text-[9px] text-muted-foreground">days left</p>
                                 </div>
                             </div>
 
                             {/* Progress bar */}
-                            <div className="mt-3 h-2 rounded-full bg-muted overflow-hidden">
+                            <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden">
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${(status.current_streak / status.next_milestone.days) * 100}%` }}
@@ -437,9 +436,9 @@ const DailyRewardsPage = () => {
                         animate={{ opacity: 1 }}
                         className="noir-card p-4 text-center"
                     >
-                        <Timer className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                        <p className="text-xs text-muted-foreground">Next reward available in</p>
-                        <p className="font-cinzel text-lg font-bold text-foreground">
+                        <Timer className="w-7 h-7 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-[11px] text-muted-foreground">Next reward available in</p>
+                        <p className="font-cinzel text-base font-bold text-foreground mt-1">
                             {Math.floor(status.hours_until_next)}h {Math.floor((status.hours_until_next % 1) * 60)}m
                         </p>
                     </motion.div>

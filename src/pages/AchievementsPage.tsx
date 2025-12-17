@@ -91,7 +91,7 @@ const AchievementCard = ({ achievement, onClaim, isClaiming }: AchievementCardPr
                             <span>
                                 {achievement.reward_type === 'cash'
                                     ? `$${(achievement.reward_amount / 1000).toFixed(0)}K`
-                                    : `${achievement.reward_amount} 💎`}
+                                    : achievement.reward_amount}
                             </span>
                         </div>
                     </div>
@@ -176,7 +176,7 @@ const AchievementsPage = () => {
                     title: 'Achievement Claimed!',
                     description: `+${achievement.reward_type === 'cash'
                         ? `$${achievement.reward_amount.toLocaleString()}`
-                        : `${achievement.reward_amount} 💎`}`,
+                        : `${achievement.reward_amount} Diamonds`}`,
                 });
             } else {
                 haptic.error();
