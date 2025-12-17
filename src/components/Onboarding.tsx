@@ -146,42 +146,68 @@ export const Onboarding = ({ onComplete, onFirstJobComplete }: OnboardingProps) 
     const isFirstStep = currentStep === 0;
     const isInteractiveStep = step.isInteractive && !jobCompleted;
 
+
     const handleExecuteFirstJob = async () => {
         if (!player?.id) return;
+
+        // Check if first job already completed (anti-exploit)
+        const firstJobCompleted = localStorage.getItem('mafia_first_job_complete');
+        if (firstJobCompleted === 'true') {
+            setJobCompleted(true);
+            return;
+        }
 
         setIsExecutingJob(true);
         haptic.medium();
 
         try {
-            // Call perform_pve_job RPC for a beginner-tier job
-            const { data, error } = await supabase.rpc('perform_pve_job', {
-                player_id_input: player.id,
-                job_name_input: 'collect_protection' // Beginner job
-            }) as { data: { success: boolean; cash_earned?: number; respect_earned?: number; message?: string } | null; error: any };
+            // Give first job rewards directly (since this is a tutorial action)
+            const cashReward = 500;
+            const respectReward = 5;
+
+            const { error } = await supabase
+                .from('players')
+                .update({
+                    cash: player.cash + cashReward,
+                    respect: (player.respect || 0) + respectReward,
+                    total_jobs_completed: (player.total_jobs_completed || 0) + 1,
+                })
+                .eq('id', player.id);
 
             if (error) throw error;
 
-            if (data?.success) {
-                setJobReward({
-                    cash: data.cash_earned || 500,
-                    respect: data.respect_earned || 5
-                });
-                setJobCompleted(true);
-                await refetchPlayer();
+            // Log transaction
+            await supabase.from('transactions').insert({
+                player_id: player.id,
+                transaction_type: 'job_complete',
+                currency: 'cash',
+                amount: cashReward,
+                description: 'Tutorial Job: Collect Protection Money'
+            });
 
-                // Trigger first choice modal after short delay
-                setTimeout(() => {
-                    if (onFirstJobComplete) {
-                        onFirstJobComplete();
-                    }
-                }, 2000);
-            }
+            // Mark as completed in localStorage (anti-exploit)
+            localStorage.setItem('mafia_first_job_complete', 'true');
+
+            setJobReward({
+                cash: cashReward,
+                respect: respectReward
+            });
+            setJobCompleted(true);
+            await refetchPlayer();
+
+            // Trigger first choice modal after short delay
+            setTimeout(() => {
+                if (onFirstJobComplete) {
+                    onFirstJobComplete();
+                }
+            }, 2000);
         } catch (error) {
             console.error('First job error:', error);
         } finally {
             setIsExecutingJob(false);
         }
     };
+
 
     const handleNext = () => {
         haptic.light();
@@ -343,10 +369,10 @@ export const Onboarding = ({ onComplete, onFirstJobComplete }: OnboardingProps) 
                         <div
                             key={index}
                             className={`w-2 h-2 rounded-full transition-all ${index === currentStep
-                                    ? 'w-6 bg-primary'
-                                    : index < currentStep
-                                        ? 'bg-primary/50'
-                                        : 'bg-muted'
+                                ? 'w-6 bg-primary'
+                                : index < currentStep
+                                    ? 'bg-primary/50'
+                                    : 'bg-muted'
                                 }`}
                         />
                     ))}
