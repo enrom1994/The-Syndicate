@@ -118,7 +118,7 @@ const InventoryItemComponent = ({
                 {item.category === 'contraband' ? (
                     <Button className="btn-gold h-7 px-3 text-xs" onClick={onSell}>
                         <Gavel className="w-3 h-3 mr-1" />
-                        Auction
+                        Black Market
                     </Button>
                 ) : item.location === 'safe' ? (
                     <Button

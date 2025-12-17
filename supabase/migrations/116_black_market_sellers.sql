@@ -142,8 +142,7 @@ RETURNS TABLE (
     rarity TEXT,
     quantity INTEGER,
     market_price BIGINT,
-    total_value BIGINT,
-    image_url TEXT
+    total_value BIGINT
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -156,8 +155,7 @@ BEGIN
         id.rarity,
         pi.quantity,
         id.sell_price AS market_price,
-        (id.sell_price * pi.quantity) AS total_value,
-        id.image_url
+        (id.sell_price * pi.quantity) AS total_value
     FROM public.player_inventory pi
     JOIN public.item_definitions id ON pi.item_id = id.id
     WHERE pi.player_id = player_id_input 

@@ -27,7 +27,6 @@ interface BlackMarketItem {
     quantity: number;
     market_price: number;
     total_value: number;
-    image_url: string;
 }
 
 const BlackMarketPage = () => {
