@@ -264,9 +264,17 @@ const TargetCard = ({
                                 <div className="px-3 py-2 bg-yellow-500/10 border-b border-yellow-500/30">
                                     <div className="flex items-center justify-between">
                                         <span className="font-cinzel font-bold text-sm text-primary">{type.name}</span>
-                                        <div className="flex items-center gap-1 bg-black/40 px-2 py-0.5 rounded-full">
-                                            <img src="/images/icons/stamina.png" alt="" className="w-3 h-3" />
-                                            <span className="text-xs font-bold text-yellow-400">{type.stamina_cost}</span>
+                                        <div className="flex items-center gap-2">
+                                            {/* Attack Fee */}
+                                            <div className="flex items-center gap-1 bg-red-500/20 border border-red-500/40 px-2 py-0.5 rounded-full">
+                                                <img src="/images/icons/cash.png" alt="" className="w-3 h-3" />
+                                                <span className="text-xs font-bold text-red-400">Fee</span>
+                                            </div>
+                                            {/* Stamina */}
+                                            <div className="flex items-center gap-1 bg-black/40 px-2 py-0.5 rounded-full">
+                                                <img src="/images/icons/stamina.png" alt="" className="w-3 h-3" />
+                                                <span className="text-xs font-bold text-yellow-400">{type.stamina_cost}</span>
+                                            </div>
                                         </div>
                                     </div>
                                     <p className="text-[10px] text-muted-foreground mt-0.5">{type.description}</p>
