@@ -29,7 +29,7 @@ import BountyBoardPage from "./pages/BountyBoardPage";
 import AchievementsPage from "./pages/AchievementsPage";
 import TasksPage from "./pages/TasksPage";
 import LuckyWheelPage from "./pages/LuckyWheelPage";
-import AuctionPage from "./pages/AuctionPage";
+import BlackMarketPage from "./pages/BlackMarketPage";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ScrollToTop } from "@/components/ScrollToTop";
@@ -122,7 +122,7 @@ const App = () => {
                       <Route path="/achievements" element={<AchievementsPage />} />
                       <Route path="/tasks" element={<TasksPage />} />
                       <Route path="/lucky-wheel" element={<LuckyWheelPage />} />
-                      <Route path="/auction" element={<AuctionPage />} />
+                      <Route path="/auction" element={<BlackMarketPage />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </ErrorBoundary>

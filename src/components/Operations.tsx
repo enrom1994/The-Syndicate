@@ -78,8 +78,8 @@ export const Operations = () => {
       path: '/hire',
     },
     {
-      iconSrc: '/images/icons/auctionhouse.png',
-      title: 'Auction House',
+      iconSrc: '/images/icons/blackmarket.png',
+      title: 'Black Market',
       path: '/auction',
     },
     {
