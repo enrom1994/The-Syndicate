@@ -125,10 +125,10 @@ BEGIN
         WHERE player_id = player_id_input AND item_id = item_id_input;
     ELSE
         UPDATE public.player_inventory
-        SET quantity = quantity - quantity_input,
-            updated_at = NOW()
+        SET quantity = quantity - quantity_input
         WHERE player_id = player_id_input AND item_id = item_id_input;
     END IF;
+
 
     -- 8. Add value to family treasury
     UPDATE public.families
