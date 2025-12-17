@@ -11,6 +11,7 @@ import { useGameStore, OwnedBusiness, BusinessDefinition } from '@/hooks/useGame
 import { rewardCash } from '@/components/RewardAnimation';
 import { supabase } from '@/lib/supabase';
 import { ContextualTooltip } from '@/components/ContextualTooltip';
+import { formatCooldownMinutes, getTimeRemainingMinutes, getCooldownRemaining } from '@/lib/formatters';
 
 interface BusinessCardProps {
     name: string;
@@ -233,26 +234,14 @@ const BusinessCard = ({
     );
 };
 
-const formatCooldown = (minutes: number): string => {
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (mins === 0) return `${hours}h`;
-    return `${hours}h ${mins}m`;
-};
+// Use shared formatCooldownMinutes as formatCooldown for compatibility
+const formatCooldown = formatCooldownMinutes;
 
 const canCollectFromBusiness = (lastCollected: string, cooldownMinutes: number): boolean => {
     const lastCollectedDate = new Date(lastCollected);
     const now = new Date();
     const minutesPassed = (now.getTime() - lastCollectedDate.getTime()) / (1000 * 60);
     return minutesPassed >= cooldownMinutes;
-};
-
-const getTimeRemainingMinutes = (lastCollected: string, cooldownMinutes: number): number => {
-    const lastDate = new Date(lastCollected);
-    const now = new Date();
-    const minutesPassed = (now.getTime() - lastDate.getTime()) / (1000 * 60);
-    return Math.max(0, cooldownMinutes - minutesPassed);
 };
 
 const calculateRushCost = (timeRemainingMinutes: number, totalCooldownMinutes: number, incomePerHour: number): number => {
@@ -380,19 +369,7 @@ const BusinessPage = () => {
         };
     });
 
-    // Calculate cooldown remaining as formatted string
-    const getCooldownRemaining = (lastCollected: string | undefined, cooldownMinutes: number): string => {
-        if (!lastCollected) return '';
-        const lastDate = new Date(lastCollected);
-        const now = new Date();
-        const minutesPassed = (now.getTime() - lastDate.getTime()) / (1000 * 60);
-        const remaining = Math.max(0, cooldownMinutes - minutesPassed);
-        if (remaining <= 0) return '';
-        const hours = Math.floor(remaining / 60);
-        const mins = Math.floor(remaining % 60);
-        if (hours > 0) return `${hours}h ${mins}m`;
-        return `${mins}m`;
-    };
+    // getCooldownRemaining is now imported from @/lib/formatters
 
     const handleAction = (
         type: 'buy' | 'upgrade' | 'collect',

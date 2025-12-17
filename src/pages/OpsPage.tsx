@@ -88,16 +88,9 @@ interface RevengeTarget {
     cooldown_remaining?: number;
 }
 
-// Helper function to format cooldown time
-const formatCooldownTime = (seconds: number): string => {
-    if (seconds <= 0) return '';
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) {
-        return `${hours}h ${mins}m`;
-    }
-    return `${mins}m`;
-};
+// Import shared formatters
+import { formatCooldownTime } from '@/lib/formatters';
+
 
 // =====================================================
 // PVE TARGET CARD

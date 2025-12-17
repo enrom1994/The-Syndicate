@@ -57,6 +57,14 @@ export const BottomNav = () => {
   // Real badge state
   const badges = useNotifications();
 
+  // Check if route is active (handles nested routes)
+  const isActiveRoute = (navPath: string): boolean => {
+    if (navPath === '/') {
+      return currentPath === '/';
+    }
+    return currentPath === navPath || currentPath.startsWith(navPath + '/');
+  };
+
   const navItems = [
     { icon: <Home className="w-5 h-5" />, label: 'Home', path: '/', badge: badges.home },
     { icon: <ShoppingBag className="w-5 h-5" />, label: 'Market', path: '/market', badge: badges.market },
@@ -79,7 +87,7 @@ export const BottomNav = () => {
             icon={item.icon}
             label={item.label}
             path={item.path}
-            isActive={currentPath === item.path}
+            isActive={isActiveRoute(item.path)}
             badge={item.badge}
           />
         ))}
