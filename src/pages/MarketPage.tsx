@@ -202,36 +202,14 @@ const MarketPage = () => {
                             </div>
                         </div>
 
-                        {/* Prominent Animated Shop Button */}
-                        <motion.div
-                            animate={{
-                                scale: [1, 1.05, 1],
-                                boxShadow: [
-                                    "0 0 0 0 rgba(212, 175, 55, 0)",
-                                    "0 0 20px 2px rgba(212, 175, 55, 0.4)",
-                                    "0 0 0 0 rgba(212, 175, 55, 0)"
-                                ]
-                            }}
-                            transition={{
-                                duration: 2,
-                                repeat: Infinity,
-                                ease: "easeInOut"
-                            }}
-                            className="rounded-lg relative z-20" // Removed overflow-hidden to allow shadow to bleed
+                        {/* Diamond Shop Button */}
+                        <Button
+                            className="btn-gold h-8 px-3 py-1 text-xs font-semibold flex items-center gap-1.5 border border-yellow-500/50"
+                            onClick={() => navigate('/shop')}
                         >
-                            <Button
-                                className="btn-gold h-auto px-4 py-2.5 text-sm font-bold flex items-center gap-2 relative group border-2 border-yellow-500/50"
-                                onClick={() => navigate('/shop')}
-                            >
-                                <motion.div
-                                    animate={{ rotate: [0, 10, 0, -10, 0] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                >
-                                    <img src="/images/icons/diamond.png" alt="💎" className="w-5 h-5" />
-                                </motion.div>
-                                <span className="relative z-10 text-shadow-sm">Diamond Shop</span>
-                            </Button>
-                        </motion.div>
+                            <img src="/images/icons/diamond.png" alt="💎" className="w-4 h-4" />
+                            <span>Shop</span>
+                        </Button>
                     </div>
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

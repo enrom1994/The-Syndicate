@@ -1,9 +1,14 @@
 import { motion } from 'framer-motion';
-import { Crown, User } from 'lucide-react';
-import { useTelegramPhoto } from '@/hooks/useTelegram';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const Header = () => {
-  const photoUrl = useTelegramPhoto();
+  const { player } = useAuth();
+
+  const formatCash = (amount: number) => {
+    if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}K`;
+    return `$${amount.toLocaleString()}`;
+  };
 
   return (
     <motion.header
@@ -14,21 +19,18 @@ export const Header = () => {
     >
       <div className="container flex items-center justify-between h-14 px-4">
         <div className="flex items-center gap-2">
-          <Crown className="w-5 h-5 text-primary" />
+          <img src="/favicon.ico" alt="Logo" className="w-5 h-5" />
           <span className="font-cinzel font-bold text-sm tracking-wider gold-shimmer">
             THE SYNDICATE
           </span>
         </div>
 
-        {/* User Avatar */}
-        <div className="w-8 h-8 rounded-full bg-muted/50 overflow-hidden border border-primary/30">
-          {photoUrl ? (
-            <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <User className="w-4 h-4 text-muted-foreground" />
-            </div>
-          )}
+        {/* Cash Balance */}
+        <div className="flex items-center gap-1.5 bg-muted/30 border border-primary/30 rounded-full px-3 py-1">
+          <img src="/images/icons/cash.png" alt="Cash" className="w-4 h-4" />
+          <span className="font-cinzel font-bold text-xs text-green-400">
+            {formatCash(player?.cash ?? 0)}
+          </span>
         </div>
       </div>
     </motion.header>
