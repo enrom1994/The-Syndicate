@@ -372,14 +372,21 @@ const ShopPage = () => {
                     ]
                 };
 
-                await tonConnectUI.sendTransaction(transaction);
+                const txResult = await tonConnectUI.sendTransaction(transaction);
 
-                // Credit diamonds after successful payment
-                await supabase.rpc('increment_diamonds', {
-                    player_id_input: player.id,
-                    amount: pendingPurchase.diamondsToCredit,
-                    source: 'ton_purchase',
+                // SECURE: Verify payment server-side before crediting
+                const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-ton-payment', {
+                    body: {
+                        boc: txResult.boc,
+                        paymentType: 'diamonds',
+                        tonAmount: pendingPurchase.tonAmount,
+                        rewardData: { diamonds: pendingPurchase.diamondsToCredit }
+                    }
                 });
+
+                if (verifyError || !verifyResult?.success) {
+                    throw new Error(verifyResult?.message || verifyError?.message || 'Payment verification failed');
+                }
 
                 haptic.success();
                 await refetchPlayer();
@@ -400,17 +407,21 @@ const ShopPage = () => {
                     ]
                 };
 
-                await tonConnectUI.sendTransaction(transaction);
+                const txResult = await tonConnectUI.sendTransaction(transaction);
 
-                // Apply protection shield booster
-                const expiresAt = new Date();
-                expiresAt.setMinutes(expiresAt.getMinutes() + pendingPurchase.protectionMinutes);
+                // SECURE: Verify payment server-side before crediting
+                const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-ton-payment', {
+                    body: {
+                        boc: txResult.boc,
+                        paymentType: 'protection',
+                        tonAmount: pendingPurchase.tonAmount,
+                        rewardData: { protectionMinutes: pendingPurchase.protectionMinutes }
+                    }
+                });
 
-                await supabase.from('player_boosters').upsert({
-                    player_id: player.id,
-                    booster_type: 'shield',
-                    expires_at: expiresAt.toISOString(),
-                }, { onConflict: 'player_id,booster_type' });
+                if (verifyError || !verifyResult?.success) {
+                    throw new Error(verifyResult?.message || verifyError?.message || 'Payment verification failed');
+                }
 
                 haptic.success();
                 await refetchPlayer();
@@ -431,15 +442,21 @@ const ShopPage = () => {
                     ]
                 };
 
-                await tonConnectUI.sendTransaction(transaction);
+                const txResult = await tonConnectUI.sendTransaction(transaction);
 
-                // Activate auto-collect in database
-                const { data, error } = await supabase.rpc('purchase_auto_collect', {
-                    target_player_id: player.id
+                // SECURE: Verify payment server-side before crediting
+                const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-ton-payment', {
+                    body: {
+                        boc: txResult.boc,
+                        paymentType: 'vip_pass',
+                        tonAmount: pendingPurchase.tonAmount,
+                        rewardData: {}
+                    }
                 });
 
-                if (error) throw error;
-                if (!data?.success) throw new Error(data?.message || 'Failed to activate');
+                if (verifyError || !verifyResult?.success) {
+                    throw new Error(verifyResult?.message || verifyError?.message || 'Payment verification failed');
+                }
 
                 haptic.success();
                 // Refetch VIP status to update UI
@@ -472,22 +489,28 @@ const ShopPage = () => {
                     ]
                 };
 
-                await tonConnectUI.sendTransaction(transaction);
+                const txResult = await tonConnectUI.sendTransaction(transaction);
 
-                // Call buy_starter_pack RPC
-                const { data, error } = await supabase.rpc('buy_starter_pack', {
-                    buyer_id: player.id
+                // SECURE: Verify payment server-side before crediting
+                const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-ton-payment', {
+                    body: {
+                        boc: txResult.boc,
+                        paymentType: 'starter_pack',
+                        tonAmount: pendingPurchase.tonAmount,
+                        rewardData: {}
+                    }
                 });
 
-                if (error) throw error;
-                if (!data?.success) throw new Error(data?.message || 'Failed to purchase');
+                if (verifyError || !verifyResult?.success) {
+                    throw new Error(verifyResult?.message || verifyError?.message || 'Payment verification failed');
+                }
 
                 haptic.success();
                 await refetchPlayer();
 
                 toast({
                     title: 'Welcome to the Family! 👔',
-                    description: data.message || 'You are now a Made Man.',
+                    description: verifyResult?.message || 'You are now a Made Man.',
                 });
 
                 // Hide the starter pack card
@@ -504,16 +527,21 @@ const ShopPage = () => {
                     ]
                 };
 
-                await tonConnectUI.sendTransaction(transaction);
+                const txResult = await tonConnectUI.sendTransaction(transaction);
 
-                // Call purchase_insurance RPC
-                const { data, error } = await supabase.rpc('purchase_insurance', {
-                    player_id_input: player.id,
-                    insurance_type_input: pendingPurchase.insuranceType
+                // SECURE: Verify payment server-side before crediting
+                const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-ton-payment', {
+                    body: {
+                        boc: txResult.boc,
+                        paymentType: 'insurance',
+                        tonAmount: pendingPurchase.tonAmount,
+                        rewardData: { insuranceType: pendingPurchase.insuranceType }
+                    }
                 });
 
-                if (error) throw error;
-                if (!data?.success) throw new Error(data?.message || 'Failed to purchase');
+                if (verifyError || !verifyResult?.success) {
+                    throw new Error(verifyResult?.message || verifyError?.message || 'Payment verification failed');
+                }
 
                 haptic.success();
 
@@ -531,7 +559,7 @@ const ShopPage = () => {
 
                 toast({
                     title: '🛡️ Insurance Purchased!',
-                    description: data.message,
+                    description: verifyResult?.message || 'Insurance purchased successfully',
                 });
             }
         } catch (error) {

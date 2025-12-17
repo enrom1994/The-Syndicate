@@ -238,25 +238,30 @@ const DailyRewardsPage = () => {
                 }]
             };
 
-            await tonConnectUI.sendTransaction(transaction);
+            const txResult = await tonConnectUI.sendTransaction(transaction);
 
-            // Restore streak
-            const { data, error } = await supabase.rpc('restore_streak', {
-                target_player_id: player.id
+            // SECURE: Verify payment server-side before crediting
+            const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-ton-payment', {
+                body: {
+                    boc: txResult.boc,
+                    paymentType: 'streak_restore',
+                    tonAmount: 0.5,
+                    rewardData: {}
+                }
             });
 
-            if (error) throw error;
-
-            if (data?.success) {
-                haptic.success();
-                toast({
-                    title: '🔥 Streak Restored!',
-                    description: `Your ${data.restored_streak} day streak is back!`,
-                });
-                setShowStreakSaver(false);
-                await refetchPlayer();
-                await loadData();
+            if (verifyError || !verifyResult?.success) {
+                throw new Error(verifyResult?.message || verifyError?.message || 'Payment verification failed');
             }
+
+            haptic.success();
+            toast({
+                title: '🔥 Streak Restored!',
+                description: `Your streak is back!`,
+            });
+            setShowStreakSaver(false);
+            await refetchPlayer();
+            await loadData();
         } catch (error) {
             console.error('Restore error:', error);
             toast({

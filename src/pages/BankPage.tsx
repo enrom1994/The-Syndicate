@@ -21,6 +21,7 @@ import { GameIcon } from '@/components/GameIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, InventoryItem, SafePackage } from '@/hooks/useGameStore';
 import { TON_RECEIVING_ADDRESS, toNanoTon } from '@/lib/ton-config';
+import { supabase } from '@/lib/supabase';
 
 const BankPage = () => {
     const { toast } = useToast();
@@ -214,32 +215,36 @@ const BankPage = () => {
                 ]
             };
 
-            await tonConnectUI.sendTransaction(transaction);
+            const txResult = await tonConnectUI.sendTransaction(transaction);
 
-            // After successful payment, record the purchase in database
-            const result = await purchaseSafeSlots(pkg.id);
-            if (result.success) {
-                toast({
-                    title: 'Vault Upgraded!',
-                    description: `You now have ${pkg.slots} more safe slots.`,
-                });
-                // Refresh safe info
-                const info = await getSafeInfo();
-                if (info) {
-                    setSafeInfo({
-                        total_slots: info.total_slots,
-                        used_slots: itemsInSafe.length,
-                        available_slots: info.total_slots - itemsInSafe.length
-                    });
+            // SECURE: Verify payment server-side before crediting
+            const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-ton-payment', {
+                body: {
+                    boc: txResult.boc,
+                    paymentType: 'safe_slots',
+                    tonAmount: pkg.price_ton,
+                    rewardData: { safeSlots: pkg.slots }
                 }
-                setPackagesDialogOpen(false);
-            } else {
-                toast({
-                    title: 'Purchase Failed',
-                    description: result.message || 'Could not complete purchase.',
-                    variant: 'destructive',
+            });
+
+            if (verifyError || !verifyResult?.success) {
+                throw new Error(verifyResult?.message || verifyError?.message || 'Payment verification failed');
+            }
+
+            toast({
+                title: 'Vault Upgraded!',
+                description: `You now have ${pkg.slots} more safe slots.`,
+            });
+            // Refresh safe info
+            const info = await getSafeInfo();
+            if (info) {
+                setSafeInfo({
+                    total_slots: info.total_slots,
+                    used_slots: itemsInSafe.length,
+                    available_slots: info.total_slots - itemsInSafe.length
                 });
             }
+            setPackagesDialogOpen(false);
         } catch (error) {
             console.error('Purchase error:', error);
             toast({
