@@ -33,6 +33,10 @@ interface TargetPlayer {
     defense: number;
     attack: number;
     has_made_man?: boolean;
+    has_shield?: boolean;
+    has_npp?: boolean;
+    on_cooldown?: boolean;
+    cooldown_remaining?: number;
 }
 
 interface PveTarget {
@@ -80,7 +84,20 @@ interface RevengeTarget {
     attacker_has_shield: boolean;
     attacker_has_npp: boolean;
     has_made_man?: boolean;
+    on_cooldown?: boolean;
+    cooldown_remaining?: number;
 }
+
+// Helper function to format cooldown time
+const formatCooldownTime = (seconds: number): string => {
+    if (seconds <= 0) return '';
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+        return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+};
 
 // =====================================================
 // PVE TARGET CARD
@@ -253,16 +270,52 @@ const TargetCard = ({
 
             {/* Attack Types or Button */}
             <div className="p-3">
+                {/* Cooldown/Shield/NPP Warning */}
+                {(target.on_cooldown || target.has_shield || target.has_npp) && (
+                    <div className="mb-2 p-2 rounded-lg bg-muted/30 border border-muted-foreground/20 text-center">
+                        {target.has_shield && (
+                            <span className="text-xs text-cyan-400 flex items-center justify-center gap-1">
+                                <Shield className="w-3 h-3" /> Protected by Shield
+                            </span>
+                        )}
+                        {target.has_npp && !target.has_shield && (
+                            <span className="text-xs text-blue-400 flex items-center justify-center gap-1">
+                                <Shield className="w-3 h-3" /> New Player Protection
+                            </span>
+                        )}
+                        {target.on_cooldown && !target.has_shield && !target.has_npp && (
+                            <span className="text-xs text-yellow-400 flex items-center justify-center gap-1">
+                                <Clock className="w-3 h-3" /> Lay low for {formatCooldownTime(target.cooldown_remaining || 0)}
+                            </span>
+                        )}
+                    </div>
+                )}
+
                 {!showTypes ? (
                     <Button
-                        className="w-full btn-gold text-xs h-9"
+                        className={`w-full text-xs h-9 ${target.on_cooldown || target.has_shield || target.has_npp ? 'bg-muted text-muted-foreground' : 'btn-gold'}`}
                         onClick={() => setShowTypes(true)}
-                        disabled={isProcessing}
+                        disabled={isProcessing || target.on_cooldown || target.has_shield || target.has_npp}
                     >
-                        <Swords className="w-4 h-4 mr-2" />
-                        Select Attack Type
+                        {target.has_shield || target.has_npp ? (
+                            <>
+                                <Shield className="w-4 h-4 mr-2" />
+                                Protected
+                            </>
+                        ) : target.on_cooldown ? (
+                            <>
+                                <Clock className="w-4 h-4 mr-2" />
+                                {formatCooldownTime(target.cooldown_remaining || 0)}
+                            </>
+                        ) : (
+                            <>
+                                <Swords className="w-4 h-4 mr-2" />
+                                Select Attack Type
+                            </>
+                        )}
                     </Button>
                 ) : (
+
                     <div className="space-y-2">
                         {attackTypes.map(type => (
                             <div
@@ -1364,6 +1417,11 @@ const OpsPage = () => {
                                                 <Shield className="w-4 h-4" />
                                                 <span>Target under New Player Protection</span>
                                             </div>
+                                        ) : target.on_cooldown ? (
+                                            <div className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded p-2 text-xs text-yellow-400">
+                                                <Clock className="w-4 h-4" />
+                                                <span>Lay low for {formatCooldownTime(target.cooldown_remaining || 0)}</span>
+                                            </div>
                                         ) : (
                                             <Button
                                                 className="w-full btn-gold text-xs"
@@ -1386,6 +1444,7 @@ const OpsPage = () => {
                                             </Button>
                                         )}
                                     </div>
+
                                 </motion.div>
                             ))
                         )}
