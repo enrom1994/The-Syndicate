@@ -878,11 +878,12 @@ const OpsPage = () => {
                         targetName: data.defender_name,
                         cashGained: data.cash_stolen || 0,
                         cashLost: 0,
-                        respectGained: data.respect_stolen || 0,
-                        respectLost: 0,
-                        xpGained: 0, // PvP doesn't give XP currently
+                        // Use new explicit fields, fallback to legacy
+                        respectGained: data.respect_gained ?? (data.respect_stolen || 0),
+                        respectLost: data.respect_lost ?? 0,
+                        xpGained: 0,
                         itemsStolen: data.contraband_stolen > 0 ? [`${data.contraband_stolen} Contraband`] : [],
-                        crewLost: 0, // Attacker won, no crew lost
+                        crewLost: 0,
                         insuranceActivated: data.insurance_applied || false
                     });
                 } else {
@@ -893,8 +894,9 @@ const OpsPage = () => {
                         targetName: data.defender_name,
                         cashGained: 0,
                         cashLost: 0,
-                        respectGained: 0,
-                        respectLost: data.attacker_respect_loss || 0,
+                        // Use new explicit fields, fallback to legacy
+                        respectGained: data.respect_gained ?? 0,
+                        respectLost: data.respect_lost ?? (data.attacker_respect_loss || 0),
                         xpGained: 0,
                         itemsStolen: [],
                         crewLost: data.attacker_crew_loss || 0
