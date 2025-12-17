@@ -263,12 +263,7 @@ const Index = () => {
               >
                 {/* Season & Round Banner */}
                 <div className="pt-4">
-                  <SeasonBanner
-                    season={3}
-                    round={7}
-                    timeRemaining="2d 14h 32m"
-                    topPrize="100 TON"
-                  />
+                  <SeasonBanner />
                 </div>
 
                 {/* Wallet Connect Button - Centered */}
