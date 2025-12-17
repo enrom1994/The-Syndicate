@@ -157,8 +157,8 @@ BEGIN
         id.name AS item_name,
         id.rarity,
         pi.quantity,
-        id.sell_price AS market_price,
-        (id.sell_price * pi.quantity) AS total_value
+        id.sell_price::BIGINT AS market_price,
+        (id.sell_price::BIGINT * pi.quantity::BIGINT) AS total_value
     FROM public.player_inventory pi
     JOIN public.item_definitions id ON pi.item_id = id.id
     WHERE pi.player_id = player_id_input 
