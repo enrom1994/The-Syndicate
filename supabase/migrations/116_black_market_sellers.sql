@@ -133,6 +133,9 @@ ALTER FUNCTION public.sell_to_black_market(UUID, UUID, INTEGER) SET search_path 
 -- =====================================================
 -- Shows current market rates for player's contraband
 
+-- Drop existing function first (changing return type)
+DROP FUNCTION IF EXISTS public.get_black_market_prices(UUID);
+
 CREATE OR REPLACE FUNCTION get_black_market_prices(
     player_id_input UUID
 )
