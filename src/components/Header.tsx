@@ -25,13 +25,25 @@ export const Header = () => {
           </span>
         </div>
 
-        {/* Cash Balance */}
-        <div className="flex items-center gap-1.5 bg-muted/30 border border-primary/30 rounded-full px-3 py-1">
-          <img src="/images/icons/cash.png" alt="Cash" className="w-4 h-4" />
-          <span className="font-cinzel font-bold text-xs text-green-400">
-            {formatCash(player?.cash ?? 0)}
-          </span>
+        {/* Currency Balances */}
+        <div className="flex items-center gap-2">
+          {/* Cash Balance */}
+          <div className="flex items-center gap-1.5 bg-muted/30 border border-green-500/30 rounded-full px-2.5 py-1">
+            <img src="/images/icons/cash.png" alt="Cash" className="w-4 h-4" />
+            <span className="font-cinzel font-bold text-xs text-green-400">
+              {formatCash(player?.cash ?? 0)}
+            </span>
+          </div>
+
+          {/* Diamonds Balance */}
+          <div className="flex items-center gap-1.5 bg-muted/30 border border-cyan-500/30 rounded-full px-2.5 py-1">
+            <img src="/images/icons/diamond.png" alt="Diamonds" className="w-4 h-4" />
+            <span className="font-cinzel font-bold text-xs text-cyan-400">
+              {player?.diamonds?.toLocaleString() ?? 0}
+            </span>
+          </div>
         </div>
+
       </div>
     </motion.header>
   );
