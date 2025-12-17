@@ -9,7 +9,19 @@
 
 SET search_path = public;
 
--- Robustly drop all versions of the function to ensure a clean slate
+
+-- 1. Create missing family_contributions table
+CREATE TABLE IF NOT EXISTS public.family_contributions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    family_id UUID REFERENCES families(id) ON DELETE CASCADE,
+    player_id UUID REFERENCES players(id) ON DELETE SET NULL,
+    amount BIGINT NOT NULL,
+    contribution_amount BIGINT NOT NULL DEFAULT 0,
+    type TEXT NOT NULL,
+    contributed_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Robustly drop all versions of the function to ensure a clean slate
 DO $$ 
 DECLARE 
     func_record RECORD;
@@ -65,7 +77,7 @@ BEGIN
 
     -- Get item value
     -- Table: item_definitions
-    SELECT base_price INTO item_value
+    SELECT sell_price INTO item_value
     FROM item_definitions
     WHERE id = contraband_id_input AND category = 'contraband';
 
@@ -113,7 +125,7 @@ BEGIN
 
     -- Add to treasury
     UPDATE families
-    SET treasury_balance = treasury_balance + total_value
+    SET treasury = treasury + total_value
     WHERE id = family_id_var;
 
     -- Log contribution
@@ -125,7 +137,7 @@ BEGIN
         'message', 'Contributed ' || quantity_input || ' items',
         'net_contribution', total_value,
         'tax_paid', 0,
-        'new_balance', (SELECT treasury_balance FROM families WHERE id = family_id_var)
+        'new_balance', (SELECT treasury FROM families WHERE id = family_id_var)
     );
 END;
 $$;
