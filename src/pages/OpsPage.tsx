@@ -20,7 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, JobDefinition } from '@/hooks/useGameStore';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
-import { rewardCash, rewardXp } from '@/components/RewardAnimation';
+import { rewardCash, rewardRespect } from '@/components/RewardAnimation';
 
 // =====================================================
 // INTERFACES
@@ -1056,9 +1056,9 @@ const OpsPage = () => {
                     rewardCash(result.cash_earned);
                 }
 
-                // Show XP animation (staggered)
-                if (result.xp_earned) {
-                    setTimeout(() => rewardXp(result.xp_earned!), 400);
+                // Show Respect animation (staggered)
+                if (result.respect_earned) {
+                    setTimeout(() => rewardRespect(result.respect_earned!), 400);
                 }
 
                 const streakMsg = result.current_streak && result.current_streak > 0
@@ -1069,7 +1069,7 @@ const OpsPage = () => {
                     title: result.leveled_up ? 'LEVEL UP! 🎉' : 'Job Completed!',
                     description: result.leveled_up
                         ? `You reached Level ${result.new_level}!`
-                        : `Earned $${result.cash_earned?.toLocaleString()} & ${result.xp_earned} XP${streakMsg}`,
+                        : `Earned $${result.cash_earned?.toLocaleString()} & ${result.respect_earned} Respect${streakMsg}`,
                 });
                 await refetchPlayer();
             } else {
@@ -1128,7 +1128,7 @@ const OpsPage = () => {
                 if (result.result === 'victory') {
                     haptic.success();
                     if (result.cash_earned) rewardCash(result.cash_earned);
-                    if (result.xp_earned) setTimeout(() => rewardXp(result.xp_earned!), 400);
+                    if (result.xp_earned) setTimeout(() => rewardRespect(result.xp_earned!), 400);
                     toast({
                         title: '🎰 HIGH STAKES WIN!',
                         description: `Scored $${result.cash_earned?.toLocaleString()}!`

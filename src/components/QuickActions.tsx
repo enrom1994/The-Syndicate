@@ -15,11 +15,12 @@ export const QuickActions = () => {
         },
         {
             label: 'Achievements',
-            iconSrc: '/images/icons/achievements.png',
+            iconSrc: '/images/icons/trophy.png',
             path: '/achievements',
             desc: 'Milestones',
             color: 'bg-yellow-500/10 border-yellow-500/20',
         },
+
         {
             label: 'Bounties',
             iconSrc: '/images/icons/bounty.png',

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { haptic } from '@/lib/haptics';
 import { GameIcon } from './GameIcon';
 
-type RewardType = 'cash' | 'diamonds' | 'energy' | 'xp' | 'item';
+type RewardType = 'cash' | 'diamonds' | 'energy' | 'xp' | 'respect' | 'item';
 
 interface Particle {
     id: number;
@@ -18,7 +18,8 @@ const rewardIcons: Record<RewardType, React.ReactNode> = {
     cash: <GameIcon type="cash" className="w-8 h-8" />,
     diamonds: <GameIcon type="diamond" className="w-12 h-12" />,
     energy: <img src="/images/icons/energy.png" alt="Energy" className="w-6 h-6 object-contain" />,
-    xp: <img src="/images/icons/xp.png" alt="XP" className="w-6 h-6 object-contain" />,
+    xp: <img src="/images/icons/respect.png" alt="Respect" className="w-6 h-6 object-contain" />,
+    respect: <img src="/images/icons/respect.png" alt="Respect" className="w-6 h-6 object-contain" />,
     item: <Gift className="w-6 h-6 text-purple-400" />,
 };
 
@@ -26,7 +27,8 @@ const rewardColors: Record<RewardType, string> = {
     cash: 'text-green-400',
     diamonds: 'text-blue-400',
     energy: 'text-yellow-400',
-    xp: 'text-cyan-400',
+    xp: 'text-orange-400',
+    respect: 'text-orange-400',
     item: 'text-purple-400',
 };
 
@@ -96,7 +98,11 @@ export const rewardEnergy = (amount: number, x?: number, y?: number) => {
 };
 
 export const rewardXp = (amount: number, x?: number, y?: number) => {
-    emitReward('xp', `${amount} XP`, x, y);
+    emitReward('xp', `${amount} Respect`, x, y);
+};
+
+export const rewardRespect = (amount: number, x?: number, y?: number) => {
+    emitReward('respect', `${amount} Respect`, x, y);
 };
 
 /**

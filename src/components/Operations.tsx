@@ -94,11 +94,6 @@ export const Operations = () => {
       path: '/profile',
     },
     {
-      iconSrc: '/images/icons/trophy.png',
-      title: 'Achievements',
-      path: '/achievements',
-    },
-    {
       iconSrc: '/images/icons/daily.png',
       title: 'Daily',
       path: '/daily-rewards',
@@ -114,6 +109,7 @@ export const Operations = () => {
       path: '/inventory',
     },
   ];
+
 
 
   return (
