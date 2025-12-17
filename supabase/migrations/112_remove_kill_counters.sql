@@ -6,10 +6,11 @@
 
 SET search_path = public;
 
--- Drop existing function to allow return type change
-DROP FUNCTION IF EXISTS get_leaderboard(TEXT, INTEGER);
+-- Drop ALL existing function signatures to allow return type change
+DROP FUNCTION IF EXISTS public.get_leaderboard(TEXT, INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS get_leaderboard(TEXT, INTEGER) CASCADE;
 
--- Update leaderboard function to support 'wins' type
+-- Recreate leaderboard function with 'wins' type
 CREATE OR REPLACE FUNCTION get_leaderboard(
     leaderboard_type TEXT,
     limit_count INTEGER DEFAULT 10
