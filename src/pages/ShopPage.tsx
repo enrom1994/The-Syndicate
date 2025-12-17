@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
 import { TON_RECEIVING_ADDRESS, toNanoTon } from '@/lib/ton-config';
+import { ContextualTooltip } from '@/components/ContextualTooltip';
 
 interface PackageProps {
     name: string;

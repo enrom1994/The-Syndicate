@@ -4,6 +4,7 @@ import { PlayerStats } from '@/components/PlayerStats';
 import { Operations } from '@/components/Operations';
 import { RecentActivity } from '@/components/RecentActivity';
 import { Onboarding, useOnboarding } from '@/components/Onboarding';
+import { FirstChoiceModal } from '@/components/FirstChoiceModal';
 import { QuickActions } from '@/components/QuickActions';
 import { MainLayout } from '@/components/MainLayout';
 import { SeasonBanner } from '@/components/SeasonBanner';
@@ -13,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Crown, Timer, Shield } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface OfflineEarnings {
   totalCash: number;
@@ -52,6 +53,8 @@ const Index = () => {
   const [protectionStatus, setProtectionStatus] = useState<ProtectionStatus>({ isActive: false, hoursRemaining: 0, minutesRemaining: 0 });
   const [starterPackAvailable, setStarterPackAvailable] = useState(false);
   const [starterPackTimer, setStarterPackTimer] = useState('');
+  const [showFirstChoice, setShowFirstChoice] = useState(false);
+  const navigate = useNavigate();
 
   // Calculate protection status from player data
   useEffect(() => {
@@ -164,6 +167,19 @@ const Index = () => {
     sessionStorage.setItem('hasSeenOfflineSummary', 'true');
   };
 
+  const handleFirstJobComplete = () => {
+    setShowFirstChoice(true);
+  };
+
+  const handleFirstChoice = (choice: 'business' | 'protection') => {
+    setShowFirstChoice(false);
+    if (choice === 'business') {
+      navigate('/business');
+    } else {
+      navigate('/shop');
+    }
+  };
+
   const handleOnboardingComplete = () => {
     completeOnboarding();
     setShowOnboarding(false);
@@ -178,7 +194,18 @@ const Index = () => {
 
   // Show onboarding first if not completed
   if (showOnboarding) {
-    return <Onboarding onComplete={handleOnboardingComplete} />;
+    return (
+      <>
+        <Onboarding
+          onComplete={handleOnboardingComplete}
+          onFirstJobComplete={handleFirstJobComplete}
+        />
+        <FirstChoiceModal
+          open={showFirstChoice}
+          onChoice={handleFirstChoice}
+        />
+      </>
+    );
   }
 
   if (isLoading) {

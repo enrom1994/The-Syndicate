@@ -1,7 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { haptic } from '@/lib/haptics';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2 } from 'lucide-react';
 import {
     Crown,
     Briefcase,
@@ -11,6 +14,7 @@ import {
     ChevronRight,
     ChevronLeft,
     X,
+    Target,
 } from 'lucide-react';
 
 interface OnboardingStep {
@@ -19,6 +23,7 @@ interface OnboardingStep {
     icon: React.ReactNode;
     iconBg: string;
     tips: string[];
+    isInteractive?: boolean;
 }
 
 const onboardingSteps: OnboardingStep[] = [
@@ -67,15 +72,16 @@ const onboardingSteps: OnboardingStep[] = [
         ],
     },
     {
-        title: 'Businesses',
-        description: 'Invest in businesses for passive income. Collect regularly before reaching the cap.',
-        icon: <Briefcase className="w-12 h-12 text-primary-foreground" />,
-        iconBg: 'bg-gradient-to-br from-blue-600 to-blue-800',
+        title: 'Your First Job',
+        description: 'Time to make your first move. Complete this job to earn cash and respect.',
+        icon: <Target className="w-12 h-12 text-green-400" />,
+        iconBg: 'bg-gradient-to-br from-green-600 to-green-800',
         tips: [
-            'Generates hourly income automatically',
-            'Higher income makes you a bigger target',
-            'Use the Bank to protect your earnings',
+            'This is your first action in the game',
+            'Jobs are guaranteed to succeed',
+            'Build your reputation step by step',
         ],
+        isInteractive: true,
     },
     {
         title: 'PvP Combat',
@@ -125,13 +131,57 @@ export const useOnboarding = () => {
 
 interface OnboardingProps {
     onComplete: () => void;
+    onFirstJobComplete?: () => void;
 }
 
-export const Onboarding = ({ onComplete }: OnboardingProps) => {
+export const Onboarding = ({ onComplete, onFirstJobComplete }: OnboardingProps) => {
+    const { player, refetchPlayer } = useAuth();
     const [currentStep, setCurrentStep] = useState(0);
+    const [isExecutingJob, setIsExecutingJob] = useState(false);
+    const [jobCompleted, setJobCompleted] = useState(false);
+    const [jobReward, setJobReward] = useState<{ cash: number; respect: number } | null>(null);
+
     const step = onboardingSteps[currentStep];
     const isLastStep = currentStep === onboardingSteps.length - 1;
     const isFirstStep = currentStep === 0;
+    const isInteractiveStep = step.isInteractive && !jobCompleted;
+
+    const handleExecuteFirstJob = async () => {
+        if (!player?.id) return;
+
+        setIsExecutingJob(true);
+        haptic.medium();
+
+        try {
+            // Call perform_pve_job RPC for a beginner-tier job
+            const { data, error } = await supabase.rpc('perform_pve_job', {
+                player_id_input: player.id,
+                job_name_input: 'collect_protection' // Beginner job
+            }) as { data: { success: boolean; cash_earned?: number; respect_earned?: number; message?: string } | null; error: any };
+
+            if (error) throw error;
+
+            if (data?.success) {
+                setJobReward({
+                    cash: data.cash_earned || 500,
+                    respect: data.respect_earned || 5
+                });
+                setJobCompleted(true);
+                await refetchPlayer();
+
+                // Trigger first choice modal after short delay
+                setTimeout(() => {
+                    if (onFirstJobComplete) {
+                        onFirstJobComplete();
+                    }
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('First job error:', error);
+        } finally {
+            setIsExecutingJob(false);
+        }
+    };
 
     const handleNext = () => {
         haptic.light();
@@ -161,8 +211,8 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-background flex flex-col"
         >
-            {/* Skip button - hidden on first step (PG+18) */}
-            {!isFirstStep && (
+            {/* Skip button - hidden on first step (PG+18) and interactive step */}
+            {!isFirstStep && !isInteractiveStep && (
                 <div className="flex justify-end p-4">
                     <button
                         onClick={handleSkip}
@@ -204,21 +254,69 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
                         {/* Description */}
                         <p className="text-muted-foreground mb-6">{step.description}</p>
 
-                        {/* Tips */}
-                        <div className="noir-card p-4 text-left space-y-2">
-                            {step.tips.map((tip, index) => (
-                                <motion.div
-                                    key={index}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.2 + index * 0.1 }}
-                                    className="flex items-start gap-2"
+                        {/* Interactive Job Section */}
+                        {isInteractiveStep ? (
+                            <div className="noir-card p-4 space-y-3 mb-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-left">
+                                        <h3 className="font-cinzel font-semibold text-sm text-foreground">
+                                            Collect Protection Money
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground">Beginner Job</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-xs text-green-400">+$500</p>
+                                        <p className="text-xs text-orange-400">+5 Respect</p>
+                                    </div>
+                                </div>
+                                <Button
+                                    onClick={handleExecuteFirstJob}
+                                    disabled={isExecutingJob}
+                                    className="w-full btn-gold"
                                 >
-                                    <span className="text-primary text-xs">▸</span>
-                                    <span className="text-sm text-foreground/80">{tip}</span>
-                                </motion.div>
-                            ))}
-                        </div>
+                                    {isExecutingJob ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Executing...
+                                        </>
+                                    ) : (
+                                        'Execute Job'
+                                    )}
+                                </Button>
+                            </div>
+                        ) : jobCompleted && currentStep === 4 ? (
+                            /* Job completed - show reward */
+                            <motion.div
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="noir-card p-4 bg-green-500/10 border-green-500/30 space-y-2 mb-4"
+                            >
+                                <p className="font-cinzel font-bold text-green-400">Job Complete!</p>
+                                <div className="flex items-center justify-center gap-3 text-sm">
+                                    <span className="text-green-400">+${jobReward?.cash || 500}</span>
+                                    <span className="text-orange-400">+{jobReward?.respect || 5} Respect</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground italic">
+                                    "Word spreads. You're on the map now."
+                                </p>
+                            </motion.div>
+                        ) : (
+                            /* Normal tips display */
+                            <div className="noir-card p-4 text-left space-y-2">
+                                {step.tips.map((tip, index) => (
+                                    <motion.div
+                                        key={index}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.2 + index * 0.1 }}
+                                        className="flex items-start gap-2"
+                                    >
+                                        <span className="text-primary text-xs">▸</span>
+                                        <span className="text-sm text-foreground/80">{tip}</span>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
 
                         {/* Special warning for PG+18 */}
                         {currentStep === 0 && (
@@ -256,7 +354,7 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
 
                 {/* Buttons */}
                 <div className="flex gap-3">
-                    {!isFirstStep && (
+                    {!isFirstStep && !isInteractiveStep && (
                         <Button
                             variant="outline"
                             onClick={handlePrev}
@@ -266,17 +364,20 @@ export const Onboarding = ({ onComplete }: OnboardingProps) => {
                             Back
                         </Button>
                     )}
-                    <Button
-                        onClick={handleNext}
-                        className={`btn-gold ${isFirstStep ? 'w-full' : 'flex-1'}`}
-                    >
-                        {isFirstStep
-                            ? 'I Am 18+ - Continue'
-                            : isLastStep
-                                ? "Let's Go!"
-                                : 'Next'}
-                        {!isLastStep && !isFirstStep && <ChevronRight className="w-4 h-4 ml-1" />}
-                    </Button>
+                    {!isInteractiveStep && (
+                        <Button
+                            onClick={handleNext}
+                            className={`btn-gold ${isFirstStep || isInteractiveStep ? 'w-full' : 'flex-1'}`}
+                            disabled={currentStep === 4 && !jobCompleted}
+                        >
+                            {isFirstStep
+                                ? 'I Am 18+ - Continue'
+                                : isLastStep
+                                    ? "Let's Go!"
+                                    : 'Next'}
+                            {!isLastStep && !isFirstStep && <ChevronRight className="w-4 h-4 ml-1" />}
+                        </Button>
+                    )}
                 </div>
             </div>
         </motion.div>
