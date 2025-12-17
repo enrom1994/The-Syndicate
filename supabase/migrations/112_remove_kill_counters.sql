@@ -6,6 +6,9 @@
 
 SET search_path = public;
 
+-- Drop existing function to allow return type change
+DROP FUNCTION IF EXISTS get_leaderboard(TEXT, INTEGER);
+
 -- Update leaderboard function to support 'wins' type
 CREATE OR REPLACE FUNCTION get_leaderboard(
     leaderboard_type TEXT,
