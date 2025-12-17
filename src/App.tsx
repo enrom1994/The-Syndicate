@@ -1,5 +1,4 @@
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -9,6 +8,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useGameStore } from "@/hooks/useGameStore";
 import { TelegramGuard } from "@/components/TelegramGuard";
 import { useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import Index from "./pages/Index";
 import MarketPage from "./pages/MarketPage";
 import OpsPage from "./pages/OpsPage";
@@ -38,12 +38,11 @@ const queryClient = new QueryClient();
 
 import { useDeepLink } from "@/hooks/useDeepLink";
 
-import { toast } from "sonner";
-
 // Syncs auth state with game store and loads initial data
 const GameInitializer = () => {
   const { player, isAuthenticated } = useAuth();
   const { setPlayerId, loadAllData, checkPendingUpkeep, reset } = useGameStore();
+  const { toast } = useToast();
 
   useEffect(() => {
     const initializeGame = async () => {
@@ -54,15 +53,16 @@ const GameInitializer = () => {
         const upkeepResult = await checkPendingUpkeep();
         if (upkeepResult && upkeepResult.hours_processed > 0) {
           if (upkeepResult.total_deducted > 0) {
-            toast.info(`💰 Crew Upkeep: -$${upkeepResult.total_deducted.toLocaleString()}`, {
+            toast({
+              title: `💰 Crew Upkeep: -$${upkeepResult.total_deducted.toLocaleString()}`,
               description: `${upkeepResult.hours_processed} hour(s) of upkeep paid`,
-              duration: 5000,
             });
           }
           if (upkeepResult.crew_lost > 0) {
-            toast.warning(`⚠️ ${upkeepResult.crew_lost} Crew Left!`, {
+            toast({
+              title: `⚠️ ${upkeepResult.crew_lost} Crew Left!`,
               description: "Couldn't afford full upkeep costs",
-              duration: 6000,
+              variant: "destructive",
             });
           }
         }
@@ -75,7 +75,7 @@ const GameInitializer = () => {
     };
 
     initializeGame();
-  }, [isAuthenticated, player?.id, setPlayerId, loadAllData, checkPendingUpkeep, reset]);
+  }, [isAuthenticated, player?.id, setPlayerId, loadAllData, checkPendingUpkeep, reset, toast]);
 
   return null;
 };
@@ -96,11 +96,11 @@ const App = () => {
               <RewardAnimationProvider>
                 <GameInitializer />
                 <Toaster />
-                <Sonner />
                 <BrowserRouter>
                   <ScrollToTop />
                   <DeepLinkHandler />
                   <ErrorBoundary>
+
                     <Routes>
                       <Route path="/" element={<Index />} />
                       <Route path="/market" element={<MarketPage />} />
