@@ -243,33 +243,50 @@ export const PlayerStats = () => {
         />
       </div>
 
-      {/* Subtle Respect Info Bar - informational, not pressure-like */}
+      {/* Respect Progress Bar - Enhanced */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.5 }}
-        className="mt-2 px-3 py-2 bg-muted/20 rounded-lg border border-muted/30"
+        className="mt-3 p-3 bg-gradient-to-r from-muted/30 to-muted/10 rounded-lg border border-primary/20"
       >
-        <div className="flex items-center justify-between">
+        {/* Header Row */}
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <img src="/images/icons/respect.png" alt="Respect" className="w-3.5 h-3.5 object-contain opacity-70" />
-            <span className="text-[10px] text-muted-foreground">{respect.toLocaleString()} Respect</span>
+            <img src="/images/icons/respect.png" alt="Respect" className="w-5 h-5 object-contain" />
+            <div>
+              <span className="font-cinzel font-semibold text-xs text-foreground">{rankInfo.title}</span>
+              <span className="text-[10px] text-muted-foreground ml-2">• {respect.toLocaleString()} Respect</span>
+            </div>
           </div>
           {respectToNext > 0 && (
-            <span className="text-[9px] text-muted-foreground/70">
-              {respectToNext.toLocaleString()} to {rankInfo.title === 'Godfather' ? 'max' : 'next rank'}
+            <span className="text-[10px] text-primary/80 font-medium">
+              +{respectToNext.toLocaleString()} to next
             </span>
           )}
         </div>
-        {/* Subtle progress indicator - thin and understated */}
-        <div className="h-0.5 rounded-full bg-muted/30 mt-1.5 overflow-hidden">
+
+        {/* Progress Bar - Thicker with gradient */}
+        <div className="h-2 rounded-full bg-muted/40 overflow-hidden border border-muted/50">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${respectProgress}%` }}
-            transition={{ duration: 1, delay: 0.7 }}
-            className="h-full bg-primary/40 rounded-full"
-          />
+            transition={{ duration: 1, delay: 0.7, ease: "easeOut" }}
+            className="h-full bg-gradient-to-r from-amber-500/80 via-primary to-amber-400/80 rounded-full relative"
+          >
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          </motion.div>
         </div>
+
+        {/* Next Rank Preview */}
+        {rankInfo.title !== 'Godfather' && (
+          <div className="flex justify-end mt-1.5">
+            <span className="text-[9px] text-muted-foreground/70">
+              Next: <span className="text-primary/70">{getRespectRank(rankInfo.nextThreshold).title}</span>
+            </span>
+          </div>
+        )}
       </motion.div>
 
       {/* Energy & Stamina Bars - Side by Side */}

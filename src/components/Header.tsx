@@ -19,7 +19,7 @@ export const Header = () => {
     >
       <div className="container flex items-center justify-between h-14 px-4">
         <div className="flex items-center gap-2">
-          <img src="/favicon.ico" alt="Logo" className="w-5 h-5" />
+          <img src="/favicon.ico" alt="Logo" className="w-10 h-10" />
           <span className="font-cinzel font-bold text-sm tracking-wider gold-shimmer">
             THE SYNDICATE
           </span>
