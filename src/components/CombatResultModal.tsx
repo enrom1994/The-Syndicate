@@ -16,6 +16,7 @@ interface CombatResultModalProps {
     itemsStolen?: string[];
     crewLost?: number;
     insuranceActivated?: boolean; // New: show when insurance protected the player
+    opponentHasMadeMan?: boolean; // Show prestige copy for Made Man opponents
 }
 
 export const CombatResultModal = ({
@@ -32,6 +33,7 @@ export const CombatResultModal = ({
     itemsStolen = [],
     crewLost = 0,
     insuranceActivated = false,
+    opponentHasMadeMan = false,
 }: CombatResultModalProps) => {
     const isVictory = result === 'victory';
 
@@ -129,6 +131,21 @@ export const CombatResultModal = ({
                             >
                                 <Shield className="w-4 h-4 text-cyan-400" />
                                 <span className="text-sm font-semibold text-cyan-400">Insurance Protected You!</span>
+                            </motion.div>
+                        )}
+
+                        {/* Made Man Prestige Copy */}
+                        {opponentHasMadeMan && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.48 }}
+                                className="flex items-center justify-center gap-2 bg-yellow-500/20 border border-yellow-500/40 rounded-lg px-3 py-2 mb-4"
+                            >
+                                <span className="text-yellow-400">🏅</span>
+                                <span className="text-sm font-semibold text-yellow-400">
+                                    {isVictory ? 'You defeated a Made Man' : 'Defeated by a Made Man'}
+                                </span>
                             </motion.div>
                         )}
 

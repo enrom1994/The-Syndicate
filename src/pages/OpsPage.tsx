@@ -32,6 +32,7 @@ interface TargetPlayer {
     cash: number;
     defense: number;
     attack: number;
+    has_made_man?: boolean;
 }
 
 interface PveTarget {
@@ -78,6 +79,7 @@ interface RevengeTarget {
     hours_remaining: number;
     attacker_has_shield: boolean;
     attacker_has_npp: boolean;
+    has_made_man?: boolean;
 }
 
 // =====================================================
@@ -230,8 +232,11 @@ const TargetCard = ({
                             <Skull className="w-4 h-4 text-red-200" />
                         </div>
                         <div>
-                            <h3 className="font-cinzel font-semibold text-sm text-foreground leading-tight">
+                            <h3 className="font-cinzel font-semibold text-sm text-foreground leading-tight flex items-center gap-1.5">
                                 {target.username || `Player ${target.id.slice(0, 6)}`}
+                                {target.has_made_man && (
+                                    <span className="text-yellow-400" title="Made Man — Initiated early">🏅</span>
+                                )}
                             </h3>
                             <div className="flex items-center gap-2 text-xs">
                                 <span className="text-green-400 font-medium">{formatNetWorth(target.cash)}</span>
@@ -697,6 +702,7 @@ const OpsPage = () => {
         itemsStolen?: string[];
         crewLost?: number;
         insuranceActivated?: boolean;
+        opponentHasMadeMan?: boolean;
     }>({ open: false, result: 'victory', targetName: '', cashGained: 0, cashLost: 0, respectGained: 0, respectLost: 0 });
 
     // PvP confirm dialog
@@ -804,12 +810,10 @@ const OpsPage = () => {
         if (!player?.id) return;
         setIsLoadingPvp(true);
         try {
-            const { data, error } = await supabase
-                .from('players')
-                .select('id, username, cash, defense, attack')
-                .neq('id', player.id)
-                .gt('cash', 1000)
-                .limit(5);
+            const { data, error } = await supabase.rpc('get_pvp_targets', {
+                player_id_input: player.id,
+                target_limit: 5
+            } as any);
             if (error) throw error;
             setPvpTargets(data || []);
         } catch (error) {
@@ -926,7 +930,8 @@ const OpsPage = () => {
                         xpGained: 0,
                         itemsStolen: data.contraband_stolen > 0 ? [`${data.contraband_stolen} Contraband`] : [],
                         crewLost: 0,
-                        insuranceActivated: data.insurance_applied || false
+                        insuranceActivated: data.insurance_applied || false,
+                        opponentHasMadeMan: pendingPvpAttack?.target?.has_made_man || false
                     });
                 } else {
                     haptic.error();
@@ -941,7 +946,8 @@ const OpsPage = () => {
                         respectLost: data.respect_lost ?? (data.attacker_respect_loss || 0),
                         xpGained: 0,
                         itemsStolen: [],
-                        crewLost: data.attacker_crew_loss || 0
+                        crewLost: data.attacker_crew_loss || 0,
+                        opponentHasMadeMan: pendingPvpAttack?.target?.has_made_man || false
                     });
                 }
                 await refetchPlayer();
@@ -996,7 +1002,8 @@ const OpsPage = () => {
                         xpGained: 0,
                         itemsStolen: data.contraband_stolen > 0 ? [`${data.contraband_stolen} Contraband`] : [],
                         crewLost: 0,
-                        insuranceActivated: data.insurance_applied || false
+                        insuranceActivated: data.insurance_applied || false,
+                        opponentHasMadeMan: pendingRevenge?.target?.has_made_man || false
                     });
                 } else {
                     haptic.error();
@@ -1010,7 +1017,8 @@ const OpsPage = () => {
                         respectLost: data.respect_lost ?? 0,
                         xpGained: 0,
                         itemsStolen: [],
-                        crewLost: data.attacker_crew_loss || 0
+                        crewLost: data.attacker_crew_loss || 0,
+                        opponentHasMadeMan: pendingRevenge?.target?.has_made_man || false
                     });
                 }
                 await refetchPlayer();
@@ -1325,8 +1333,11 @@ const OpsPage = () => {
                                                     <Flame className="w-4 h-4 text-orange-200" />
                                                 </div>
                                                 <div>
-                                                    <h3 className="font-cinzel font-semibold text-sm text-foreground leading-tight">
+                                                    <h3 className="font-cinzel font-semibold text-sm text-foreground leading-tight flex items-center gap-1.5">
                                                         {target.attacker_name || 'Unknown'}
+                                                        {target.has_made_man && (
+                                                            <span className="text-yellow-400" title="Made Man — Initiated early">🏅</span>
+                                                        )}
                                                     </h3>
                                                     <p className="text-xs text-muted-foreground">
                                                         Attacked you {Math.max(0, 24 - target.hours_remaining)}h ago
