@@ -80,7 +80,7 @@ const ProfilePage = () => {
     const { toast } = useToast();
     const { player, refetchPlayer } = useAuth();
     const { user } = useTelegram();
-    const { businesses, crew: hiredCrew } = useGameStore();
+    const { businesses, crew: hiredCrew, achievements } = useGameStore();
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [pendingTrain, setPendingTrain] = useState<{ name: string; cost: number; stat: string } | null>(null);
 
@@ -221,7 +221,13 @@ const ProfilePage = () => {
                             </div>
                         </div>
                         <div className="flex-1">
-                            <h1 className="font-cinzel text-lg font-bold text-foreground">{fullName}</h1>
+                            <h1 className="font-cinzel text-lg font-bold text-foreground flex items-center gap-2">
+                                {fullName}
+                                {/* Made Man Badge */}
+                                {achievements?.some((a: any) => a.name === 'Made Man' && a.is_unlocked) && (
+                                    <span className="text-yellow-400" title="Made Man — Initiated into the Family">🏅</span>
+                                )}
+                            </h1>
                             {username && <p className="text-xs text-muted-foreground">{username}</p>}
                             <div className="flex items-center gap-2 mt-1">
                                 <span className={`text-xs font-semibold ${rankInfo.color}`}>{rankInfo.title}</span>
