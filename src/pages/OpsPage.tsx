@@ -1079,8 +1079,8 @@ const OpsPage = () => {
                     className="noir-card p-3 mb-6 grid grid-cols-3 gap-3"
                 >
                     <div className="text-center">
-                        <p className="text-xs text-muted-foreground">Kills</p>
-                        <p className="font-cinzel font-bold text-lg text-foreground">{player?.total_kills ?? 0}</p>
+                        <p className="text-xs text-muted-foreground">Wins</p>
+                        <p className="font-cinzel font-bold text-lg text-foreground">{player?.total_attacks_won ?? 0}</p>
                     </div>
                     <div className="text-center">
                         <p className="text-xs text-muted-foreground">Stamina</p>

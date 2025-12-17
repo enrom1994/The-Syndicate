@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Trophy, Crown, DollarSign, Skull, Star, Medal, Loader2 } from 'lucide-react';
+import { Trophy, Crown, DollarSign, Swords, Star, Medal, Loader2 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -63,8 +63,8 @@ const formatValue = (value: number, type: string): string => {
         if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
         return `$${value.toLocaleString()}`;
     }
-    if (type === 'kills') {
-        return `${value.toLocaleString()} Kills`;
+    if (type === 'wins') {
+        return `${value.toLocaleString()} Wins`;
     }
     if (type === 'respect') {
         return value.toLocaleString();
@@ -76,11 +76,11 @@ const RanksPage = () => {
     const [activeTab, setActiveTab] = useState('networth');
     const [leaderboardData, setLeaderboardData] = useState<Record<string, LeaderboardEntry[]>>({
         networth: [],
-        kills: [],
+        wins: [],
         respect: [],
     });
     const [isLoading, setIsLoading] = useState(true);
-    const [playerRank, setPlayerRank] = useState<{ networth: number; respect: number; kills: number } | null>(null);
+    const [playerRank, setPlayerRank] = useState<{ networth: number; respect: number; wins: number } | null>(null);
     const [seasonInfo, setSeasonInfo] = useState<{ name: string; days_remaining: number; prize_pool: string } | null>(null);
 
     const { player } = useAuth();
@@ -124,15 +124,15 @@ const RanksPage = () => {
                 .select('*', { count: 'exact', head: true })
                 .gt('respect', player.respect);
 
-            const { count: killsRank } = await supabase
+            const { count: winsRank } = await supabase
                 .from('players')
                 .select('*', { count: 'exact', head: true })
-                .gt('total_kills', player.total_kills);
+                .gt('total_attacks_won', player.total_attacks_won);
 
             setPlayerRank({
                 networth: (networthRank || 0) + 1,
                 respect: (respectRank || 0) + 1,
-                kills: (killsRank || 0) + 1,
+                wins: (winsRank || 0) + 1,
             });
         } catch (error) {
             console.error('Error calculating player rank:', error);
@@ -143,15 +143,15 @@ const RanksPage = () => {
         const loadAllLeaderboards = async () => {
             setIsLoading(true);
 
-            const [networth, kills, respect] = await Promise.all([
+            const [networth, wins, respect] = await Promise.all([
                 fetchLeaderboard('networth'),
-                fetchLeaderboard('kills'),
+                fetchLeaderboard('wins'),
                 fetchLeaderboard('respect'),
             ]);
 
             setLeaderboardData({
                 networth,
-                kills,
+                wins,
                 respect,
             });
 
@@ -241,9 +241,9 @@ const RanksPage = () => {
                             </p>
                         </div>
                         <div>
-                            <p className="text-xs text-muted-foreground">Kills</p>
+                            <p className="text-xs text-muted-foreground">Wins</p>
                             <p className="font-cinzel font-bold text-sm text-foreground">
-                                {player?.total_kills ?? 0}
+                                {player?.total_attacks_won ?? 0}
                             </p>
                         </div>
                     </div>
@@ -254,8 +254,8 @@ const RanksPage = () => {
                         <TabsTrigger value="networth" className="font-cinzel text-[10px] p-2">
                             <DollarSign className="w-4 h-4" />
                         </TabsTrigger>
-                        <TabsTrigger value="kills" className="font-cinzel text-[10px] p-2">
-                            <Skull className="w-4 h-4" />
+                        <TabsTrigger value="wins" className="font-cinzel text-[10px] p-2">
+                            <Swords className="w-4 h-4" />
                         </TabsTrigger>
                         <TabsTrigger value="respect" className="font-cinzel text-[10px] p-2">
                             <Star className="w-4 h-4" />
@@ -279,17 +279,17 @@ const RanksPage = () => {
                                 )}
                             </TabsContent>
 
-                            <TabsContent value="kills" className="space-y-2 mt-0">
-                                <h3 className="font-cinzel text-xs text-muted-foreground mb-2">Most Kills</h3>
-                                {leaderboardData.kills.length === 0 ? (
-                                    <p className="text-center text-muted-foreground text-sm py-4">No kills recorded yet</p>
+                            <TabsContent value="wins" className="space-y-2 mt-0">
+                                <h3 className="font-cinzel text-xs text-muted-foreground mb-2">Most Wins</h3>
+                                {leaderboardData.wins.length === 0 ? (
+                                    <p className="text-center text-muted-foreground text-sm py-4">No wins recorded yet</p>
                                 ) : (
-                                    leaderboardData.kills.map((entry, index) => (
+                                    leaderboardData.wins.map((entry, index) => (
                                         <LeaderboardEntryComponent
                                             key={entry.rank + entry.player_id}
                                             rank={Number(entry.rank)}
                                             name={entry.username || `Player ${entry.player_id.slice(0, 6)}`}
-                                            value={formatValue(entry.value, 'kills')}
+                                            value={formatValue(entry.value, 'wins')}
                                             isYou={entry.player_id === player?.id}
                                             delay={0.05 * index}
                                         />
