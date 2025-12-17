@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useGameStore } from '@/hooks/useGameStore';
 import { Input } from '@/components/ui/input';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { ContributionDialog } from '@/components/ContributionDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -202,7 +203,6 @@ const FamilyPage = () => {
     const [isProcessing, setIsProcessing] = useState(false);
 
     const [contributeOpen, setContributeOpen] = useState(false);
-    const [contributeAmount, setContributeAmount] = useState(10000);
 
     const [inviteOpen, setInviteOpen] = useState(false);
     const [inviteUsername, setInviteUsername] = useState('');
@@ -388,36 +388,6 @@ const FamilyPage = () => {
         } catch (error) {
             console.error('Action error:', error);
             toast({ title: 'Error', description: 'Action failed. Please try again.', variant: 'destructive' });
-        } finally {
-            setIsProcessing(false);
-        }
-    };
-
-    const handleContribute = async () => {
-        if (!player?.id || contributeAmount <= 0) return;
-
-        setIsProcessing(true);
-
-        try {
-            const { data, error } = await supabase.rpc('contribute_to_treasury', {
-                contributor_id: player.id,
-                amount: contributeAmount
-            });
-
-            if (error) throw error;
-
-            if (data?.success) {
-                haptic.success();
-                toast({ title: 'Contribution Made', description: data.message });
-                setContributeOpen(false);
-                await refetchPlayer();
-                await loadFamilyData();
-            } else {
-                toast({ title: 'Error', description: data?.message || 'Failed to contribute', variant: 'destructive' });
-            }
-        } catch (error) {
-            console.error('Contribute error:', error);
-            toast({ title: 'Error', description: 'Failed to contribute. Please try again.', variant: 'destructive' });
         } finally {
             setIsProcessing(false);
         }
@@ -768,48 +738,14 @@ const FamilyPage = () => {
             </div>
 
             {/* Contribute Dialog */}
-            <Dialog open={contributeOpen} onOpenChange={setContributeOpen}>
-                <DialogContent className="bg-card border-border">
-                    <DialogHeader>
-                        <DialogTitle className="font-cinzel">Contribute to Treasury</DialogTitle>
-                        <DialogDescription>
-                            Support your family's operations
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Your Cash:</span>
-                            <span className="font-bold">${(player?.cash ?? 0).toLocaleString()}</span>
-                        </div>
-                        <Input
-                            type="number"
-                            value={contributeAmount}
-                            onChange={(e) => setContributeAmount(parseInt(e.target.value) || 0)}
-                            className="bg-muted/30 border-border/50"
-                            min={1000}
-                            max={player?.cash ?? 0}
-                        />
-                        <div className="grid grid-cols-4 gap-2">
-                            {[10000, 50000, 100000, 500000].map((amount) => (
-                                <button
-                                    key={amount}
-                                    onClick={() => setContributeAmount(Math.min(amount, player?.cash ?? 0))}
-                                    className="p-2 text-[10px] rounded-sm bg-muted/30 border border-border/50 text-muted-foreground hover:border-primary/50"
-                                >
-                                    ${(amount / 1000)}K
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setContributeOpen(false)}>Cancel</Button>
-                        <Button className="btn-gold" onClick={handleContribute} disabled={isProcessing || contributeAmount <= 0}>
-                            {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                            Contribute ${contributeAmount.toLocaleString()}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <ContributionDialog
+                open={contributeOpen}
+                onOpenChange={setContributeOpen}
+                familyName={family.name}
+                treasuryBalance={family.treasury}
+                myContribution={familyData?.my_contribution || 0}
+                onSuccess={loadFamilyData}
+            />
 
             {/* Confirm Action Dialog */}
             <ConfirmDialog

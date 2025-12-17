@@ -273,3 +273,8 @@ Creating economic tension
 Designing war as a ruleset, not a skin
 
 This is exactly how sustainable PvP economies are built.
+
+
+Treasury-funded War actions
+
+

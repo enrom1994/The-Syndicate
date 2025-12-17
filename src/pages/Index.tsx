@@ -335,7 +335,7 @@ const Index = () => {
                   )}
                 </div>
 
-                <PlayerStats />
+                <PlayerStats onOpenOnboarding={() => setShowOnboarding(true)} />
 
                 <Operations />
 

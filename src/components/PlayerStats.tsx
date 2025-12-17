@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Swords, Shield, Users, TrendingUp } from 'lucide-react';
+import { Swords, Shield, Users, TrendingUp, Info } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { EnergyBar, StaminaBar } from './SeasonBanner';
 import { GameIcon } from './GameIcon';
+import { Button } from './ui/button';
 import { useEnergyRegen } from '@/hooks/useEnergyRegen';
 import { useStaminaRegen } from '@/hooks/useStaminaRegen';
 import { useAuth } from '@/contexts/AuthContext';
@@ -82,7 +83,11 @@ const getRespectRank = (respect: number): { title: string; nextThreshold: number
   return { title: 'Street Thug', nextThreshold: 250, currentThreshold: 0 };
 };
 
-export const PlayerStats = () => {
+interface PlayerStatsProps {
+  onOpenOnboarding?: () => void;
+}
+
+export const PlayerStats = ({ onOpenOnboarding }: PlayerStatsProps = {}) => {
   const navigate = useNavigate();
   const { player } = useAuth();
   const { crew: hiredCrew, businesses, inventory } = useGameStore();
@@ -182,7 +187,20 @@ export const PlayerStats = () => {
         transition={{ duration: 0.5 }}
         className="flex items-center justify-between mb-3"
       >
-        <h2 className="font-cinzel text-base font-semibold text-foreground">Your Empire</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="font-cinzel text-base font-semibold text-foreground">Your Empire</h2>
+          {onOpenOnboarding && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onOpenOnboarding}
+              className="w-6 h-6 rounded-full hover:bg-primary/20"
+              title="View Tutorial"
+            >
+              <Info className="w-4 h-4 text-muted-foreground hover:text-primary" />
+            </Button>
+          )}
+        </div>
         <Link to="/ranks" className="stat-badge text-primary hover:bg-primary/20 transition-colors cursor-pointer">
           Rank #{playerRank ?? '---'}
         </Link>
