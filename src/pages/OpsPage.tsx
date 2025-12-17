@@ -70,6 +70,16 @@ interface PvpAttackType {
     vault_steal_percent: number;
 }
 
+interface RevengeTarget {
+    attack_log_id: string;
+    attacker_id: string;
+    attacker_name: string;
+    attacked_at: string;
+    hours_remaining: number;
+    attacker_has_shield: boolean;
+    attacker_has_npp: boolean;
+}
+
 // =====================================================
 // PVE TARGET CARD
 // =====================================================
@@ -710,6 +720,12 @@ const OpsPage = () => {
     const [isLoadingHighStakes, setIsLoadingHighStakes] = useState(false);
     const [confirmHighStakes, setConfirmHighStakes] = useState<HighStakesJob | null>(null);
 
+    // Revenge state
+    const [revengeTargets, setRevengeTargets] = useState<RevengeTarget[]>([]);
+    const [isLoadingRevenge, setIsLoadingRevenge] = useState(false);
+    const [pendingRevenge, setPendingRevenge] = useState<{ target: RevengeTarget; attackType: string } | null>(null);
+    const [revengeConfirmOpen, setRevengeConfirmOpen] = useState(false);
+
     // =====================================================
     // LOAD DATA
     // =====================================================
@@ -721,6 +737,7 @@ const OpsPage = () => {
             loadPvpAttackTypes();
             loadJobChainStatus();
             loadHighStakesJobs();
+            loadRevengeTargets();
         }
     }, [player?.id]);
 
@@ -749,6 +766,23 @@ const OpsPage = () => {
             setHighStakesJobs(jobs);
         } finally {
             setIsLoadingHighStakes(false);
+        }
+    };
+
+    const loadRevengeTargets = async () => {
+        if (!player?.id) return;
+        setIsLoadingRevenge(true);
+        try {
+            const { data, error } = await supabase.rpc('get_revenge_targets', {
+                player_id_input: player.id
+            });
+            if (!error && data) {
+                setRevengeTargets(data);
+            }
+        } catch (err) {
+            console.error('Failed to load revenge targets:', err);
+        } finally {
+            setIsLoadingRevenge(false);
         }
     };
 
@@ -923,6 +957,75 @@ const OpsPage = () => {
         } finally {
             setProcessingId(null);
             setPendingPvpAttack(null);
+        }
+    };
+
+    // =====================================================
+    // REVENGE EXECUTION
+    // =====================================================
+
+    const executeRevenge = async () => {
+        if (!pendingRevenge || !player) return;
+
+        setRevengeConfirmOpen(false);
+        setProcessingId(pendingRevenge.target.attacker_id);
+
+        try {
+            const { data, error } = await supabase.rpc('perform_pvp_attack', {
+                attacker_id_input: player.id,
+                defender_id_input: pendingRevenge.target.attacker_id,
+                attack_type_input: pendingRevenge.attackType,
+                is_revenge_input: true,
+                original_attack_id_input: pendingRevenge.target.attack_log_id
+            } as any);
+
+            if (error) throw error;
+
+            if (data?.success) {
+                if (data.result === 'victory') {
+                    haptic.success();
+                    if (data.cash_stolen) rewardCash(data.cash_stolen);
+                    setCombatResult({
+                        open: true,
+                        result: 'victory',
+                        targetName: data.defender_name,
+                        cashGained: data.cash_stolen || 0,
+                        cashLost: 0,
+                        respectGained: data.respect_gained ?? 0,
+                        respectLost: 0,
+                        xpGained: 0,
+                        itemsStolen: data.contraband_stolen > 0 ? [`${data.contraband_stolen} Contraband`] : [],
+                        crewLost: 0,
+                        insuranceActivated: data.insurance_applied || false
+                    });
+                } else {
+                    haptic.error();
+                    setCombatResult({
+                        open: true,
+                        result: 'defeat',
+                        targetName: data.defender_name,
+                        cashGained: 0,
+                        cashLost: 0,
+                        respectGained: 0,
+                        respectLost: data.respect_lost ?? 0,
+                        xpGained: 0,
+                        itemsStolen: [],
+                        crewLost: data.attacker_crew_loss || 0
+                    });
+                }
+                await refetchPlayer();
+                await loadCrew();
+                await loadInventory();
+                await loadRevengeTargets(); // Refresh revenge list
+            } else {
+                toast({ title: 'Revenge Failed', description: data?.message, variant: 'destructive' });
+            }
+        } catch (error) {
+            console.error('Revenge attack error:', error);
+            toast({ title: 'Error', description: 'Revenge attack failed', variant: 'destructive' });
+        } finally {
+            setProcessingId(null);
+            setPendingRevenge(null);
         }
     };
 
@@ -1115,13 +1218,18 @@ const OpsPage = () => {
                             <Swords className="w-3 h-3" />
                             PvP
                         </TabsTrigger>
+                        <TabsTrigger value="revenge" className="font-cinzel text-xs flex items-center gap-1 relative">
+                            <Flame className="w-3 h-3 text-orange-500" />
+                            Revenge
+                            {revengeTargets.length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[10px] font-bold flex items-center justify-center">
+                                    {revengeTargets.length}
+                                </span>
+                            )}
+                        </TabsTrigger>
                         <TabsTrigger value="jobs" className="font-cinzel text-xs flex items-center gap-1">
                             <Target className="w-3 h-3" />
                             Jobs
-                        </TabsTrigger>
-                        <TabsTrigger value="highstakes" className="font-cinzel text-xs flex items-center gap-1">
-                            <Star className="w-3 h-3 text-yellow-500" />
-                            Stakes
                         </TabsTrigger>
                     </TabsList>
 
@@ -1174,6 +1282,100 @@ const OpsPage = () => {
                                     delay={0.05 * idx}
                                     onAttack={(attackType) => handlePvpAttackClick(target, attackType)}
                                 />
+                            ))
+                        )}
+                    </TabsContent>
+
+                    {/* Revenge Tab */}
+                    <TabsContent value="revenge" className="space-y-3 mt-0">
+                        <div className="noir-card p-3 mb-3 flex items-center gap-2 text-xs text-orange-400">
+                            <Flame className="w-4 h-4" />
+                            <span>Strike back at those who attacked you! Same rules as PvP.</span>
+                        </div>
+
+                        {isLoadingRevenge ? (
+                            <div className="flex items-center justify-center py-12">
+                                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                            </div>
+                        ) : revengeTargets.length === 0 ? (
+                            <div className="text-center py-8">
+                                <Flame className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                                <p className="text-muted-foreground">No active revenge targets</p>
+                                <p className="text-xs text-muted-foreground/60 mt-1">
+                                    Revenge is available for 24h after being attacked
+                                </p>
+                                <Button variant="outline" className="mt-4" onClick={loadRevengeTargets}>
+                                    Refresh
+                                </Button>
+                            </div>
+                        ) : (
+                            revengeTargets.map((target, idx) => (
+                                <motion.div
+                                    key={target.attack_log_id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5, delay: 0.05 * idx }}
+                                    className="noir-card overflow-hidden border-l-4 border-orange-500"
+                                >
+                                    {/* Target Header */}
+                                    <div className="p-3 border-b border-border/30">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-600 to-red-800 flex items-center justify-center">
+                                                    <Flame className="w-4 h-4 text-orange-200" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-cinzel font-semibold text-sm text-foreground leading-tight">
+                                                        {target.attacker_name || 'Unknown'}
+                                                    </h3>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Attacked you {Math.max(0, 24 - target.hours_remaining)}h ago
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-xs text-orange-400 font-bold">
+                                                    {target.hours_remaining}h left
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Status & Action */}
+                                    <div className="p-3">
+                                        {target.attacker_has_shield ? (
+                                            <div className="flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 rounded p-2 text-xs text-blue-400">
+                                                <Shield className="w-4 h-4" />
+                                                <span>Target has Shield active - revenge blocked</span>
+                                            </div>
+                                        ) : target.attacker_has_npp ? (
+                                            <div className="flex items-center gap-2 bg-cyan-500/10 border border-cyan-500/30 rounded p-2 text-xs text-cyan-400">
+                                                <Shield className="w-4 h-4" />
+                                                <span>Target under New Player Protection</span>
+                                            </div>
+                                        ) : (
+                                            <Button
+                                                className="w-full btn-gold text-xs"
+                                                onClick={() => {
+                                                    if (pvpAttackTypes.length > 0) {
+                                                        setPendingRevenge({ target, attackType: pvpAttackTypes[0].id });
+                                                        setRevengeConfirmOpen(true);
+                                                    }
+                                                }}
+                                                disabled={processingId === target.attacker_id}
+                                            >
+                                                {processingId === target.attacker_id ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <>
+                                                        <Flame className="w-4 h-4 mr-2" />
+                                                        Take Revenge
+                                                    </>
+                                                )}
+                                            </Button>
+                                        )}
+                                    </div>
+                                </motion.div>
                             ))
                         )}
                     </TabsContent>
@@ -1344,6 +1546,35 @@ const OpsPage = () => {
                             className="bg-gradient-to-r from-yellow-600 to-orange-600"
                         >
                             Enter ({confirmHighStakes?.entry_cost_diamonds}💎)
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Revenge Confirm Dialog */}
+            <AlertDialog open={revengeConfirmOpen} onOpenChange={setRevengeConfirmOpen}>
+                <AlertDialogContent className="noir-card border-border">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-cinzel text-orange-400 flex items-center gap-2">
+                            <Flame className="w-5 h-5" />
+                            Confirm Revenge
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Strike back at <span className="font-bold text-foreground">{pendingRevenge?.target.attacker_name}</span>!
+                            <br /><br />
+                            <span className="text-xs text-muted-foreground">
+                                Same rules as normal PvP apply. Cash fee will be deducted.
+                            </span>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={executeRevenge}
+                            className="bg-gradient-to-r from-orange-600 to-red-600"
+                        >
+                            <Flame className="w-4 h-4 mr-2" />
+                            Take Revenge
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
