@@ -41,6 +41,7 @@ interface Member {
     level: number;
     respect: number;
     joined_at: string;
+    has_made_man?: boolean;
 }
 
 interface FamilyData {
@@ -127,9 +128,16 @@ const MemberCard = ({ member, myRole, isMe, delay = 0, onAction }: MemberCardPro
                 </div>
             </div>
             <div className="flex-1 min-w-0">
-                <p className={`font-cinzel font-semibold text-sm truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>
-                    {displayName} {isMe && <span className="text-xs font-inter">(You)</span>}
-                </p>
+                <div className="flex items-center gap-1">
+                    <p className={`font-cinzel font-semibold text-sm truncate ${isMe ? 'text-primary' : 'text-foreground'}`}>
+                        {displayName}
+                    </p>
+                    {/* Made Man Badge */}
+                    {member.has_made_man && (
+                        <span className="text-amber-400 text-xs" title="Made Man">👑</span>
+                    )}
+                    {isMe && <span className="text-xs font-inter text-muted-foreground">(You)</span>}
+                </div>
                 <p className="text-xs text-muted-foreground">{member.role} • <img src="/images/icons/respect.png" alt="" className="w-3 h-3 inline" /> {member.respect.toLocaleString()}</p>
             </div>
             <div className="text-right shrink-0">

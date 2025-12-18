@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Trophy, Crown, DollarSign, Swords, Star, Medal, Loader2 } from 'lucide-react';
+import { Trophy, Crown, DollarSign, Swords, Star, Medal, Loader2, Users } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +11,7 @@ interface LeaderboardEntry {
     player_id: string;
     username: string;
     value: number;
+    has_made_man?: boolean;
 }
 
 interface LeaderboardEntryProps {
@@ -20,9 +21,11 @@ interface LeaderboardEntryProps {
     value: string;
     isYou?: boolean;
     delay?: number;
+    hasMadeMan?: boolean;
+    isFamily?: boolean;
 }
 
-const LeaderboardEntryComponent = ({ rank, name, family, value, isYou, delay = 0 }: LeaderboardEntryProps) => {
+const LeaderboardEntryComponent = ({ rank, name, family, value, isYou, delay = 0, hasMadeMan, isFamily }: LeaderboardEntryProps) => {
     const getRankIcon = () => {
         if (rank === 1) return <Crown className="w-5 h-5 text-yellow-500" />;
         if (rank === 2) return <Medal className="w-5 h-5 text-gray-400" />;
@@ -46,10 +49,18 @@ const LeaderboardEntryComponent = ({ rank, name, family, value, isYou, delay = 0
                 {getRankIcon()}
             </div>
             <div className="flex-1">
-                <p className={`font-cinzel font-semibold text-sm ${isYou ? 'text-primary' : 'text-foreground'}`}>
-                    {name} {isYou && <span className="text-xs font-inter">(You)</span>}
-                </p>
+                <div className="flex items-center gap-1.5">
+                    <p className={`font-cinzel font-semibold text-sm ${isYou ? 'text-primary' : 'text-foreground'}`}>
+                        {name}
+                    </p>
+                    {/* Made Man Badge */}
+                    {hasMadeMan && !isFamily && (
+                        <span className="text-amber-400 text-xs" title="Made Man">👑</span>
+                    )}
+                    {isYou && <span className="text-xs font-inter text-muted-foreground">(You)</span>}
+                </div>
                 {family && <p className="text-xs text-muted-foreground">{family}</p>}
+                {isFamily && <p className="text-xs text-muted-foreground">Family</p>}
             </div>
             <p className="font-cinzel font-bold text-sm text-primary">{value}</p>
         </motion.div>
@@ -57,7 +68,7 @@ const LeaderboardEntryComponent = ({ rank, name, family, value, isYou, delay = 0
 };
 
 const formatValue = (value: number, type: string): string => {
-    if (type === 'networth') {
+    if (type === 'networth' || type === 'families') {
         if (value >= 1000000000) return `$${(value / 1000000000).toFixed(1)}B`;
         if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
         if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
@@ -78,6 +89,7 @@ const RanksPage = () => {
         networth: [],
         wins: [],
         respect: [],
+        families: [],
     });
     const [isLoading, setIsLoading] = useState(true);
     const [playerRank, setPlayerRank] = useState<{ networth: number; respect: number; wins: number } | null>(null);
@@ -108,11 +120,6 @@ const RanksPage = () => {
         if (!player?.id) return;
 
         try {
-            // Get player's net worth rank
-            const netWorth = await supabase.rpc('calculate_net_worth', {
-                player_id_input: player.id,
-            });
-
             // Count players with higher values to estimate rank
             const { count: networthRank } = await supabase
                 .from('players')
@@ -143,30 +150,38 @@ const RanksPage = () => {
         const loadAllLeaderboards = async () => {
             setIsLoading(true);
 
-            const [networth, wins, respect] = await Promise.all([
+            const [networth, wins, respect, families] = await Promise.all([
                 fetchLeaderboard('networth'),
                 fetchLeaderboard('wins'),
                 fetchLeaderboard('respect'),
+                fetchLeaderboard('families'),
             ]);
 
             setLeaderboardData({
                 networth,
                 wins,
                 respect,
+                families,
             });
 
             // Load season info
             try {
                 const { data } = await supabase.rpc('get_current_season');
                 if (data) {
+                    const seasonData = data as any;
                     setSeasonInfo({
-                        name: data.name || 'Season 1',
-                        days_remaining: data.days_remaining || 0,
-                        prize_pool: data.prize_pool || '500 TON'
+                        name: seasonData.name || 'Season 1',
+                        days_remaining: seasonData.days_remaining || 0,
+                        prize_pool: seasonData.prize_pool || '500 TON'
                     });
                 }
             } catch (err) {
-                console.error('Failed to load season:', err);
+                // Season RPC might not exist, use defaults
+                setSeasonInfo({
+                    name: 'Season 1',
+                    days_remaining: 14,
+                    prize_pool: '500 TON'
+                });
             }
 
             await calculatePlayerRank();
@@ -183,6 +198,8 @@ const RanksPage = () => {
             name: entry.username || `Player ${entry.player_id.slice(0, 6)}`,
             value: formatValue(entry.value, activeTab),
             isYou: entry.player_id === player?.id,
+            hasMadeMan: entry.has_made_man || false,
+            isFamily: activeTab === 'families',
         }));
     };
 
@@ -251,7 +268,7 @@ const RanksPage = () => {
                 </motion.div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 bg-muted/30 rounded-sm mb-4">
+                    <TabsList className="grid w-full grid-cols-4 bg-muted/30 rounded-sm mb-4">
                         <TabsTrigger value="networth" className="font-cinzel text-[10px] p-2">
                             <DollarSign className="w-4 h-4" />
                         </TabsTrigger>
@@ -260,6 +277,9 @@ const RanksPage = () => {
                         </TabsTrigger>
                         <TabsTrigger value="respect" className="font-cinzel text-[10px] p-2">
                             <Star className="w-4 h-4" />
+                        </TabsTrigger>
+                        <TabsTrigger value="families" className="font-cinzel text-[10px] p-2">
+                            <Users className="w-4 h-4" />
                         </TabsTrigger>
                     </TabsList>
 
@@ -292,6 +312,7 @@ const RanksPage = () => {
                                             name={entry.username || `Player ${entry.player_id.slice(0, 6)}`}
                                             value={formatValue(entry.value, 'wins')}
                                             isYou={entry.player_id === player?.id}
+                                            hasMadeMan={entry.has_made_man}
                                             delay={0.05 * index}
                                         />
                                     ))
@@ -310,6 +331,25 @@ const RanksPage = () => {
                                             name={entry.username || `Player ${entry.player_id.slice(0, 6)}`}
                                             value={formatValue(entry.value, 'respect')}
                                             isYou={entry.player_id === player?.id}
+                                            hasMadeMan={entry.has_made_man}
+                                            delay={0.05 * index}
+                                        />
+                                    ))
+                                )}
+                            </TabsContent>
+
+                            <TabsContent value="families" className="space-y-2 mt-0">
+                                <h3 className="font-cinzel text-xs text-muted-foreground mb-2">Top Families</h3>
+                                {leaderboardData.families.length === 0 ? (
+                                    <p className="text-center text-muted-foreground text-sm py-4">No families yet</p>
+                                ) : (
+                                    leaderboardData.families.map((entry, index) => (
+                                        <LeaderboardEntryComponent
+                                            key={entry.rank + entry.player_id}
+                                            rank={Number(entry.rank)}
+                                            name={entry.username}
+                                            value={`${entry.value.toLocaleString()} Respect`}
+                                            isFamily={true}
                                             delay={0.05 * index}
                                         />
                                     ))
