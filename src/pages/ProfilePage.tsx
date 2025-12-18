@@ -12,6 +12,7 @@ import { useGameStore } from '@/hooks/useGameStore';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
 import { ReferralSection } from '@/components/ReferralSection';
+import { MadeManBadge } from '@/components/MadeManBadge';
 
 // Compact Stat Card for training
 interface StatCardProps {
@@ -211,21 +212,25 @@ const ProfilePage = () => {
                     className="noir-card p-4 mb-4"
                 >
                     <div className="flex items-center gap-3 mb-3">
-                        <div className="w-14 h-14 rounded-lg bg-gradient-gold p-0.5 overflow-hidden shrink-0">
-                            <div className="w-full h-full bg-black rounded-[calc(0.5rem-2px)] overflow-hidden flex items-center justify-center">
-                                {photoUrl ? (
-                                    <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
-                                ) : (
-                                    <User className="w-6 h-6 text-primary" />
-                                )}
+                        {/* Avatar with Made Man Badge */}
+                        <div className="relative shrink-0">
+                            <div className="w-14 h-14 rounded-lg bg-gradient-gold p-0.5 overflow-hidden">
+                                <div className="w-full h-full bg-black rounded-[calc(0.5rem-2px)] overflow-hidden flex items-center justify-center">
+                                    {photoUrl ? (
+                                        <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <User className="w-6 h-6 text-primary" />
+                                    )}
+                                </div>
                             </div>
+                            {player?.starter_pack_claimed && <MadeManBadge size="md" />}
                         </div>
                         <div className="flex-1">
                             <h1 className="font-cinzel text-lg font-bold text-foreground flex items-center gap-2">
                                 {fullName}
-                                {/* Made Man Badge */}
-                                {achievements?.some((a: any) => a.name === 'Made Man' && a.is_unlocked) && (
-                                    <span className="text-yellow-400" title="Made Man — Initiated into the Family">🏅</span>
+                                {/* Made Man text indicator */}
+                                {player?.starter_pack_claimed && (
+                                    <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">Made Man</span>
                                 )}
                             </h1>
                             {username && <p className="text-xs text-muted-foreground">{username}</p>}

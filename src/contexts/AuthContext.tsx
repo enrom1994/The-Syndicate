@@ -36,6 +36,7 @@ interface Player {
     auto_collect_businesses: boolean;
     created_at: string;
     updated_at: string;
+    starter_pack_claimed: boolean | null;
 }
 
 interface AuthContextType {

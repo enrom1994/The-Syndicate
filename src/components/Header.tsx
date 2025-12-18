@@ -1,8 +1,28 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const Header = () => {
   const { player } = useAuth();
+  const [showUsername, setShowUsername] = useState(false);
+
+  // Check if player has Made Man badge
+  const hasMadeMan = player?.starter_pack_claimed === true;
+  const username = player?.username || player?.first_name || 'Player';
+
+  // Flip between "THE SYNDICATE" and username every 30 seconds if MadeMan
+  useEffect(() => {
+    if (!hasMadeMan) {
+      setShowUsername(false);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setShowUsername(prev => !prev);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [hasMadeMan]);
 
   const formatCash = (amount: number) => {
     if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
@@ -20,9 +40,36 @@ export const Header = () => {
       <div className="container flex items-center justify-between h-14 px-4">
         <div className="flex items-center gap-2">
           <img src="/favicon.ico" alt="Logo" className="w-10 h-10" />
-          <span className="font-cinzel font-bold text-sm tracking-wider gold-shimmer">
-            THE SYNDICATE
-          </span>
+
+          {/* Title with flip animation for MadeMan */}
+          <div className="relative h-6 overflow-hidden min-w-[100px]">
+            <AnimatePresence mode="wait">
+              {hasMadeMan && showUsername ? (
+                <motion.span
+                  key="username"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ duration: 0.4, ease: 'easeInOut' }}
+                  className="absolute inset-0 font-cinzel font-bold text-sm tracking-wider flex items-center"
+                >
+                  <span className="gold-shimmer">@{username}</span>
+                  <span className="ml-1.5 text-amber-400">👑</span>
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="syndicate"
+                  initial={{ y: hasMadeMan ? 20 : 0, opacity: hasMadeMan ? 0 : 1 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -20, opacity: 0 }}
+                  transition={{ duration: 0.4, ease: 'easeInOut' }}
+                  className="absolute inset-0 font-cinzel font-bold text-sm tracking-wider gold-shimmer flex items-center"
+                >
+                  THE SYNDICATE
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Currency Balances */}
