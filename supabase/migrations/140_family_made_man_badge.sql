@@ -17,7 +17,6 @@ DECLARE
     membership RECORD;
     family_data RECORD;
     members_array JSONB;
-    inventory_data JSONB;
 BEGIN
     -- Get membership
     SELECT fm.*, f.*
@@ -61,12 +60,6 @@ BEGIN
     JOIN players p ON fm.player_id = p.id
     WHERE fm.family_id = membership.family_id;
     
-    -- Get family inventory (contraband in treasury)
-    SELECT COALESCE(jsonb_object_agg(item_id, quantity), '{}'::jsonb)
-    INTO inventory_data
-    FROM family_inventory
-    WHERE family_id = membership.family_id AND quantity > 0;
-    
     RETURN jsonb_build_object(
         'has_family', true,
         'family', jsonb_build_object(
@@ -79,8 +72,7 @@ BEGIN
             'is_recruiting', membership.is_recruiting,
             'min_level_required', membership.min_level_required,
             'created_at', membership.created_at,
-            'invite_code', membership.invite_code,
-            'inventory', COALESCE(inventory_data, '{}'::jsonb)
+            'invite_code', membership.invite_code
         ),
         'my_role', membership.role,
         'my_contribution', membership.contribution,
