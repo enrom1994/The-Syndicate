@@ -336,10 +336,18 @@ const ShopPage = () => {
 
         try {
             if (pendingPurchase.type === 'booster' && pendingPurchase.boosterId) {
+                // Find booster details for duration
+                const booster = boosterTypes.find(b => b.id === pendingPurchase.boosterId);
+                if (!booster) {
+                    throw new Error('Booster type not found');
+                }
+
                 // Use the activate_booster RPC which handles diamond deduction and insertion
                 const { data, error } = await supabase.rpc('activate_booster', {
                     player_id_input: player.id,
                     booster_type_input: pendingPurchase.boosterId,
+                    duration_hours_input: Math.floor(booster.duration_minutes / 60),
+                    diamond_cost_input: booster.price,
                 });
 
                 if (error) {
@@ -350,15 +358,12 @@ const ShopPage = () => {
                     throw new Error(data?.message || 'Failed to activate booster');
                 }
 
-                // Find booster details for toast message
-                const booster = boosterTypes.find(b => b.id === pendingPurchase.boosterId);
-
                 haptic.success();
                 await refetchPlayer();
 
                 toast({
                     title: 'Booster Activated!',
-                    description: `${pendingPurchase.name} is now active for ${formatDuration(booster?.duration_minutes || 60)}.`,
+                    description: `${pendingPurchase.name} is now active for ${formatDuration(booster.duration_minutes)}.`,
                 });
             } else if (pendingPurchase.type === 'diamonds' && pendingPurchase.tonAmount && pendingPurchase.diamondsToCredit) {
                 // Send TON transaction
