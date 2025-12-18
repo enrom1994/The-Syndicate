@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Briefcase, TrendingUp, DollarSign, Clock, ArrowUp, Loader2, Factory, Users, Package, AlertCircle } from 'lucide-react';
+import { Briefcase, TrendingUp, DollarSign, Clock, ArrowUp, Loader2, Factory, Users, Package, AlertCircle, Timer } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -284,6 +284,38 @@ const BusinessPage = () => {
     const [producingRecipeId, setProducingRecipeId] = useState<string | null>(null);
     const [rushingId, setRushingId] = useState<string | null>(null);
 
+    // Active boosters state
+    const [activeIncomeBooost, setActiveIncomeBoost] = useState<{ expiresAt: string | null; minutesRemaining: number } | null>(null);
+
+    // Fetch active boosters
+    useEffect(() => {
+        const fetchBoosters = async () => {
+            if (!player?.id) return;
+            try {
+                const { data, error } = await supabase.rpc('get_active_boosters', {
+                    player_id_input: player.id
+                });
+                if (!error && data) {
+                    const incomeBoost = data.find((b: any) => b.booster_type === '2x_income' || b.booster_type === 'vip_pass');
+                    if (incomeBoost) {
+                        setActiveIncomeBoost({
+                            expiresAt: incomeBoost.expires_at,
+                            minutesRemaining: incomeBoost.time_remaining_minutes
+                        });
+                    } else {
+                        setActiveIncomeBoost(null);
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching boosters:', err);
+            }
+        };
+        fetchBoosters();
+        // Refresh every minute
+        const interval = setInterval(fetchBoosters, 60000);
+        return () => clearInterval(interval);
+    }, [player?.id]);
+
     // Load production recipes
     useEffect(() => {
         if (player?.id && activeTab === 'produce') {
@@ -529,6 +561,23 @@ const BusinessPage = () => {
                             <h1 className="font-cinzel text-xl font-bold text-foreground">Business Empire</h1>
                             <p className="text-xs text-muted-foreground">Invest in income-generating ventures</p>
                         </div>
+                        {/* 2x Income Booster Badge */}
+                        {activeIncomeBooost && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="ml-auto flex items-center gap-1.5 px-2 py-1 bg-green-500/20 border border-green-500/40 rounded-full"
+                            >
+                                <span className="text-xs font-bold text-green-400">x2</span>
+                                <TrendingUp className="w-3 h-3 text-green-400" />
+                                <Timer className="w-2.5 h-2.5 text-green-400/70" />
+                                <span className="text-[10px] text-green-300">
+                                    {activeIncomeBooost.minutesRemaining >= 60
+                                        ? `${Math.floor(activeIncomeBooost.minutesRemaining / 60)}h`
+                                        : `${activeIncomeBooost.minutesRemaining}m`}
+                                </span>
+                            </motion.div>
+                        )}
                     </motion.div>
                 </ContextualTooltip>
 

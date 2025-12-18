@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Swords, Target, Clock, Loader2, Skull, Users, Shield, AlertTriangle, Flame, Diamond, Star } from 'lucide-react';
+import { Swords, Target, Clock, Loader2, Skull, Users, Shield, AlertTriangle, Flame, Diamond, Star, Timer, TrendingUp } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -780,6 +780,40 @@ const OpsPage = () => {
     const [pendingRevenge, setPendingRevenge] = useState<{ target: RevengeTarget; attackType: string } | null>(null);
     const [revengeConfirmOpen, setRevengeConfirmOpen] = useState(false);
 
+    // Active boosters state
+    const [activeBoosters, setActiveBoosters] = useState<{
+        attack: { minutesRemaining: number } | null;
+        shield: { minutesRemaining: number } | null;
+        vip: { minutesRemaining: number } | null;
+    }>({ attack: null, shield: null, vip: null });
+
+    // Fetch active boosters
+    useEffect(() => {
+        const fetchBoosters = async () => {
+            if (!player?.id) return;
+            try {
+                const { data, error } = await supabase.rpc('get_active_boosters', {
+                    player_id_input: player.id
+                });
+                if (!error && data) {
+                    const attackBoost = data.find((b: any) => b.booster_type === '2x_attack');
+                    const shieldBoost = data.find((b: any) => b.booster_type === 'shield');
+                    const vipBoost = data.find((b: any) => b.booster_type === 'vip_pass');
+                    setActiveBoosters({
+                        attack: attackBoost ? { minutesRemaining: attackBoost.time_remaining_minutes } : null,
+                        shield: shieldBoost ? { minutesRemaining: shieldBoost.time_remaining_minutes } : null,
+                        vip: vipBoost ? { minutesRemaining: vipBoost.time_remaining_minutes } : null,
+                    });
+                }
+            } catch (err) {
+                console.error('Error fetching boosters:', err);
+            }
+        };
+        fetchBoosters();
+        const interval = setInterval(fetchBoosters, 60000);
+        return () => clearInterval(interval);
+    }, [player?.id]);
+
     // =====================================================
     // LOAD DATA
     // =====================================================
@@ -1236,6 +1270,44 @@ const OpsPage = () => {
                     <div>
                         <h1 className="font-cinzel text-xl font-bold text-foreground">Operations</h1>
                         <p className="text-xs text-muted-foreground">Attack, execute jobs, earn rewards</p>
+                    </div>
+                    {/* Active Booster Badges */}
+                    <div className="ml-auto flex items-center gap-2">
+                        {/* 2x Attack (or VIP) */}
+                        {(activeBoosters.attack || activeBoosters.vip) && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className={`flex items-center gap-1 px-2 py-1 ${activeBoosters.vip ? 'bg-amber-500/20 border-amber-500/40' : 'bg-red-500/20 border-red-500/40'} border rounded-full`}
+                            >
+                                <span className={`text-xs font-bold ${activeBoosters.vip ? 'text-amber-400' : 'text-red-400'}`}>x2</span>
+                                <Swords className={`w-3 h-3 ${activeBoosters.vip ? 'text-amber-400' : 'text-red-400'}`} />
+                                <Timer className={`w-2.5 h-2.5 ${activeBoosters.vip ? 'text-amber-400/70' : 'text-red-400/70'}`} />
+                                <span className={`text-[10px] ${activeBoosters.vip ? 'text-amber-300' : 'text-red-300'}`}>
+                                    {(() => {
+                                        const mins = activeBoosters.vip?.minutesRemaining || activeBoosters.attack?.minutesRemaining || 0;
+                                        return mins >= 60 ? `${Math.floor(mins / 60)}h` : `${mins}m`;
+                                    })()}
+                                </span>
+                            </motion.div>
+                        )}
+                        {/* Shield Booster */}
+                        {(activeBoosters.shield || activeBoosters.vip) && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className={`flex items-center gap-1 px-2 py-1 ${activeBoosters.vip ? 'bg-amber-500/20 border-amber-500/40' : 'bg-cyan-500/20 border-cyan-500/40'} border rounded-full`}
+                            >
+                                <Shield className={`w-3 h-3 ${activeBoosters.vip ? 'text-amber-400' : 'text-cyan-400'}`} />
+                                <Timer className={`w-2.5 h-2.5 ${activeBoosters.vip ? 'text-amber-400/70' : 'text-cyan-400/70'}`} />
+                                <span className={`text-[10px] ${activeBoosters.vip ? 'text-amber-300' : 'text-cyan-300'}`}>
+                                    {(() => {
+                                        const mins = activeBoosters.vip?.minutesRemaining || activeBoosters.shield?.minutesRemaining || 0;
+                                        return mins >= 60 ? `${Math.floor(mins / 60)}h` : `${mins}m`;
+                                    })()}
+                                </span>
+                            </motion.div>
+                        )}
                     </div>
                 </motion.div>
 
