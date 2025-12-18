@@ -245,7 +245,9 @@ const TargetCard = ({
                             <h3 className="font-cinzel font-semibold text-sm text-foreground leading-tight flex items-center gap-1.5">
                                 {target.username || `Player ${target.id.slice(0, 6)}`}
                                 {target.has_made_man && (
-                                    <span className="text-yellow-400" title="Made Man — Initiated early">🏅</span>
+                                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-amber-500 via-yellow-400 to-amber-600 border border-amber-300 shadow-lg shadow-amber-500/30" title="Made Man">
+                                        <svg className="w-2.5 h-2.5 text-amber-900" fill="currentColor" viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" /></svg>
+                                    </span>
                                 )}
                             </h3>
                             <div className="flex items-center gap-2 text-xs">
@@ -1382,7 +1384,9 @@ const OpsPage = () => {
                                                     <h3 className="font-cinzel font-semibold text-sm text-foreground leading-tight flex items-center gap-1.5">
                                                         {target.attacker_name || 'Unknown'}
                                                         {target.has_made_man && (
-                                                            <span className="text-yellow-400" title="Made Man — Initiated early">🏅</span>
+                                                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gradient-to-br from-amber-500 via-yellow-400 to-amber-600 border border-amber-300 shadow-lg shadow-amber-500/30" title="Made Man">
+                                                                <svg className="w-2.5 h-2.5 text-amber-900" fill="currentColor" viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" /></svg>
+                                                            </span>
                                                         )}
                                                     </h3>
                                                     <p className="text-xs text-muted-foreground">
