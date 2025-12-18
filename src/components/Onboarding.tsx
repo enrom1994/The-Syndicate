@@ -91,7 +91,7 @@ const onboardingSteps: OnboardingStep[] = [
         tips: [
             'Attacks cost $500-$2,000 depending on your tier',
             'Shields block attacks - fee refunded if target is shielded',
-            'Failed attacks = respect loss + crew deaths',
+            'Failed attacks = respect loss + injured crew',
             'Victims can revenge you within 24 hours',
         ],
     },

@@ -272,10 +272,15 @@ export const CombatResultModal = ({
                                                     </div>
                                                 )}
                                                 {crewLost > 0 && (
-                                                    <div className="flex items-center gap-2 bg-black/30 rounded-md p-2 col-span-2">
-                                                        <Skull className="w-4 h-4 text-red-400" />
-                                                        <span className="text-sm font-bold text-red-400">
-                                                            Lost {crewLost} crew member{crewLost > 1 ? 's' : ''}
+                                                    <div className="flex flex-col gap-1 bg-black/30 rounded-md p-2 col-span-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <Skull className="w-4 h-4 text-orange-400" />
+                                                            <span className="text-sm font-bold text-orange-400">
+                                                                {crewLost} crew member{crewLost > 1 ? 's' : ''} injured
+                                                            </span>
+                                                        </div>
+                                                        <span className="text-[10px] text-orange-400/60">
+                                                            Recovers at 1 per hour
                                                         </span>
                                                     </div>
                                                 )}
