@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Crown } from 'lucide-react';
 
 export const Header = () => {
   const { player } = useAuth();
@@ -9,6 +10,9 @@ export const Header = () => {
   // Check if player has Made Man badge
   const hasMadeMan = player?.starter_pack_claimed === true;
   const username = player?.username || player?.first_name || 'Player';
+
+  // Truncate username if too long (max 12 chars)
+  const displayUsername = username.length > 12 ? username.slice(0, 12) + '…' : username;
 
   // Flip between "THE SYNDICATE" and username every 30 seconds if MadeMan
   useEffect(() => {
@@ -42,31 +46,49 @@ export const Header = () => {
           <img src="/favicon.ico" alt="Logo" className="w-10 h-10" />
 
           {/* Title with flip animation for MadeMan */}
-          <div className="relative h-6 overflow-hidden min-w-[100px]">
+          <div className="flex flex-col justify-center">
             <AnimatePresence mode="wait">
               {hasMadeMan && showUsername ? (
-                <motion.span
+                <motion.div
                   key="username"
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -20, opacity: 0 }}
-                  transition={{ duration: 0.4, ease: 'easeInOut' }}
-                  className="absolute inset-0 font-cinzel font-bold text-sm tracking-wider flex items-center"
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="flex flex-col"
                 >
-                  <span className="gold-shimmer">@{username}</span>
-                  <span className="ml-1.5 text-amber-400">👑</span>
-                </motion.span>
+                  {/* Small label */}
+                  <span className="text-[8px] uppercase tracking-widest text-amber-500/80 font-semibold">
+                    Made Man
+                  </span>
+                  {/* Username with crown */}
+                  <div className="flex items-center gap-1">
+                    <Crown className="w-3.5 h-3.5 text-amber-400" />
+                    <span className="font-cinzel font-bold text-sm gold-shimmer">
+                      {displayUsername}
+                    </span>
+                  </div>
+                </motion.div>
               ) : (
-                <motion.span
+                <motion.div
                   key="syndicate"
-                  initial={{ y: hasMadeMan ? 20 : 0, opacity: hasMadeMan ? 0 : 1 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -20, opacity: 0 }}
-                  transition={{ duration: 0.4, ease: 'easeInOut' }}
-                  className="absolute inset-0 font-cinzel font-bold text-sm tracking-wider gold-shimmer flex items-center"
+                  initial={{ opacity: hasMadeMan ? 0 : 1, y: hasMadeMan ? 10 : 0, scale: hasMadeMan ? 0.95 : 1 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="flex flex-col"
                 >
-                  THE SYNDICATE
-                </motion.span>
+                  {/* Small label for MadeMan players */}
+                  {hasMadeMan && (
+                    <span className="text-[8px] uppercase tracking-widest text-primary/60 font-semibold">
+                      Welcome to
+                    </span>
+                  )}
+                  {/* Main title */}
+                  <span className="font-cinzel font-bold text-sm tracking-wider gold-shimmer">
+                    THE SYNDICATE
+                  </span>
+                </motion.div>
               )}
             </AnimatePresence>
           </div>
