@@ -528,4 +528,4 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 ALTER FUNCTION public.perform_pvp_attack(UUID, UUID, TEXT) SET search_path = public;
 
-COMMENT ON FUNCTION perform_pvp_attack IS 'PvP attack with NPP check, shield check, and insurance mitigation';
+COMMENT ON FUNCTION perform_pvp_attack(UUID, UUID, TEXT) IS 'PvP attack with NPP check, shield check, and insurance mitigation';

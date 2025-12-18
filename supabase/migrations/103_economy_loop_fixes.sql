@@ -8,6 +8,10 @@
 -- =====================================================
 -- 1. SELL ITEM RPC
 -- =====================================================
+-- Drop existing function to avoid signature conflicts
+DROP FUNCTION IF EXISTS sell_item(UUID, UUID, INTEGER);
+DROP FUNCTION IF EXISTS sell_item(UUID, UUID, INTEGER, TEXT);
+
 CREATE OR REPLACE FUNCTION sell_item(
     player_id_input UUID,
     item_id_input UUID,

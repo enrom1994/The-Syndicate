@@ -394,7 +394,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 ALTER FUNCTION public.perform_pvp_attack(UUID, UUID, TEXT) SET search_path = public;
 
-COMMENT ON FUNCTION perform_pvp_attack IS 'PvP attack with consumable respect bonus (+10 vs +5), NPP check, and insurance';
+COMMENT ON FUNCTION perform_pvp_attack(UUID, UUID, TEXT) IS 'PvP attack with consumable respect bonus (+10 vs +5), NPP check, and insurance';
 
 
 -- =====================================================

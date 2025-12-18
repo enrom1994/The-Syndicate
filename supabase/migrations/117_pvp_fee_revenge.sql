@@ -53,6 +53,8 @@ COMMENT ON FUNCTION get_pvp_fee IS 'Returns PvP attack fee based on attacker res
 -- =====================================================
 -- Returns eligible revenge targets for a player
 
+DROP FUNCTION IF EXISTS get_revenge_targets(UUID);
+
 CREATE OR REPLACE FUNCTION get_revenge_targets(player_id_input UUID)
 RETURNS TABLE (
     attack_log_id UUID,
@@ -581,4 +583,4 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 ALTER FUNCTION public.perform_pvp_attack(UUID, UUID, TEXT, BOOLEAN, UUID) SET search_path = public;
 
-COMMENT ON FUNCTION perform_pvp_attack IS 'PvP attack with tiered cash fee (Early $500, Mid $1000, Late $2000), revenge support, shield/NPP blocks. Fee refunded if attack blocked.';
+COMMENT ON FUNCTION perform_pvp_attack(UUID, UUID, TEXT, BOOLEAN, UUID) IS 'PvP attack with tiered cash fee (Early $500, Mid $1000, Late $2000), revenge support, shield/NPP blocks. Fee refunded if attack blocked.';

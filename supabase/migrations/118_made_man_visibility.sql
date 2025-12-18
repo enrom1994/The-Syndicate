@@ -16,6 +16,8 @@ SET search_path = public;
 -- Replaces the direct query in OpsPage with an RPC
 -- that includes Made Man status
 
+DROP FUNCTION IF EXISTS get_pvp_targets(UUID, INTEGER);
+
 CREATE OR REPLACE FUNCTION get_pvp_targets(
     player_id_input UUID,
     target_limit INTEGER DEFAULT 5

@@ -425,4 +425,4 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 ALTER FUNCTION public.perform_pvp_attack(UUID, UUID, TEXT) SET search_path = public;
 
-COMMENT ON FUNCTION perform_pvp_attack IS 'PvP attack with aligned Respect logic: Shield blocks PvP, flat loss on defeat (-4 to -8), defender success +2';
+COMMENT ON FUNCTION perform_pvp_attack(UUID, UUID, TEXT) IS 'PvP attack with aligned Respect logic: Shield blocks PvP, flat loss on defeat (-4 to -8), defender success +2';

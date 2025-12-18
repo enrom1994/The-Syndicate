@@ -588,7 +588,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 ALTER FUNCTION public.perform_pvp_attack(UUID, UUID, TEXT, BOOLEAN, UUID) SET search_path = public;
 
-COMMENT ON FUNCTION perform_pvp_attack IS 'PvP attack with 3-hour per-target cooldown, tiered cash fee, revenge support, shield/NPP blocks. Cooldown prevents harassment loops.';
+COMMENT ON FUNCTION perform_pvp_attack(UUID, UUID, TEXT, BOOLEAN, UUID) IS 'PvP attack with 3-hour per-target cooldown, tiered cash fee, revenge support, shield/NPP blocks. Cooldown prevents harassment loops.';
 
 -- =====================================================
 -- 4. UPDATE GET_REVENGE_TARGETS WITH COOLDOWN STATUS

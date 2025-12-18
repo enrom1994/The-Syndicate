@@ -20,6 +20,8 @@ ADD COLUMN IF NOT EXISTS contraband_contribution_reset_at TIMESTAMPTZ DEFAULT NO
 -- 2. CONTRIBUTE CONTRABAND TO TREASURY RPC
 -- =====================================================
 
+DROP FUNCTION IF EXISTS contribute_contraband_to_treasury(UUID, UUID, INTEGER);
+
 CREATE OR REPLACE FUNCTION contribute_contraband_to_treasury(
     player_id_input UUID,
     item_id_input UUID,

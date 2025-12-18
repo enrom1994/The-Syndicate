@@ -265,7 +265,8 @@ const BusinessPage = () => {
         buyBusiness,
         upgradeBusiness,
         collectIncome,
-        rushBusinessCollect
+        rushBusinessCollect,
+        loadCrew
     } = useGameStore();
 
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -321,7 +322,7 @@ const BusinessPage = () => {
                     title: 'Production Complete!',
                     description: data.message,
                 });
-                await loadRecipes(); // Refresh cooldowns
+                await Promise.all([loadRecipes(), loadCrew()]); // Refresh cooldowns + crew count
             } else {
                 toast({
                     title: 'Production Failed',
