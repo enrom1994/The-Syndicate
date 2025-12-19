@@ -86,6 +86,8 @@ export const RecentActivity = () => {
     useEffect(() => {
         if (!player?.id) return;
 
+        let isMounted = true;
+
         const fetchActivity = async () => {
             setIsLoading(true);
             try {
@@ -95,6 +97,9 @@ export const RecentActivity = () => {
                         target_player_id: player.id,
                         limit_count: 5
                     });
+
+                // Don't update state if component unmounted
+                if (!isMounted) return;
 
                 if (error) throw error;
 
@@ -108,14 +113,24 @@ export const RecentActivity = () => {
                 }));
 
                 setActivities(mapped);
-            } catch (error) {
+            } catch (error: any) {
+                // Silently ignore aborted requests and network errors during unmount
+                if (!isMounted || error?.name === 'AbortError' || error?.message?.includes('Failed to fetch')) {
+                    return;
+                }
                 console.error('Error fetching activity:', error);
             } finally {
-                setIsLoading(false);
+                if (isMounted) {
+                    setIsLoading(false);
+                }
             }
         };
 
         fetchActivity();
+
+        return () => {
+            isMounted = false;
+        };
     }, [player?.id]);
 
     return (

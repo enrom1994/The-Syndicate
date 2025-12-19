@@ -97,6 +97,8 @@ export const PlayerStats = ({ onOpenOnboarding }: PlayerStatsProps = {}) => {
 
   // Fetch player's leaderboard rank
   useEffect(() => {
+    let isMounted = true;
+
     const fetchRank = async () => {
       if (!player?.id) return;
 
@@ -107,6 +109,9 @@ export const PlayerStats = ({ onOpenOnboarding }: PlayerStatsProps = {}) => {
           leaderboard_type: 'networth',
           limit_count: 100
         }) as { data: Array<{ player_id: string }> | null; error: any };
+
+        // Don't update state if component unmounted
+        if (!isMounted) return;
 
         if (error) {
           console.error('Error fetching leaderboard:', error);
@@ -121,7 +126,11 @@ export const PlayerStats = ({ onOpenOnboarding }: PlayerStatsProps = {}) => {
           // Player not in top 100, estimate rank
           setPlayerRank(100);
         }
-      } catch (err) {
+      } catch (err: any) {
+        // Silently ignore aborted requests and network errors during unmount
+        if (!isMounted || err?.name === 'AbortError' || err?.message?.includes('Failed to fetch')) {
+          return;
+        }
         console.error('Failed to fetch rank:', err);
       }
     };
@@ -129,7 +138,10 @@ export const PlayerStats = ({ onOpenOnboarding }: PlayerStatsProps = {}) => {
     fetchRank();
     // Refresh rank every 60 seconds
     const interval = setInterval(fetchRank, 60000);
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, [player?.id]);
 
   // Energy system with auto-regen - use player's actual energy

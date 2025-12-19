@@ -29,6 +29,8 @@ export const useNotifications = () => {
     useEffect(() => {
         if (!player?.id) return;
 
+        let isMounted = true;
+
         const fetchNotifications = async () => {
             setIsLoading(true);
             try {
@@ -39,6 +41,9 @@ export const useNotifications = () => {
                     .order('created_at', { ascending: false })
                     .limit(20);
 
+                // Don't update state if component unmounted
+                if (!isMounted) return;
+
                 if (error) throw error;
 
                 setNotifications(data || []);
@@ -47,10 +52,16 @@ export const useNotifications = () => {
                 const unread = (data || []).filter(n => !n.read).length;
                 setBadges(prev => ({ ...prev, home: unread > 0 })); // Simple mapping for now
 
-            } catch (error) {
+            } catch (error: any) {
+                // Silently ignore aborted requests and network errors during unmount
+                if (!isMounted || error?.name === 'AbortError' || error?.message?.includes('Failed to fetch')) {
+                    return;
+                }
                 console.error('Error fetching notifications:', error);
             } finally {
-                setIsLoading(false);
+                if (isMounted) {
+                    setIsLoading(false);
+                }
             }
         };
 
@@ -68,13 +79,16 @@ export const useNotifications = () => {
                     filter: `player_id=eq.${player.id}`,
                 },
                 (payload) => {
-                    setNotifications(prev => [payload.new as Notification, ...prev]);
-                    setBadges(prev => ({ ...prev, home: true }));
+                    if (isMounted) {
+                        setNotifications(prev => [payload.new as Notification, ...prev]);
+                        setBadges(prev => ({ ...prev, home: true }));
+                    }
                 }
             )
             .subscribe();
 
         return () => {
+            isMounted = false;
             supabase.removeChannel(channel);
         };
     }, [player?.id]);
