@@ -156,7 +156,7 @@ export interface ItemDefinition {
     sell_price: number;
     buy_price: number;
     is_purchasable: boolean;
-    image_url?: string;
+    icon?: string;
 }
 
 // Referral Types

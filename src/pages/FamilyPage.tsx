@@ -698,8 +698,8 @@ const FamilyPage = () => {
                                             <div key={itemId} className="noir-card p-3 border-l-2 border-primary/30">
                                                 <div className="flex items-center gap-2 mb-2">
                                                     <div className="w-8 h-8 rounded bg-muted/50 flex items-center justify-center">
-                                                        {itemDef.image_url ? (
-                                                            <img src={itemDef.image_url} className="w-6 h-6 object-contain" />
+                                                        {itemDef.icon ? (
+                                                            <img src={itemDef.icon} className="w-6 h-6 object-contain" />
                                                         ) : (
                                                             <Shield className="w-4 h-4 text-muted-foreground" />
                                                         )}
