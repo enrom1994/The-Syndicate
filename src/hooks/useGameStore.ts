@@ -169,6 +169,7 @@ export interface ReferralStats {
         id: string;
         username: string;
         level: number;
+        respect: number;
         is_qualified: boolean;
         created_at: string;
     }[];

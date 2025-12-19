@@ -213,7 +213,7 @@ export const ReferralSection = ({ compact = false }: ReferralSectionProps) => {
                 <div className="flex-1">
                     <h2 className="font-cinzel text-sm font-bold text-foreground">Invite Friends</h2>
                     <p className="text-xs text-muted-foreground">
-                        Earn rewards when friends reach Level 3
+                        Earn rewards when friends earn 500 Respect
                     </p>
                 </div>
             </div>
@@ -372,7 +372,7 @@ export const ReferralSection = ({ compact = false }: ReferralSectionProps) => {
                                                 <span className="text-xs">{ref.username}</span>
                                             </div>
                                             <span className="text-[10px] text-muted-foreground">
-                                                Lv.{ref.level} {ref.is_qualified ? '✓' : '(pending)'}
+                                                {ref.is_qualified ? '✓ Qualified' : `${ref.respect || 0}/500 Respect`}
                                             </span>
                                         </div>
                                     ))}
