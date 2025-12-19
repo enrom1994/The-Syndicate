@@ -57,7 +57,7 @@ const InventoryItemComponent = ({
     const formatStat = (): string => {
         if (item.attack_bonus > 0) return `+${item.attack_bonus} ATK`;
         if (item.defense_bonus > 0) return `+${item.defense_bonus} DEF`;
-        if (item.income_bonus > 0) return `+${item.income_bonus}% Income`;
+        // income_bonus removed: not implemented in backend
         return '';
     };
 
@@ -643,6 +643,35 @@ const InventoryPage = () => {
                             </TabsContent>
 
                             <TabsContent value="crew" className="space-y-2 mt-0">
+                                {/* Injured Crew Info Block */}
+                                {(player?.injured_crew ?? 0) > 0 && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="noir-card p-3 border-l-2 border-orange-500/50 bg-orange-500/5"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center shrink-0">
+                                                <Users className="w-5 h-5 text-orange-400" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-cinzel font-semibold text-sm text-orange-400">Injured Crew</h3>
+                                                    <span className="px-1.5 py-0.5 text-[9px] bg-orange-500/20 text-orange-400 rounded-sm">
+                                                        {player?.injured_crew}
+                                                    </span>
+                                                </div>
+                                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                                    Recovering: <span className="text-orange-400">+1 per hour</span>
+                                                </p>
+                                                <p className="text-[9px] text-muted-foreground/70 mt-0.5 italic">
+                                                    Injured crew do not fight or cost upkeep
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+
                                 {hiredCrew.length === 0 ? (
                                     <p className="text-center text-muted-foreground text-sm py-8">No crew hired</p>
                                 ) : (

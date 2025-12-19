@@ -150,13 +150,14 @@ const MarketPage = () => {
     };
 
     // Filter items by category (contraband removed - only via production/auction)
-    const weapons = itemDefinitions.filter(i => i.category === 'weapon');
-    const equipment = itemDefinitions.filter(i => i.category === 'equipment');
+    // Also filter by is_purchasable to exclude disabled items like Diamond Ring
+    const weapons = itemDefinitions.filter(i => i.category === 'weapon' && i.is_purchasable !== false);
+    const equipment = itemDefinitions.filter(i => i.category === 'equipment' && i.is_purchasable !== false);
 
     const formatStat = (item: ItemDefinition) => {
         if (item.attack_bonus > 0) return `+${item.attack_bonus} Attack`;
         if (item.defense_bonus > 0) return `+${item.defense_bonus} Defense`;
-        if (item.income_bonus > 0) return `+${item.income_bonus}% Income`;
+        // income_bonus removed: not implemented in collect_business_income RPC
         return '';
     };
 
