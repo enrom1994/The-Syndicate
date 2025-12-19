@@ -1,7 +1,8 @@
 // TON Blockchain Configuration
 
 // The receiving wallet address for all TON payments
-export const TON_RECEIVING_ADDRESS = 'UQBwSrL92eTOv4UuYgs01xDe5LtY9rQgG7fpdbOpPxoBce28';
+// Can be overridden via environment variable for easy wallet changes without code deployment
+export const TON_RECEIVING_ADDRESS = import.meta.env.VITE_TON_RECEIVING_ADDRESS || 'UQBwSrL92eTOv4UuYgs01xDe5LtY9rQgG7fpdbOpPxoBce28';
 
 // Diamond package prices in TON
 export const DIAMOND_PACKAGES = [
@@ -18,7 +19,45 @@ export const PROTECTION_PACKS = [
     { id: 'premium', name: 'Premium Protection', tonPrice: 1, durationMinutes: 1440 },
 ];
 
-// Convert TON to nanoTON (1 TON = 10^9 nanoTON)
+/**
+ * Convert TON to nanoTON (1 TON = 10^9 nanoTON)
+ * Uses string-based conversion to avoid floating point precision issues
+ * @param ton - Amount in TON (e.g., 1.5)
+ * @returns Amount in nanoTON as bigint
+ */
 export const toNanoTon = (ton: number): bigint => {
-    return BigInt(Math.floor(ton * 1_000_000_000));
+    // Convert to string with 9 decimal places to preserve precision
+    const tonString = ton.toFixed(9);
+    const [whole, decimal = ''] = tonString.split('.');
+
+    // Pad decimal to exactly 9 digits
+    const paddedDecimal = decimal.padEnd(9, '0').slice(0, 9);
+
+    // Combine whole + decimal as nanoTON
+    const nanoTonString = whole + paddedDecimal;
+
+    // Remove leading zeros and convert to BigInt
+    return BigInt(nanoTonString.replace(/^0+/, '') || '0');
 };
+
+/**
+ * Transaction timeout in seconds (10 minutes)
+ * After this time, the wallet will reject the transaction
+ */
+export const TRANSACTION_TIMEOUT_SECONDS = 600;
+
+/**
+ * Get a transaction object with proper timeout
+ * @param address - Receiving wallet address
+ * @param tonAmount - Amount in TON
+ * @returns Transaction object for TonConnect
+ */
+export const createTonTransaction = (address: string, tonAmount: number) => ({
+    validUntil: Math.floor(Date.now() / 1000) + TRANSACTION_TIMEOUT_SECONDS,
+    messages: [
+        {
+            address,
+            amount: toNanoTon(tonAmount).toString(),
+        }
+    ]
+});

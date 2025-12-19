@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { GameIcon } from '@/components/GameIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, InventoryItem, SafePackage } from '@/hooks/useGameStore';
-import { TON_RECEIVING_ADDRESS, toNanoTon } from '@/lib/ton-config';
+import { TON_RECEIVING_ADDRESS, createTonTransaction } from '@/lib/ton-config';
 import { supabase } from '@/lib/supabase';
 
 const BankPage = () => {
@@ -205,16 +205,7 @@ const BankPage = () => {
         setIsPurchasing(true);
         try {
             // Send TON transaction for payment
-            const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutes
-                messages: [
-                    {
-                        address: TON_RECEIVING_ADDRESS,
-                        amount: toNanoTon(pkg.price_ton).toString(),
-                    }
-                ]
-            };
-
+            const transaction = createTonTransaction(TON_RECEIVING_ADDRESS, pkg.price_ton);
             const txResult = await tonConnectUI.sendTransaction(transaction);
 
             // SECURE: Verify payment server-side before crediting

@@ -11,7 +11,7 @@ import { GameIcon } from '@/components/GameIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
-import { TON_RECEIVING_ADDRESS, toNanoTon } from '@/lib/ton-config';
+import { TON_RECEIVING_ADDRESS, createTonTransaction } from '@/lib/ton-config';
 import { ContextualTooltip } from '@/components/ContextualTooltip';
 
 interface PackageProps {
@@ -367,16 +367,7 @@ const ShopPage = () => {
                 });
             } else if (pendingPurchase.type === 'diamonds' && pendingPurchase.tonAmount && pendingPurchase.diamondsToCredit) {
                 // Send TON transaction
-                const transaction = {
-                    validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutes
-                    messages: [
-                        {
-                            address: TON_RECEIVING_ADDRESS,
-                            amount: toNanoTon(pendingPurchase.tonAmount).toString(),
-                        }
-                    ]
-                };
-
+                const transaction = createTonTransaction(TON_RECEIVING_ADDRESS, pendingPurchase.tonAmount);
                 const txResult = await tonConnectUI.sendTransaction(transaction);
 
                 // SECURE: Verify payment server-side before crediting
@@ -402,16 +393,7 @@ const ShopPage = () => {
                 });
             } else if (pendingPurchase.type === 'protection' && pendingPurchase.tonAmount && pendingPurchase.protectionMinutes) {
                 // Send TON transaction
-                const transaction = {
-                    validUntil: Math.floor(Date.now() / 1000) + 600,
-                    messages: [
-                        {
-                            address: TON_RECEIVING_ADDRESS,
-                            amount: toNanoTon(pendingPurchase.tonAmount).toString(),
-                        }
-                    ]
-                };
-
+                const transaction = createTonTransaction(TON_RECEIVING_ADDRESS, pendingPurchase.tonAmount);
                 const txResult = await tonConnectUI.sendTransaction(transaction);
 
                 // SECURE: Verify payment server-side before crediting
@@ -437,16 +419,7 @@ const ShopPage = () => {
                 });
             } else if ((pendingPurchase.type as string) === 'auto_collect' && pendingPurchase.tonAmount) {
                 // Send TON transaction for Auto-Collector
-                const transaction = {
-                    validUntil: Math.floor(Date.now() / 1000) + 600,
-                    messages: [
-                        {
-                            address: TON_RECEIVING_ADDRESS,
-                            amount: toNanoTon(pendingPurchase.tonAmount).toString(),
-                        }
-                    ]
-                };
-
+                const transaction = createTonTransaction(TON_RECEIVING_ADDRESS, pendingPurchase.tonAmount);
                 const txResult = await tonConnectUI.sendTransaction(transaction);
 
                 // SECURE: Verify payment server-side before crediting
@@ -484,16 +457,7 @@ const ShopPage = () => {
                 });
             } else if ((pendingPurchase.type as string) === 'starter_pack' && pendingPurchase.tonAmount) {
                 // Send TON transaction for Starter Pack
-                const transaction = {
-                    validUntil: Math.floor(Date.now() / 1000) + 600,
-                    messages: [
-                        {
-                            address: TON_RECEIVING_ADDRESS,
-                            amount: toNanoTon(pendingPurchase.tonAmount).toString(),
-                        }
-                    ]
-                };
-
+                const transaction = createTonTransaction(TON_RECEIVING_ADDRESS, pendingPurchase.tonAmount);
                 const txResult = await tonConnectUI.sendTransaction(transaction);
 
                 // SECURE: Verify payment server-side before crediting
@@ -522,16 +486,7 @@ const ShopPage = () => {
                 setStarterPackAvailable(false);
             } else if (pendingPurchase.type === 'insurance' && pendingPurchase.tonAmount && pendingPurchase.insuranceType) {
                 // Send TON transaction for Insurance
-                const transaction = {
-                    validUntil: Math.floor(Date.now() / 1000) + 600,
-                    messages: [
-                        {
-                            address: TON_RECEIVING_ADDRESS,
-                            amount: toNanoTon(pendingPurchase.tonAmount).toString(),
-                        }
-                    ]
-                };
-
+                const transaction = createTonTransaction(TON_RECEIVING_ADDRESS, pendingPurchase.tonAmount);
                 const txResult = await tonConnectUI.sendTransaction(transaction);
 
                 // SECURE: Verify payment server-side before crediting

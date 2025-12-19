@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
 import { rewardCash, rewardDiamonds, rewardEnergy } from '@/components/RewardAnimation';
-import { TON_RECEIVING_ADDRESS, toNanoTon } from '@/lib/ton-config';
+import { TON_RECEIVING_ADDRESS, createTonTransaction } from '@/lib/ton-config';
 
 interface DayReward {
     day: number;
@@ -230,14 +230,7 @@ const DailyRewardsPage = () => {
         setIsRestoring(true);
         try {
             // Send TON payment
-            const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 600,
-                messages: [{
-                    address: TON_RECEIVING_ADDRESS,
-                    amount: toNanoTon(0.5).toString(),
-                }]
-            };
-
+            const transaction = createTonTransaction(TON_RECEIVING_ADDRESS, 0.5);
             const txResult = await tonConnectUI.sendTransaction(transaction);
 
             // SECURE: Verify payment server-side before crediting

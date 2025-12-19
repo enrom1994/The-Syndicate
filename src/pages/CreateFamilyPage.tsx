@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
 import { GameIcon } from '@/components/GameIcon';
-import { TON_RECEIVING_ADDRESS, toNanoTon } from '@/lib/ton-config';
+import { TON_RECEIVING_ADDRESS, createTonTransaction } from '@/lib/ton-config';
 
 const CreateFamilyPage = () => {
     const navigate = useNavigate();
@@ -55,16 +55,7 @@ const CreateFamilyPage = () => {
 
         try {
             // First, send TON payment
-            const transaction = {
-                validUntil: Math.floor(Date.now() / 1000) + 600,
-                messages: [
-                    {
-                        address: TON_RECEIVING_ADDRESS,
-                        amount: toNanoTon(tonCost).toString(),
-                    }
-                ]
-            };
-
+            const transaction = createTonTransaction(TON_RECEIVING_ADDRESS, tonCost);
             const txResult = await tonConnectUI.sendTransaction(transaction);
 
             // SECURE: Verify payment server-side before creating family
