@@ -219,43 +219,47 @@ const MarketPage = () => {
                             <TabsTrigger value="equipment" className="font-cinzel text-xs">Equipment</TabsTrigger>
                         </TabsList>
 
-                        <TabsContent value="weapons" className="space-y-3 mt-0">
+                        <TabsContent value="weapons" className="mt-0">
                             {weapons.length === 0 && !isStoreLoading && (
                                 <p className="text-center text-muted-foreground text-xs py-8">No weapons available.</p>
                             )}
-                            {weapons.map((item, index) => (
-                                <MarketItem
-                                    key={item.id}
-                                    id={item.id}
-                                    name={item.name}
-                                    description={item.description || ''}
-                                    price={item.buy_price}
-                                    stat={formatStat(item)}
-                                    image={getImage(item)}
-                                    delay={0.1 * index}
-                                    onBuy={() => handleBuyClick(item)}
-                                />
-                            ))}
+                            <div className="grid grid-cols-2 gap-2">
+                                {weapons.map((item, index) => (
+                                    <MarketItem
+                                        key={item.id}
+                                        id={item.id}
+                                        name={item.name}
+                                        description={item.description || ''}
+                                        price={item.buy_price}
+                                        stat={formatStat(item)}
+                                        image={getImage(item)}
+                                        delay={0.05 * index}
+                                        onBuy={() => handleBuyClick(item)}
+                                    />
+                                ))}
+                            </div>
                         </TabsContent>
 
 
-                        <TabsContent value="equipment" className="space-y-3 mt-0">
+                        <TabsContent value="equipment" className="mt-0">
                             {equipment.length === 0 && !isStoreLoading && (
                                 <p className="text-center text-muted-foreground text-xs py-8">No equipment available.</p>
                             )}
-                            {equipment.map((item, index) => (
-                                <MarketItem
-                                    key={item.id}
-                                    id={item.id}
-                                    name={item.name}
-                                    description={item.description || ''}
-                                    price={item.buy_price}
-                                    stat={formatStat(item)}
-                                    image={getImage(item)}
-                                    delay={0.1 * index}
-                                    onBuy={() => handleBuyClick(item)}
-                                />
-                            ))}
+                            <div className="grid grid-cols-2 gap-2">
+                                {equipment.map((item, index) => (
+                                    <MarketItem
+                                        key={item.id}
+                                        id={item.id}
+                                        name={item.name}
+                                        description={item.description || ''}
+                                        price={item.buy_price}
+                                        stat={formatStat(item)}
+                                        image={getImage(item)}
+                                        delay={0.05 * index}
+                                        onBuy={() => handleBuyClick(item)}
+                                    />
+                                ))}
+                            </div>
                         </TabsContent>
                     </Tabs>
                 </motion.div>
