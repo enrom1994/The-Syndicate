@@ -16,14 +16,13 @@ export const Hero = ({ onEnter }: HeroProps) => {
           muted
           playsInline
           poster="/images/backgrounds/welcome.png"
-          className="w-full h-full object-cover opacity-50"
+          className="w-full h-full object-cover opacity-80"
         >
           <source src="/animation/hero.mp4" type="video/mp4" />
         </video>
-        {/* Enhanced gradient overlays for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-transparent to-background/50" />
-        <div className="absolute inset-0 bg-background/20" />
+        {/* Lighter gradient overlays to let video show through while keeping text readable */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/40 via-transparent to-background/40" />
       </div>
 
       {/* Art Deco Decorative Elements */}
