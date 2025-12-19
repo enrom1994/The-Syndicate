@@ -431,7 +431,7 @@ const InventoryPage = () => {
 
         setIsContributing(true);
         try {
-            const success = await contributeItemToFamily(contributeItem.id, contributeQuantity);
+            const success = await contributeItemToFamily(contributeItem.item_id, contributeQuantity);
             if (success) {
                 toast({
                     title: 'Contributed!',
