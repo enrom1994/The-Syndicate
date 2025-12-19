@@ -15,13 +15,14 @@ export const Hero = ({ onEnter }: HeroProps) => {
           loop
           muted
           playsInline
-          poster="/images/backgrounds/welcome.png"
+          poster="/animation/hero_alt.png"
           className="w-full h-full object-cover opacity-80"
         >
           <source src="/animation/hero.mp4" type="video/mp4" />
         </video>
-        {/* Lighter gradient overlays to let video show through while keeping text readable */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        {/* Gradient overlays - stronger bottom fade to hide video text */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-background to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-background/40 via-transparent to-background/40" />
       </div>
 
