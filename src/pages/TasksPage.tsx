@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
     ListTodo,
     ExternalLink,
@@ -8,7 +8,9 @@ import {
     RefreshCw,
     MessageCircle,
     Loader2,
+    Play,
 } from 'lucide-react';
+import { useAdsgram } from '@/hooks/useAdsgram';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { haptic } from '@/lib/haptics';
@@ -18,7 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, PlayerTask } from '@/hooks/useGameStore';
 import { ReferralSection } from '@/components/ReferralSection';
 
-type TaskType = 'telegram' | 'daily' | 'weekly' | 'special';
+type TaskType = 'telegram' | 'daily' | 'weekly' | 'special' | 'ad';
 
 interface TaskCardProps {
     task: PlayerTask;
@@ -168,6 +170,127 @@ const TaskCard = ({ task, onVerify, onStart, isVerifying }: TaskCardProps) => {
     );
 };
 
+// Ad Task Card - uses Adsgram SDK for rewarded video ads
+interface AdTaskCardProps {
+    task: PlayerTask;
+    onComplete: (id: string) => Promise<void>;
+}
+
+const AdTaskCard = ({ task, onComplete }: AdTaskCardProps) => {
+    const [isClaimingReward, setIsClaimingReward] = useState(false);
+
+    const { showAd, isLoading, isShowing, isAvailable, error } = useAdsgram({
+        onReward: () => {
+            // UX callback only - not payment authority
+            // Backend SSV handles actual reward via completeTask()
+            console.log('[AdTaskCard] Ad completed - claiming task reward');
+        },
+        onError: (err) => {
+            console.error('[AdTaskCard] Ad error:', err);
+        },
+    });
+
+    const handleWatchAd = async () => {
+        if (isShowing || isClaimingReward || task.is_completed) return;
+
+        const completed = await showAd();
+
+        if (completed) {
+            // Ad was fully watched - now claim the task reward
+            // Backend will verify SSV was received before granting reward
+            setIsClaimingReward(true);
+            try {
+                await onComplete(task.id);
+            } finally {
+                setIsClaimingReward(false);
+            }
+        }
+    };
+
+    const rewardDisplay = task.reward_type === 'cash'
+        ? `$${(task.reward_amount / 1000).toFixed(0)}K`
+        : `${task.reward_amount}`;
+
+    const isButtonDisabled = isLoading || isShowing || isClaimingReward || task.is_completed || !isAvailable;
+    const buttonText = isShowing
+        ? 'Watching...'
+        : isClaimingReward
+            ? 'Claiming...'
+            : task.is_completed
+                ? 'Completed'
+                : !isAvailable
+                    ? (error || 'Not Available')
+                    : 'Watch Ad';
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`noir-card p-4 ${task.is_completed ? 'opacity-60' : ''}`}
+        >
+            <div className="flex items-start gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${task.is_completed ? 'bg-green-500/20' : 'bg-purple-500/20'
+                    }`}>
+                    {task.is_completed ? (
+                        <Check className="w-5 h-5 text-green-500" />
+                    ) : (
+                        <Play className="w-5 h-5 text-purple-400" />
+                    )}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                            <h3 className="font-cinzel font-semibold text-sm text-foreground">
+                                {task.title}
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                {task.description}
+                            </p>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                            <div className="flex items-center gap-1 text-sm text-primary font-semibold">
+                                {task.reward_type === 'cash' ? (
+                                    <img src="/images/icons/cash.png" alt="Cash" className="w-6 h-6" />
+                                ) : (
+                                    <img src="/images/icons/diamond.png" alt="Diamonds" className="w-6 h-6" />
+                                )}
+                                {rewardDisplay}
+                            </div>
+                        </div>
+                    </div>
+
+                    {task.is_completed ? (
+                        <div className="mt-3 flex items-center gap-2">
+                            <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-sm font-semibold">
+                                ✓ Claimed
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="mt-3">
+                            <Button
+                                size="sm"
+                                className={`w-full text-xs ${isAvailable && !task.is_completed ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+                                disabled={isButtonDisabled}
+                                onClick={handleWatchAd}
+                            >
+                                {(isLoading || isShowing || isClaimingReward) && (
+                                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                )}
+                                {!isLoading && !isShowing && !isClaimingReward && isAvailable && (
+                                    <Play className="w-3 h-3 mr-1" />
+                                )}
+                                {buttonText}
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </motion.div>
+    );
+};
+
 
 const TasksPage = () => {
     const { toast } = useToast();
@@ -254,6 +377,7 @@ const TasksPage = () => {
     const telegramTasks = tasks.filter(t => t.task_type === 'telegram');
     const dailyTasks = tasks.filter(t => t.task_type === 'daily');
     const weeklyTasks = tasks.filter(t => t.task_type === 'weekly');
+    const adTasks = tasks.filter(t => t.task_type === 'ad');
 
     const completedCount = tasks.filter(t => t.is_completed).length;
 
@@ -309,6 +433,42 @@ const TasksPage = () => {
                                             onVerify={handleVerify}
                                             onStart={handleStart}
                                             isVerifying={verifyingTaskId === task.id}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Watch Ads */}
+                        {adTasks.length > 0 && (
+                            <div className="mb-6">
+                                <h2 className="font-cinzel text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                    <Play className="w-4 h-4 text-purple-400" />
+                                    Watch Ads
+                                </h2>
+                                <div className="space-y-3">
+                                    {adTasks.map(task => (
+                                        <AdTaskCard
+                                            key={task.id}
+                                            task={task}
+                                            onComplete={async (id) => {
+                                                const success = await completeTask(id);
+                                                if (success) {
+                                                    haptic.success();
+                                                    if (task.reward_type === 'cash') {
+                                                        rewardCash(task.reward_amount);
+                                                    } else {
+                                                        rewardDiamonds(task.reward_amount);
+                                                    }
+                                                    await refetchPlayer();
+                                                    toast({
+                                                        title: 'Reward Claimed!',
+                                                        description: `+${task.reward_type === 'cash'
+                                                            ? `$${task.reward_amount.toLocaleString()}`
+                                                            : `${task.reward_amount} Diamonds`}`,
+                                                    });
+                                                }
+                                            }}
                                         />
                                     ))}
                                 </div>

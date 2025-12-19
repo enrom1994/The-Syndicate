@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@adsgram/react':
+        specifier: ^1.0.2
+        version: 1.0.2(react@18.3.1)
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.68.0(react@18.3.1))
@@ -221,6 +224,14 @@ importers:
         version: 5.4.21(@types/node@22.19.1)
 
 packages:
+
+  '@adsgram/common@1.0.2':
+    resolution: {integrity: sha512-lExGFbRhdz/JdqqOc/1c0lU8OQAtTG6Y0WE2hw5hUV0+v+xZXbaWVyKXcCDr3l+KuxbPw7P515a/+CXjsYQuqA==}
+
+  '@adsgram/react@1.0.2':
+    resolution: {integrity: sha512-41Ywf5zweIu/cbvyfyQK1DRK6L64wr1+u+F5XAICM2wV4uJa0mnfQ8dCa51JZ9uvde3BTuMqpToU8VomPc6XQQ==}
+    peerDependencies:
+      react: '>=16.8.0'
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
@@ -2738,6 +2749,13 @@ packages:
         optional: true
 
 snapshots:
+
+  '@adsgram/common@1.0.2': {}
+
+  '@adsgram/react@1.0.2(react@18.3.1)':
+    dependencies:
+      '@adsgram/common': 1.0.2
+      react: 18.3.1
 
   '@alloc/quick-lru@5.2.0': {}
 
