@@ -1036,8 +1036,28 @@ const OpsPage = () => {
                 await loadCrew();
                 await loadInventory();
                 await loadPvpTargets();
+                await loadRevengeTargets(); // Sync cooldowns across tabs
             } else {
-                toast({ title: 'Attack Failed', description: data?.message, variant: 'destructive' });
+                // Handle specific error types
+                let errorTitle = 'Attack Failed';
+                let errorDescription = data?.message || 'Unknown error';
+
+                if (data?.error_code === 'PVP_COOLDOWN_ACTIVE') {
+                    errorTitle = '⏳ On Cooldown';
+                    errorDescription = `Wait ${Math.ceil((data.cooldown_seconds || 0) / 60)}m before attacking again`;
+                } else if (data?.message?.includes('Protection')) {
+                    errorTitle = '🛡️ Protected';
+                } else if (data?.message?.includes('Shield')) {
+                    errorTitle = '🛡️ Shielded';
+                } else if (data?.message?.includes('New Player Protection')) {
+                    errorTitle = '👶 New Player Protected';
+                }
+
+                toast({ title: errorTitle, description: errorDescription, variant: 'destructive' });
+
+                // Refresh both target lists to update cooldown UI
+                await loadPvpTargets();
+                await loadRevengeTargets();
             }
         } catch (error) {
             console.error('PvP attack error:', error);
@@ -1047,6 +1067,7 @@ const OpsPage = () => {
             setPendingPvpAttack(null);
         }
     };
+
 
     // =====================================================
     // REVENGE EXECUTION
@@ -1107,6 +1128,7 @@ const OpsPage = () => {
                 await loadCrew();
                 await loadInventory();
                 await loadRevengeTargets(); // Refresh revenge list
+                await loadPvpTargets(); // Also refresh PvP targets to update cooldowns
             } else {
                 // Handle specific error types
                 let errorTitle = 'Revenge Failed';
@@ -1125,9 +1147,11 @@ const OpsPage = () => {
 
                 toast({ title: errorTitle, description: errorDescription, variant: 'destructive' });
 
-                // Refresh revenge targets to update cooldown UI
+                // Refresh target lists to update cooldown UI
                 await loadRevengeTargets();
+                await loadPvpTargets();
             }
+
         } catch (error) {
             console.error('Revenge attack error:', error);
             toast({ title: 'Error', description: 'Revenge attack failed', variant: 'destructive' });
