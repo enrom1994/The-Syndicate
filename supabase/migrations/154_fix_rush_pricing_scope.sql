@@ -1,9 +1,9 @@
 -- =====================================================
--- FIX: RUSH BUSINESS COLLECT DYNAMIC PRICING BUG
+-- FIX: RUSH BUSINESS COLLECT - VALUE-BASED PRICING
 -- =====================================================
--- The 102_dynamic_rush_pricing.sql migration had a bug where
--- income_based_max_cost was declared in a nested DECLARE block,
--- making it undefined in the outer scope.
+-- New formula: 1 diamond per $2,500 of income value
+-- rush_value = (time_remaining_minutes / 60) * income_per_hour
+-- diamond_cost = max(1, min(50, floor(rush_value / 2500)))
 
 SET search_path = public;
 
@@ -24,7 +24,7 @@ DECLARE
     time_remaining_minutes NUMERIC;
     cooldown_minutes INTEGER;
     diamond_cost INTEGER;
-    income_based_max_cost INTEGER;  -- FIXED: Moved to outer DECLARE block
+    rush_value NUMERIC;
 BEGIN
     -- Get player
     SELECT * INTO player_record FROM players WHERE id = player_id_input;
@@ -52,14 +52,13 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'message', 'Business is ready to collect. No rush needed!');
     END IF;
     
-    -- Calculate income-based max cost (scale with business value)
-    -- Low income (~1000/hr) = max 5 diamonds, High income (~100000/hr) = max 30 diamonds
-    -- Formula: 5 + (income / 5000), capped at 30
-    income_based_max_cost := LEAST(30, 5 + (business_record.base_income_per_hour / 5000));
+    -- Calculate level-scaled income per hour
+    income_amount := FLOOR(business_record.base_income_per_hour * POWER(1.15, business_record.level - 1));
     
-    -- Calculate dynamic diamond cost based on time AND income
-    -- Formula: (time_remaining / cooldown) * income_based_max_cost, minimum 1 diamond
-    diamond_cost := GREATEST(1, CEIL((time_remaining_minutes / cooldown_minutes::NUMERIC) * income_based_max_cost));
+    -- VALUE-BASED PRICING: 1 diamond per $2,500 of income value
+    -- rush_value = (time_remaining / 60) * income_per_hour
+    rush_value := (time_remaining_minutes / 60.0) * income_amount;
+    diamond_cost := GREATEST(1, LEAST(50, FLOOR(rush_value / 2500)));
     
     -- Check diamonds
     IF player_record.diamonds < diamond_cost THEN
@@ -69,9 +68,6 @@ BEGIN
             'required_diamonds', diamond_cost
         );
     END IF;
-    
-    -- Calculate income (1 hour worth, scaled by level)
-    income_amount := FLOOR(business_record.base_income_per_hour * POWER(1.15, business_record.level - 1));
     
     -- Check for 2x income booster (or VIP)
     SELECT EXISTS (
@@ -85,7 +81,7 @@ BEGIN
         income_amount := income_amount * 2;
     END IF;
     
-    -- Deduct diamonds
+    -- Deduct diamonds and add cash
     UPDATE players 
     SET diamonds = diamonds - diamond_cost,
         cash = cash + income_amount
@@ -121,4 +117,4 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION rush_business_collect IS 'Rush collect business income with dynamic diamond pricing based on time remaining and business income';
+COMMENT ON FUNCTION rush_business_collect IS 'Rush collect with value-based pricing: 1 diamond per $2,500 of income value (capped 1-50)';

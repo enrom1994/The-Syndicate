@@ -246,11 +246,11 @@ const canCollectFromBusiness = (lastCollected: string, cooldownMinutes: number):
 
 const calculateRushCost = (timeRemainingMinutes: number, totalCooldownMinutes: number, incomePerHour: number): number => {
     if (timeRemainingMinutes <= 0) return 0;
-    // Calculate income-based max cost (matches backend logic)
-    // Low income (~1000/hr) = max 5 diamonds, High income (~100000/hr) = max 30 diamonds
-    const incomeBasedMaxCost = Math.min(30, 5 + Math.floor(incomePerHour / 5000));
-    // Formula: (timeRemaining / totalCooldown) * incomeBasedMaxCost, minimum 1 diamond
-    return Math.max(1, Math.ceil((timeRemainingMinutes / totalCooldownMinutes) * incomeBasedMaxCost));
+    // VALUE-BASED PRICING: 1 diamond per $2,500 of income value
+    // rush_value = (timeRemaining / 60) * incomePerHour
+    const rushValue = (timeRemainingMinutes / 60) * incomePerHour;
+    // diamond_cost = max(1, min(50, floor(rush_value / 2500)))
+    return Math.max(1, Math.min(50, Math.floor(rushValue / 2500)));
 };
 
 const BusinessPage = () => {
