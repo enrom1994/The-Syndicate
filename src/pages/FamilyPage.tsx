@@ -577,7 +577,7 @@ const FamilyPage = () => {
                         <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Family Power</p>
                         <div className="grid grid-cols-3 gap-2">
                             <div className="bg-muted/20 rounded-lg p-2 text-center">
-                                <p className="text-[10px] text-purple-400 uppercase">Contraband</p>
+                                <p className="text-[10px] text-purple-400 uppercase">Items</p>
                                 <p className="font-bold text-sm text-purple-300">
                                     {Object.values(family.inventory || {}).reduce((a, b) => a + (b as number), 0)}
                                 </p>
