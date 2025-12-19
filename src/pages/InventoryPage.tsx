@@ -149,8 +149,8 @@ const InventoryItemComponent = ({
                             size="sm"
                             className="h-7 px-2 text-xs"
                             onClick={onMoveToSafe}
-                            disabled={isProcessing || item.assigned_quantity > 0}
-                            title={item.assigned_quantity > 0 ? 'Unassign first' : 'Move to Safe'}
+                            disabled={isProcessing || item.assigned_quantity >= item.quantity}
+                            title={item.assigned_quantity >= item.quantity ? 'All items assigned' : 'Move to Safe'}
                         >
                             <Lock className="w-3 h-3 mr-1" />
                             Safe
@@ -161,8 +161,8 @@ const InventoryItemComponent = ({
                                 size="sm"
                                 className="h-7 px-2 text-xs text-green-500 hover:text-green-400"
                                 onClick={onSell}
-                                disabled={isProcessing || item.assigned_quantity > 0}
-                                title={item.assigned_quantity > 0 ? 'Unassign first' : 'Sell for cash'}
+                                disabled={isProcessing || item.assigned_quantity >= item.quantity}
+                                title={item.assigned_quantity >= item.quantity ? 'All items assigned' : 'Sell for cash'}
                             >
                                 <DollarSign className="w-3 h-3 mr-1" />
                                 Sell
@@ -174,8 +174,8 @@ const InventoryItemComponent = ({
                                 size="sm"
                                 className="h-7 px-2 text-xs text-blue-500 hover:text-blue-400"
                                 onClick={onContribute}
-                                disabled={isProcessing || item.assigned_quantity > 0}
-                                title={item.assigned_quantity > 0 ? 'Unassign first' : 'Contribute to Family'}
+                                disabled={isProcessing || item.assigned_quantity >= item.quantity}
+                                title={item.assigned_quantity >= item.quantity ? 'All items assigned' : 'Contribute to Family'}
                             >
                                 <Users className="w-3 h-3 mr-1" />
                                 Family
@@ -939,7 +939,9 @@ const InventoryPage = () => {
                             Contribute {contributeItem?.name}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground">
-                            Help your family by stocking the armory.
+                            <span className="text-amber-500 font-semibold">⚠️ This action is irreversible.</span>
+                            <br />
+                            Contributed items are permanently forfeited. You will earn Loyalty Points based on item value.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
 

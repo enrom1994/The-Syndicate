@@ -435,23 +435,25 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             if (error) throw error;
 
-            const inventory: InventoryItem[] = (data || []).map((item: any) => ({
-                id: item.id,
-                item_id: item.item_id,
-                name: item.item_definitions?.name || 'Unknown',
-                icon: item.item_definitions?.icon || null,
-                category: item.item_definitions?.category || 'weapon',
-                quantity: item.quantity,
-                assigned_quantity: item.assigned_quantity || 0,
-                is_equipped: item.is_equipped,
-                location: item.location || 'inventory',
-                safe_until: item.safe_until,
-                rarity: item.item_definitions?.rarity || 'common',
-                attack_bonus: item.item_definitions?.attack_bonus || 0,
-                defense_bonus: item.item_definitions?.defense_bonus || 0,
-                income_bonus: item.item_definitions?.income_bonus || 0,
-                sell_price: item.item_definitions?.sell_price || 0,
-            }));
+            const inventory: InventoryItem[] = (data || [])
+                .filter((item: any) => item.quantity > 0)
+                .map((item: any) => ({
+                    id: item.id,
+                    item_id: item.item_id,
+                    name: item.item_definitions?.name || 'Unknown',
+                    icon: item.item_definitions?.icon || null,
+                    category: item.item_definitions?.category || 'weapon',
+                    quantity: item.quantity,
+                    assigned_quantity: item.assigned_quantity || 0,
+                    is_equipped: item.is_equipped,
+                    location: item.location || 'inventory',
+                    safe_until: item.safe_until,
+                    rarity: item.item_definitions?.rarity || 'common',
+                    attack_bonus: item.item_definitions?.attack_bonus || 0,
+                    defense_bonus: item.item_definitions?.defense_bonus || 0,
+                    income_bonus: item.item_definitions?.income_bonus || 0,
+                    sell_price: item.item_definitions?.sell_price || 0,
+                }));
 
             set({ inventory });
         } catch (error) {
