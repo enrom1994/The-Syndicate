@@ -151,9 +151,8 @@ const PveTargetCard = ({
                         <img src="/images/icons/respect.png" alt="" className="w-3 h-3" />
                         <span className="text-muted-foreground text-[10px]">Respect</span>
                     </div>
-                    <p className="font-bold text-cyan-400">+{target.xp_reward + target.respect_reward}</p>
+                    <p className="font-bold text-cyan-400">+{target.respect_reward}</p>
                 </div>
-                {/* Removed old respect reward column - respect is now combined above */}
             </div>
 
             {/* Requirements Row */}
@@ -443,8 +442,8 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, pla
     const { inventory, itemDefinitions } = useGameStore();
 
     const bonusCash = streakBonus > 0 ? Math.round(job.cash_reward * (1 + streakBonus / 100)) : job.cash_reward;
-    // Calculate Respect bonus with streak (XP deprecated, respect only)
-    const bonusRespect = streakBonus > 0 ? Math.round((job.experience_reward + (job.respect_reward || 0)) * (1 + streakBonus / 100)) : (job.experience_reward + (job.respect_reward || 0));
+    // Respect calculation (XP system deprecated)
+    const bonusRespect = streakBonus > 0 ? Math.round((job.respect_reward || 0) * (1 + streakBonus / 100)) : (job.respect_reward || 0);
 
     // Check item requirements
     let meetsItemReq = true;
@@ -655,7 +654,7 @@ const HighStakesCard = ({ job, isProcessing, delay = 0, onExecute }: {
                         <img src="/images/icons/respect.png" alt="" className="w-3 h-3" />
                         <span className="text-muted-foreground text-[10px]">Respect</span>
                     </div>
-                    <p className="font-bold text-cyan-400">+{job.xp_reward}</p>
+                    <p className="font-bold text-cyan-400">+{job.respect_reward || job.xp_reward || 0}</p>
                 </div>
                 <div className="bg-red-500/15 border border-red-500/30 rounded p-2 text-center">
                     <div className="flex items-center justify-center gap-1 mb-0.5">
