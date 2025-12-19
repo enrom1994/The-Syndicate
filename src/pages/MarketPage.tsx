@@ -36,11 +36,11 @@ const MarketItem = ({ name, description, price, stat, image, delay = 0, onBuy }:
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay }}
-        className="noir-card p-3"
+        className="noir-card p-3 h-full flex flex-col"
     >
         {/* Icon at Top - No Border */}
-        <div className="flex flex-col items-center mb-2">
-            <div className="w-14 sm:w-16 h-14 sm:h-16 flex items-center justify-center shrink-0 mb-1.5">
+        <div className="flex flex-col items-center mb-2 flex-1">
+            <div className="w-12 h-12 flex items-center justify-center shrink-0 mb-1.5">
                 <img
                     src={image}
                     alt={name}
@@ -54,32 +54,26 @@ const MarketItem = ({ name, description, price, stat, image, delay = 0, onBuy }:
             </div>
 
             {/* Name and Stat Badge */}
-            <div className="text-center w-full mb-1.5">
-                <h3 className="font-cinzel font-bold text-xs sm:text-sm text-foreground mb-1">{name}</h3>
+            <div className="text-center w-full">
+                <h3 className="font-cinzel font-bold text-[11px] text-foreground mb-0.5 line-clamp-1">{name}</h3>
                 {stat && (
-                    <div className="inline-block">
-                        <span className="text-[9px] sm:text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 rounded-sm whitespace-nowrap">
-                            {stat}
-                        </span>
-                    </div>
+                    <span className="text-[9px] font-bold text-green-400 bg-green-500/10 border border-green-500/20 px-1.5 py-0.5 rounded-sm whitespace-nowrap">
+                        {stat}
+                    </span>
                 )}
-                <p className="text-[10px] sm:text-[11px] text-muted-foreground leading-snug line-clamp-2 px-1 mt-1">{description}</p>
+                <p className="text-[9px] text-muted-foreground leading-tight line-clamp-2 mt-1 h-[2.5em]">{description}</p>
             </div>
         </div>
 
         {/* Price Display */}
         <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded p-1.5 mb-2">
-            <div className="flex items-center justify-center gap-0.5 text-[9px] sm:text-[10px] text-muted-foreground mb-0.5">
-                <img src="/images/icons/cash.png" alt="$" className="w-2.5 h-2.5" />
-                <span className="font-medium">Price</span>
-            </div>
-            <p className="font-cinzel font-bold text-xs sm:text-sm text-primary text-center">${price.toLocaleString()}</p>
+            <p className="font-cinzel font-bold text-xs text-primary text-center">${price.toLocaleString()}</p>
         </div>
 
         {/* Buy Button - Centered & Compact */}
-        <div className="flex justify-center">
-            <Button className="btn-gold text-[10px] sm:text-xs h-8 px-4" onClick={onBuy}>
-                <ShoppingBag className="w-3.5 h-3.5 mr-1" />
+        <div className="flex justify-center mt-auto">
+            <Button className="btn-gold text-[10px] h-7 px-3 w-full" onClick={onBuy}>
+                <ShoppingBag className="w-3 h-3 mr-1" />
                 Buy
             </Button>
         </div>
