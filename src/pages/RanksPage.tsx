@@ -228,9 +228,6 @@ const RanksPage = () => {
                     <img src="/images/icons/fedora.png" alt="Leaderboard" className="w-12 h-12 object-contain" />
                     <div>
                         <h1 className="font-cinzel text-xl font-bold text-foreground">Leaderboard</h1>
-                        <p className="text-xs text-muted-foreground">
-                            {seasonInfo ? `${seasonInfo.name} • ${seasonInfo.days_remaining} days remaining` : 'Loading...'}
-                        </p>
                     </div>
                 </motion.div>
 
@@ -365,12 +362,16 @@ const RanksPage = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.5, delay: 0.4 }}
-                    className="mt-6 noir-card p-4 text-center"
+                    className="mt-6 noir-card p-4 text-center relative overflow-hidden"
                 >
-                    <Trophy className="w-8 h-8 text-primary mx-auto mb-2" />
-                    <h3 className="font-cinzel font-bold text-sm text-foreground">Season Rewards</h3>
-                    <p className="text-xs text-muted-foreground mt-1">Top 100 players receive TON prizes</p>
-                    <p className="font-cinzel font-bold text-lg text-primary mt-2">🏆 500 TON Pool</p>
+                    {/* Blurred placeholder overlay */}
+                    <div className="absolute inset-0 backdrop-blur-sm bg-background/60 z-10 flex items-center justify-center">
+                        <p className="font-cinzel text-sm text-muted-foreground">Coming Soon</p>
+                    </div>
+                    <Trophy className="w-8 h-8 text-primary mx-auto mb-2 opacity-50" />
+                    <h3 className="font-cinzel font-bold text-sm text-foreground opacity-50">Season Rewards</h3>
+                    <p className="text-xs text-muted-foreground mt-1 opacity-50">Top 100 players receive TON prizes</p>
+                    <p className="font-cinzel font-bold text-lg text-primary mt-2 opacity-50">🏆 Prize Pool TBD</p>
                 </motion.div>
             </div>
         </MainLayout>
