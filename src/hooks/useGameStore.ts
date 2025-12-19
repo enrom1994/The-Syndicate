@@ -784,7 +784,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
         const { data, error } = await supabase.rpc('bank_deposit', {
             player_id_input: playerId,
-            amount,
+            amount_input: amount,
         });
 
         if (error) {
@@ -795,13 +795,14 @@ export const useGameStore = create<GameState>((set, get) => ({
         return data === true;
     },
 
+
     withdraw: async (amount) => {
         const { playerId } = get();
         if (!playerId) return false;
 
         const { data, error } = await supabase.rpc('bank_withdraw', {
             player_id_input: playerId,
-            amount,
+            amount_input: amount,
         });
 
         if (error) {
@@ -811,6 +812,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
         return data === true;
     },
+
 
     // Business actions - use RPC for SECURITY DEFINER bypass
     buyBusiness: async (businessId) => {
