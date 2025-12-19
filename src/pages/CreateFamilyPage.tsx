@@ -65,7 +65,21 @@ const CreateFamilyPage = () => {
                 ]
             };
 
-            await tonConnectUI.sendTransaction(transaction);
+            const txResult = await tonConnectUI.sendTransaction(transaction);
+
+            // SECURE: Verify payment server-side before creating family
+            const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-ton-payment', {
+                body: {
+                    boc: txResult.boc,
+                    paymentType: 'family_creation',
+                    tonAmount: tonCost,
+                    rewardData: {}
+                }
+            });
+
+            if (verifyError || !verifyResult?.success) {
+                throw new Error(verifyResult?.message || verifyError?.message || 'Payment verification failed');
+            }
 
             // Then create family via RPC
             const { data, error } = await supabase.rpc('create_family', {
@@ -224,8 +238,8 @@ const CreateFamilyPage = () => {
                                 <div
                                     onClick={() => setJoinType('open')}
                                     className={`p-3 rounded-sm border cursor-pointer transition-colors ${joinType === 'open'
-                                            ? 'bg-primary/10 border-primary/50'
-                                            : 'bg-muted/20 border-border/50 hover:border-border'
+                                        ? 'bg-primary/10 border-primary/50'
+                                        : 'bg-muted/20 border-border/50 hover:border-border'
                                         }`}
                                 >
                                     <div className="flex items-start gap-2">
@@ -242,8 +256,8 @@ const CreateFamilyPage = () => {
                                 <div
                                     onClick={() => setJoinType('request')}
                                     className={`p-3 rounded-sm border cursor-pointer transition-colors ${joinType === 'request'
-                                            ? 'bg-primary/10 border-primary/50'
-                                            : 'bg-muted/20 border-border/50 hover:border-border'
+                                        ? 'bg-primary/10 border-primary/50'
+                                        : 'bg-muted/20 border-border/50 hover:border-border'
                                         }`}
                                 >
                                     <div className="flex items-start gap-2">
