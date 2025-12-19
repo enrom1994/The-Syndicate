@@ -460,7 +460,7 @@ const BusinessPage = () => {
                 }
                 toast({
                     title: '⚡ Rush Collect!',
-                    description: `Collected $${result.income_collected?.toLocaleString()} from ${businessName} (5💎)`,
+                    description: `Collected $${result.income_collected?.toLocaleString()} from ${businessName} (${result.diamonds_spent}💎)`,
                 });
                 await refetchPlayer();
             } else {
