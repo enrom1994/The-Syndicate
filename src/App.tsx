@@ -30,6 +30,7 @@ import AchievementsPage from "./pages/AchievementsPage";
 import TasksPage from "./pages/TasksPage";
 import LuckyWheelPage from "./pages/LuckyWheelPage";
 import BlackMarketPage from "./pages/BlackMarketPage";
+import FaqPage from "./pages/FaqPage";
 import NotFound from "./pages/NotFound";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ScrollToTop } from "@/components/ScrollToTop";
@@ -114,6 +115,7 @@ const App = () => {
                       <Route path="/inventory" element={<InventoryPage />} />
                       <Route path="/hire" element={<HirePage />} />
                       <Route path="/profile" element={<ProfilePage />} />
+                      <Route path="/faq" element={<FaqPage />} />
                       <Route path="/bank" element={<BankPage />} />
                       <Route path="/notifications" element={<NotificationsPage />} />
                       <Route path="/daily-rewards" element={<DailyRewardsPage />} />

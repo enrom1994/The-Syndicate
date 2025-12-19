@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { User, Sword, Shield, TrendingUp, Crown, Star } from 'lucide-react';
+import { User, Sword, Shield, TrendingUp, Crown, Star, HelpCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -378,6 +379,24 @@ const ProfilePage = () => {
                             canAfford={(player?.cash ?? 0) >= getTrainCost(defense)}
                         />
                     </div>
+                </motion.div>
+
+                {/* Help / Info Button */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                    className="mt-4"
+                >
+                    <Link to="/faq">
+                        <Button
+                            variant="outline"
+                            className="w-full h-10 border-muted/40 hover:bg-muted/20 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            <HelpCircle className="w-4 h-4 mr-2" />
+                            Help & FAQ
+                        </Button>
+                    </Link>
                 </motion.div>
             </div>
 
