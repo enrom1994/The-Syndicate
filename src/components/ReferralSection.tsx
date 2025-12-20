@@ -84,14 +84,15 @@ export const ReferralSection = ({ compact = false }: ReferralSectionProps) => {
         // Use Telegram WebApp share if available
         const tg = (window as any).Telegram?.WebApp;
         if (tg?.openTelegramLink) {
-            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Join me in TON Mafia! 🔫💰')}`;
+            const shareText = '🎩 The Syndicate calls you, Boss. Build your empire in the underworld! 💎🔫';
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(shareText)}`;
             tg.openTelegramLink(shareUrl);
         } else {
             // Fallback to Web Share API
             if (navigator.share) {
                 navigator.share({
-                    title: 'TON Mafia',
-                    text: 'Join me in TON Mafia! 🔫💰',
+                    title: 'The Syndicate',
+                    text: '🎩 The Syndicate calls you, Boss. Build your empire in the underworld! 💎🔫',
                     url: link,
                 });
             } else {
