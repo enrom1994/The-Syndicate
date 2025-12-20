@@ -713,7 +713,7 @@ const OpsPage = () => {
                 </motion.div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-4 bg-muted/30 rounded-sm mb-4">
+                    <TabsList className="grid w-full grid-cols-5 bg-muted/30 rounded-sm mb-4">
                         <TabsTrigger value="pve" className="font-cinzel text-xs flex items-center gap-1">
                             <Skull className="w-3 h-3" />
                             Heists
@@ -734,6 +734,10 @@ const OpsPage = () => {
                         <TabsTrigger value="jobs" className="font-cinzel text-xs flex items-center gap-1">
                             <Target className="w-3 h-3" />
                             Jobs
+                        </TabsTrigger>
+                        <TabsTrigger value="highstakes" className="font-cinzel text-xs flex items-center gap-1">
+                            <Diamond className="w-3 h-3 text-yellow-500" />
+                            Stakes
                         </TabsTrigger>
                     </TabsList>
 
