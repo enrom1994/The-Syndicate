@@ -194,7 +194,9 @@ const Index = () => {
     if (player?.id) {
       try {
         // Use RPC for atomic, server-validated claim
-        const { data, error } = await supabase.rpc('claim_founder_bonus');
+        const { data, error } = await supabase.rpc('claim_founder_bonus' as any, {
+          player_id_input: player.id
+        });
 
         if (error) {
           console.error('Founder bonus RPC error:', error);
