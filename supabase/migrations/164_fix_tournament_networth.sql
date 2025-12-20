@@ -75,8 +75,8 @@ BEGIN
               AND player_id = v_player_id
         ) INTO v_is_registered;
         
-        -- Get player's current rank and net worth INCLUDING BUSINESS VALUE
-        -- This matches the main leaderboard calculation exactly
+        -- Get player's GLOBAL rank and net worth (among ALL players, not just tournament participants)
+        -- This matches the main leaderboard ranking exactly
         WITH ranked AS (
             SELECT 
                 p.id,
@@ -102,9 +102,7 @@ BEGIN
                         ), 0)
                     ) DESC
                 ) as rank
-            FROM players p
-            INNER JOIN tournament_participants tp ON tp.player_id = p.id
-            WHERE tp.tournament_id = v_tournament.id
+            FROM players p  -- All players, not just tournament participants
         )
         SELECT rank, networth INTO v_player_rank, v_player_networth
         FROM ranked
