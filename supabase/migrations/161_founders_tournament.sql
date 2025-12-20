@@ -300,7 +300,7 @@ INSERT INTO public.tournaments (
 ) VALUES (
     'FOUNDERS TOURNAMENT',
     'The first ever tournament for founding members of The Syndicate. Highest Net Worth wins!',
-    10,
+    50,
     'TON',
     NOW(), -- Starts immediately
     NOW() + INTERVAL '7 days', -- Runs for 7 days
