@@ -183,136 +183,201 @@ export const FoundersTournamentBanner = () => {
             transition={{ duration: 0.5 }}
             className="mx-4 my-3"
         >
-            <div className="relative overflow-hidden rounded-lg border-2 border-amber-500/60 bg-gradient-to-br from-amber-900/40 via-amber-800/30 to-amber-900/40 shadow-lg">
-                {/* Animated shimmer effect */}
+            {/* Outer glow container */}
+            <div className="relative">
+                {/* Animated pulsing glow */}
                 <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/10 to-transparent"
-                    animate={{ x: ['-100%', '100%'] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
+                    className="absolute -inset-1 bg-gradient-to-r from-amber-500/30 via-yellow-400/40 to-amber-500/30 rounded-xl blur-md"
+                    animate={{
+                        opacity: [0.4, 0.7, 0.4],
+                        scale: [1, 1.02, 1],
+                    }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                 />
 
-                {/* Corner decorations */}
-                <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-amber-400/50" />
-                <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-amber-400/50" />
-                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-amber-400/50" />
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-amber-400/50" />
+                <div className="relative overflow-hidden rounded-lg border-2 border-amber-400/70 bg-gradient-to-br from-amber-950/90 via-amber-900/80 to-amber-950/90 shadow-2xl">
+                    {/* Animated shimmer effect */}
+                    <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-300/15 to-transparent skew-x-12"
+                        animate={{ x: ['-200%', '200%'] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', repeatDelay: 1 }}
+                    />
 
-                <div className="relative z-10 p-4">
-                    {/* Header */}
-                    <div className="flex items-center justify-center gap-2 mb-3">
-                        <Trophy className="w-5 h-5 text-amber-400" />
-                        <h3 className="font-cinzel font-bold text-lg text-amber-200 tracking-wider">
-                            {tournament.name}
-                        </h3>
-                        <Trophy className="w-5 h-5 text-amber-400" />
-                    </div>
+                    {/* Sparkle particles */}
+                    <motion.div
+                        className="absolute top-4 right-8 w-1.5 h-1.5 bg-amber-300 rounded-full"
+                        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+                        transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
+                    />
+                    <motion.div
+                        className="absolute top-8 left-12 w-1 h-1 bg-yellow-300 rounded-full"
+                        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+                        transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
+                    />
+                    <motion.div
+                        className="absolute bottom-12 right-16 w-1 h-1 bg-amber-200 rounded-full"
+                        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
+                        transition={{ duration: 1.5, repeat: Infinity, delay: 1 }}
+                    />
 
-                    {/* Subheadline */}
-                    <p className="text-center text-sm text-amber-100/90 mb-4">
-                        Highest Net Worth Wins
-                    </p>
+                    {/* Art Deco corner decorations */}
+                    <div className="absolute top-0 left-0 w-10 h-10 border-t-2 border-l-2 border-amber-400/60" />
+                    <div className="absolute top-0 right-0 w-10 h-10 border-t-2 border-r-2 border-amber-400/60" />
+                    <div className="absolute bottom-0 left-0 w-10 h-10 border-b-2 border-l-2 border-amber-400/60" />
+                    <div className="absolute bottom-0 right-0 w-10 h-10 border-b-2 border-r-2 border-amber-400/60" />
 
-                    {/* Prize Display */}
-                    <div className="flex items-center justify-center gap-2 mb-4">
-                        <span className="text-xs text-amber-300/80 uppercase tracking-wide">Prize:</span>
-                        <div className="flex items-center gap-1.5 bg-amber-500/20 px-3 py-1.5 rounded-full border border-amber-500/40">
-                            <span className="text-lg font-bold text-amber-100">{tournament.prize_amount}</span>
-                            <img
-                                src="/images/icons/ton_symbol.png"
-                                alt="TON"
-                                className="w-5 h-5 object-contain"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Countdown Timer */}
-                    <div className="flex items-center justify-center gap-1 mb-4">
-                        <Clock className="w-4 h-4 text-amber-400/80" />
-                        <span className="text-xs text-amber-300/80 mr-1">
-                            {isStarted ? 'Ends in:' : 'Starts in:'}
-                        </span>
-                        <div className="flex items-center gap-1 font-mono text-sm text-amber-100">
-                            <span className="bg-amber-900/50 px-1.5 py-0.5 rounded">{formatNumber(countdown.days)}</span>
-                            <span className="text-amber-400/60">d</span>
-                            <span className="bg-amber-900/50 px-1.5 py-0.5 rounded">{formatNumber(countdown.hours)}</span>
-                            <span className="text-amber-400/60">h</span>
-                            <span className="bg-amber-900/50 px-1.5 py-0.5 rounded">{formatNumber(countdown.minutes)}</span>
-                            <span className="text-amber-400/60">m</span>
-                            <span className="bg-amber-900/50 px-1.5 py-0.5 rounded text-xs">{formatNumber(countdown.seconds)}</span>
-                            <span className="text-amber-400/60 text-xs">s</span>
-                        </div>
-                    </div>
-
-                    {/* Stats Row */}
-                    <div className="flex items-center justify-center gap-4 text-xs text-amber-300/70 mb-4">
-                        <div className="flex items-center gap-1">
-                            <Users className="w-3.5 h-3.5" />
-                            <span>{tournament.participant_count} Entrants</span>
-                        </div>
-                        <span className="text-amber-500/40">•</span>
-                        <span>Skill-Based Only</span>
-                    </div>
-
-                    {/* Player Status / CTA */}
-                    <AnimatePresence mode="wait">
-                        {isRegistered ? (
+                    <div className="relative z-10 p-5">
+                        {/* Header with animated trophies */}
+                        <div className="flex items-center justify-center gap-3 mb-2">
                             <motion.div
-                                key="registered"
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="space-y-2"
+                                animate={{ rotate: [-5, 5, -5], y: [0, -2, 0] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                             >
-                                {/* Rank display */}
-                                {playerStatus?.current_rank && (
-                                    <div className="flex items-center justify-center gap-2 py-2 bg-amber-500/10 rounded-lg border border-amber-500/30">
-                                        <Crown className="w-4 h-4 text-amber-400" />
-                                        <span className="text-sm text-amber-200">
-                                            Your Rank: <span className="font-bold">#{playerStatus.current_rank}</span>
-                                        </span>
-                                    </div>
-                                )}
-
-                                {/* View Leaderboard link */}
-                                <Link to="/ranks" className="block">
-                                    <Button
-                                        variant="outline"
-                                        className="w-full border-amber-500/50 text-amber-200 hover:bg-amber-500/20 hover:border-amber-500"
-                                    >
-                                        <span>View Leaderboard</span>
-                                        <ChevronRight className="w-4 h-4 ml-1" />
-                                    </Button>
-                                </Link>
+                                <Trophy className="w-6 h-6 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
                             </motion.div>
-                        ) : (
+                            <h3 className="font-cinzel font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-200 tracking-widest drop-shadow-lg">
+                                {tournament.name}
+                            </h3>
                             <motion.div
-                                key="register"
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
+                                animate={{ rotate: [5, -5, 5], y: [0, -2, 0] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                             >
-                                <Button
-                                    onClick={handleRegister}
-                                    disabled={isRegistering}
-                                    className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-black font-cinzel font-bold tracking-wider py-3 shadow-lg"
+                                <Trophy className="w-6 h-6 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
+                            </motion.div>
+                        </div>
+
+                        {/* Subheadline */}
+                        <p className="text-center text-sm text-amber-100/90 mb-4 font-medium">
+                            Highest Net Worth Wins
+                        </p>
+
+                        {/* DRAMATIC Prize Display */}
+                        <motion.div
+                            className="flex items-center justify-center gap-3 mb-5 py-3 px-4 bg-gradient-to-r from-amber-500/10 via-amber-400/20 to-amber-500/10 rounded-lg border border-amber-400/30"
+                            animate={{ boxShadow: ['0 0 20px rgba(251,191,36,0.1)', '0 0 30px rgba(251,191,36,0.3)', '0 0 20px rgba(251,191,36,0.1)'] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                        >
+                            <span className="text-xs text-amber-300 uppercase tracking-widest font-semibold">Grand Prize:</span>
+                            <div className="flex items-center gap-2">
+                                <motion.span
+                                    className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-200"
+                                    animate={{ scale: [1, 1.05, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
                                 >
-                                    {isRegistering ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Registering...
-                                        </>
-                                    ) : (
-                                        'CLAIM YOUR SPOT'
-                                    )}
-                                </Button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                    {tournament.prize_amount}
+                                </motion.span>
+                                <motion.img
+                                    src="/images/icons/ton_symbol.png"
+                                    alt="TON"
+                                    className="w-7 h-7 object-contain drop-shadow-[0_0_8px_rgba(56,178,254,0.6)]"
+                                    animate={{ rotate: [0, 5, 0, -5, 0] }}
+                                    transition={{ duration: 4, repeat: Infinity }}
+                                />
+                            </div>
+                        </motion.div>
 
-                    {/* Flavor text */}
-                    <p className="text-center text-[10px] text-amber-400/50 italic mt-3">
-                        Only the sharpest minds rise to the top.
-                    </p>
+                        {/* Countdown Timer */}
+                        <div className="flex items-center justify-center gap-2 mb-4 bg-black/30 rounded-lg py-2 px-3">
+                            <Clock className="w-4 h-4 text-amber-400" />
+                            <span className="text-xs text-amber-300/90 font-medium">
+                                {isStarted ? 'Ends in:' : 'Starts in:'}
+                            </span>
+                            <div className="flex items-center gap-1 font-mono text-sm">
+                                <span className="bg-amber-800/60 px-2 py-1 rounded text-amber-100 font-bold">{formatNumber(countdown.days)}</span>
+                                <span className="text-amber-400/70 text-xs">d</span>
+                                <span className="bg-amber-800/60 px-2 py-1 rounded text-amber-100 font-bold">{formatNumber(countdown.hours)}</span>
+                                <span className="text-amber-400/70 text-xs">h</span>
+                                <span className="bg-amber-800/60 px-2 py-1 rounded text-amber-100 font-bold">{formatNumber(countdown.minutes)}</span>
+                                <span className="text-amber-400/70 text-xs">m</span>
+                                <span className="bg-amber-800/60 px-1.5 py-1 rounded text-amber-100 font-bold text-xs">{formatNumber(countdown.seconds)}</span>
+                                <span className="text-amber-400/70 text-[10px]">s</span>
+                            </div>
+                        </div>
+
+                        {/* Stats Row */}
+                        <div className="flex items-center justify-center gap-4 text-xs text-amber-300/80 mb-4">
+                            <div className="flex items-center gap-1.5">
+                                <Users className="w-4 h-4" />
+                                <span className="font-medium">{tournament.participant_count} Entrants</span>
+                            </div>
+                            <span className="text-amber-500/50">•</span>
+                            <span className="font-medium">Skill-Based • No Random Winners</span>
+                        </div>
+
+                        {/* Player Status / CTA */}
+                        <AnimatePresence mode="wait">
+                            {isRegistered ? (
+                                <motion.div
+                                    key="registered"
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="space-y-3"
+                                >
+                                    {/* Rank display */}
+                                    {playerStatus?.current_rank && (
+                                        <div className="flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-amber-500/10 via-amber-400/20 to-amber-500/10 rounded-lg border border-amber-500/40">
+                                            <Crown className="w-5 h-5 text-amber-400" />
+                                            <span className="text-sm text-amber-200">
+                                                Your Rank: <span className="font-bold text-lg text-amber-100">#{playerStatus.current_rank}</span>
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* View Leaderboard link */}
+                                    <Link to="/ranks" className="block">
+                                        <Button
+                                            variant="outline"
+                                            className="w-full border-amber-400/60 text-amber-200 hover:bg-amber-500/20 hover:border-amber-400 font-cinzel tracking-wide"
+                                        >
+                                            <span>View Leaderboard</span>
+                                            <ChevronRight className="w-4 h-4 ml-1" />
+                                        </Button>
+                                    </Link>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="register"
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                >
+                                    <motion.div
+                                        animate={{
+                                            boxShadow: [
+                                                '0 0 20px rgba(251,191,36,0.3)',
+                                                '0 0 35px rgba(251,191,36,0.5)',
+                                                '0 0 20px rgba(251,191,36,0.3)',
+                                            ],
+                                        }}
+                                        transition={{ duration: 1.5, repeat: Infinity }}
+                                        className="rounded-lg overflow-hidden"
+                                    >
+                                        <Button
+                                            onClick={handleRegister}
+                                            disabled={isRegistering}
+                                            className="w-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:via-yellow-400 hover:to-amber-400 text-black font-cinzel font-bold tracking-widest py-4 text-base shadow-xl border-2 border-amber-300/50"
+                                        >
+                                            {isRegistering ? (
+                                                <>
+                                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                                    Registering...
+                                                </>
+                                            ) : (
+                                                '🏆 CLAIM YOUR SPOT'
+                                            )}
+                                        </Button>
+                                    </motion.div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Flavor text */}
+                        <p className="text-center text-[10px] text-amber-400/60 italic mt-4">
+                            Only the sharpest minds rise to the top.
+                        </p>
+                    </div>
                 </div>
             </div>
         </motion.div>
     );
 };
+
