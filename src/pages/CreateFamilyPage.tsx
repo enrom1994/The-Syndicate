@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { Crown, Users, ArrowLeft, Plus, AlertTriangle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTonConnectUI } from '@tonconnect/ui-react';
 import { MainLayout } from '@/components/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,13 +12,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
 import { GameIcon } from '@/components/GameIcon';
-import { TON_RECEIVING_ADDRESS, createTonTransaction } from '@/lib/ton-config';
 
 const CreateFamilyPage = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const { player, refetchPlayer } = useAuth();
-    const [tonConnectUI] = useTonConnectUI();
 
     const [familyName, setFamilyName] = useState('');
     const [familyTag, setFamilyTag] = useState('');
@@ -29,7 +26,6 @@ const CreateFamilyPage = () => {
     const [isProcessing, setIsProcessing] = useState(false);
 
     const diamondCost = 100;
-    const tonCost = 0.5;
 
     const isValid =
         familyName.length >= 3 &&
@@ -38,10 +34,6 @@ const CreateFamilyPage = () => {
         (player?.diamonds ?? 0) >= diamondCost;
 
     const handleCreate = () => {
-        if (!tonConnectUI.wallet) {
-            tonConnectUI.openModal();
-            return;
-        }
         if (isValid) {
             setConfirmOpen(true);
         }
@@ -54,25 +46,7 @@ const CreateFamilyPage = () => {
         setConfirmOpen(false);
 
         try {
-            // First, send TON payment
-            const transaction = createTonTransaction(TON_RECEIVING_ADDRESS, tonCost);
-            const txResult = await tonConnectUI.sendTransaction(transaction);
-
-            // SECURE: Verify payment server-side before creating family
-            const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('verify-ton-payment', {
-                body: {
-                    boc: txResult.boc,
-                    paymentType: 'family_creation',
-                    tonAmount: tonCost,
-                    rewardData: {}
-                }
-            });
-
-            if (verifyError || !verifyResult?.success) {
-                throw new Error(verifyResult?.message || verifyError?.message || 'Payment verification failed');
-            }
-
-            // Then create family via RPC
+            // Create family via RPC (diamonds deducted server-side)
             const { data, error } = await supabase.rpc('create_family', {
                 creator_id: player.id,
                 family_name: familyName,
@@ -153,7 +127,7 @@ const CreateFamilyPage = () => {
                         <div className="text-xs text-yellow-200">
                             <p className="font-semibold mb-1">Important:</p>
                             <ul className="list-disc list-inside space-y-0.5 text-yellow-200/80">
-                                <li>Creating a family requires an initial treasury deposit</li>
+                                <li>Creating a family costs {diamondCost} diamonds</li>
                                 <li>You will become the Boss with full control</li>
                                 <li>Family name and tag cannot be changed easily</li>
                             </ul>
@@ -265,23 +239,15 @@ const CreateFamilyPage = () => {
                             </div>
                         </div>
 
-                        {/* Cost Display */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-sm">
-                                <span className="text-xs text-muted-foreground">Diamond Cost:</span>
-                                <div className="flex items-center gap-1">
-                                    <GameIcon type="diamond" className="w-5 h-5" />
-                                    <span className="font-cinzel font-bold text-foreground">{diamondCost}</span>
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-between p-3 bg-primary/10 rounded-sm border border-primary/30">
-                                <span className="text-xs text-muted-foreground">TON Fee:</span>
-                                <div className="flex items-center gap-1">
-                                    <GameIcon type="ton" className="w-5 h-5" />
-                                    <span className="font-cinzel font-bold text-primary">{tonCost}</span>
-                                </div>
+                        {/* Cost Display - Diamonds Only */}
+                        <div className="flex items-center justify-between p-3 bg-primary/10 rounded-sm border border-primary/30">
+                            <span className="text-xs text-muted-foreground">Creation Cost:</span>
+                            <div className="flex items-center gap-1">
+                                <GameIcon type="diamond" className="w-5 h-5" />
+                                <span className="font-cinzel font-bold text-primary">{diamondCost}</span>
                             </div>
                         </div>
+
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">Your Diamonds:</span>
                             <span className={`font-bold ${(player?.diamonds ?? 0) >= diamondCost ? 'text-primary' : 'text-destructive'}`}>
@@ -307,20 +273,20 @@ const CreateFamilyPage = () => {
                         ) : (
                             <Plus className="w-4 h-4 mr-2" />
                         )}
-                        Create Family (100 💎 + 0.5 TON)
+                        Create Family ({diamondCost} 💎)
                     </Button>
                 </motion.div>
-            </div >
+            </div>
 
             <ConfirmDialog
                 open={confirmOpen}
                 onOpenChange={setConfirmOpen}
                 title="Create Family?"
-                description={`Create "${familyName}" [${familyTag}] for 100💎 + 0.5 TON? You will become the Boss.`}
+                description={`Create "${familyName}" [${familyTag}] for ${diamondCost}💎? You will become the Boss.`}
                 onConfirm={confirmCreate}
                 confirmText="Create Family"
             />
-        </MainLayout >
+        </MainLayout>
     );
 };
 
