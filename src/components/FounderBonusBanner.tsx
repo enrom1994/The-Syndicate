@@ -29,29 +29,48 @@ export const FounderBonusBanner = () => {
         try {
             const { data, error } = await supabase.rpc('claim_founder_bonus' as any);
 
+            console.log('[FounderBonus] RPC response:', { data, error });
+
             if (error) throw error;
 
-            if ((data as any)?.success) {
+            // Handle the response - backend returns jsonb with success/error fields
+            const response = data as any;
+
+            if (response?.success === true) {
                 haptic.success();
                 toast({
                     title: '💎 Founder Bonus Claimed!',
-                    description: `You received ${(data as any).diamonds_awarded} diamonds!`,
+                    description: `You received ${response.diamonds_awarded || 50} diamonds!`,
                 });
                 await refetchPlayer();
-            } else if ((data as any)?.already_claimed) {
+            } else if (response?.already_claimed === true) {
+                // Already claimed - just refresh and hide banner
                 toast({
                     title: 'Already Claimed',
                     description: 'You have already received your founder bonus.',
                 });
                 await refetchPlayer();
+            } else if (response?.error) {
+                // Backend returned an error message
+                toast({
+                    title: 'Claim Failed',
+                    description: response.error,
+                    variant: 'destructive',
+                });
             } else {
-                throw new Error((data as any)?.message || 'Claim failed');
+                // Unexpected response format - log and show error
+                console.error('[FounderBonus] Unexpected response format:', response);
+                toast({
+                    title: 'Error',
+                    description: 'Something went wrong. Please try again.',
+                    variant: 'destructive',
+                });
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Founder bonus claim error:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to claim bonus. Please try again.',
+                description: error?.message || 'Failed to claim bonus. Please try again.',
                 variant: 'destructive',
             });
         } finally {
