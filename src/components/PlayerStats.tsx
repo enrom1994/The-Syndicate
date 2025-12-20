@@ -180,15 +180,19 @@ export const PlayerStats = ({ onOpenOnboarding }: PlayerStatsProps = {}) => {
     : 100;  // Max rank
   const respectToNext = rankInfo.nextThreshold - respect;
 
-  // Calculate Net Worth (cash + bank ONLY - matches database/leaderboard)
+  // Calculate Net Worth (cash + bank + business value - matches leaderboard RPC)
   const cash = player?.cash ?? 0;
   const bank = player?.banked_cash ?? 0;
-  const netWorth = cash + bank;
+  // Business value = sum of (base_purchase_cost * level) approximated by income_per_hour * 24
+  // This matches the ProfilePage calculation for frontend consistency
+  const businessValue = businesses.reduce((sum, b) => sum + (b.income_per_hour * 24), 0);
+  const netWorth = cash + bank + businessValue;
 
   // DEBUG: Log values to identify discrepancy
   console.log('[PlayerStats] Net Worth Debug:', {
     cash,
     banked_cash: bank,
+    businessValue,
     netWorth,
     player_id: player?.id,
   });

@@ -5,6 +5,7 @@ import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGameStore } from '@/hooks/useGameStore';
 
 interface LeaderboardEntry {
     rank: number;
@@ -206,13 +207,17 @@ const RanksPage = () => {
         }));
     };
 
+    const { businesses } = useGameStore();
+
     const getPlayerNetWorth = () => {
         if (!player) return 0;
-        const netWorth = player.cash + player.banked_cash;
+        const businessValue = businesses.reduce((sum, b) => sum + (b.income_per_hour * 24), 0);
+        const netWorth = player.cash + player.banked_cash + businessValue;
         // DEBUG: Log values to identify discrepancy source
         console.log('[RanksPage] Net Worth Debug:', {
             cash: player.cash,
             banked_cash: player.banked_cash,
+            businessValue,
             calculated_networth: netWorth,
             playerRank_networth: playerRank?.networth || 'N/A',
         });
