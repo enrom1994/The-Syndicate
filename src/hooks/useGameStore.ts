@@ -57,6 +57,7 @@ export interface OwnedBusiness {
     max_level: number;
     income_per_hour: number;
     upgrade_cost: number;
+    base_purchase_cost: number; // Added for net worth calculation (matches backend RPC)
     last_collected: string;
     collect_cooldown_minutes: number;
     image_url: string;
@@ -513,6 +514,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                     max_level: def?.max_level || 10,
                     income_per_hour: Math.floor((def?.base_income_per_hour || 0) * Math.pow(1.15, b.level - 1)),
                     upgrade_cost: Math.floor((def?.base_purchase_cost || 0) * Math.pow(def?.upgrade_cost_multiplier || 1.5, b.level)),
+                    base_purchase_cost: def?.base_purchase_cost || 0,
                     last_collected: b.last_collected,
                     collect_cooldown_minutes: def?.collect_cooldown_minutes || 60,
                     image_url: def?.image_url || '',

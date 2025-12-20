@@ -183,9 +183,8 @@ export const PlayerStats = ({ onOpenOnboarding }: PlayerStatsProps = {}) => {
   // Calculate Net Worth (cash + bank + business value - matches leaderboard RPC)
   const cash = player?.cash ?? 0;
   const bank = player?.banked_cash ?? 0;
-  // Business value = sum of (base_purchase_cost * level) approximated by income_per_hour * 24
-  // This matches the ProfilePage calculation for frontend consistency
-  const businessValue = businesses.reduce((sum, b) => sum + (b.income_per_hour * 24), 0);
+  // Business value = sum of (base_purchase_cost * level) - MATCHES BACKEND RPC EXACTLY
+  const businessValue = businesses.reduce((sum, b) => sum + (b.base_purchase_cost * b.level), 0);
   const netWorth = cash + bank + businessValue;
 
   // DEBUG: Log values to identify discrepancy
@@ -194,6 +193,7 @@ export const PlayerStats = ({ onOpenOnboarding }: PlayerStatsProps = {}) => {
     banked_cash: bank,
     businessValue,
     netWorth,
+    businesses: businesses.map(b => ({ name: b.name, level: b.level, base_cost: b.base_purchase_cost, value: b.base_purchase_cost * b.level })),
     player_id: player?.id,
   });
 

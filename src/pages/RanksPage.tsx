@@ -211,7 +211,8 @@ const RanksPage = () => {
 
     const getPlayerNetWorth = () => {
         if (!player) return 0;
-        const businessValue = businesses.reduce((sum, b) => sum + (b.income_per_hour * 24), 0);
+        // Business value = sum of (base_purchase_cost * level) - MATCHES BACKEND RPC EXACTLY
+        const businessValue = businesses.reduce((sum, b) => sum + (b.base_purchase_cost * b.level), 0);
         const netWorth = player.cash + player.banked_cash + businessValue;
         // DEBUG: Log values to identify discrepancy source
         console.log('[RanksPage] Net Worth Debug:', {

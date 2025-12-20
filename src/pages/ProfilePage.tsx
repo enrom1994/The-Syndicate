@@ -153,10 +153,11 @@ const ProfilePage = () => {
         }
     };
 
-    // Calculate Net Worth
+    // Calculate Net Worth (matches backend RPC: cash + banked_cash + business value)
     const cash = player?.cash ?? 0;
     const bankedCash = player?.banked_cash ?? 0;
-    const businessValue = businesses.reduce((sum, b) => sum + (b.income_per_hour * 24), 0);
+    // Business value = sum of (base_purchase_cost * level) - MATCHES BACKEND RPC EXACTLY
+    const businessValue = businesses.reduce((sum, b) => sum + (b.base_purchase_cost * b.level), 0);
     const netWorth = cash + bankedCash + businessValue;
 
     // Calculate crew totals
