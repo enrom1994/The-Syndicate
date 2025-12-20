@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { haptic } from '@/lib/haptics';
 
-// TODO: Replace with your actual Telegram channel link
-const TELEGRAM_CHANNEL_URL = 'https://t.me/TheSyndicateTON';
+// Official Telegram channel
+const TELEGRAM_CHANNEL_URL = 'https://t.me/TheSyndicateOfficialgamebot';
 
 export const TelegramBanner = () => {
     const { isStepActive, markStepComplete } = useTutorial();
