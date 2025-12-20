@@ -47,9 +47,10 @@ const Index = () => {
   const hasSeenOfflineSummary = sessionStorage.getItem('hasSeenOfflineSummary') === 'true';
 
   // New dopamine-first flow: Skip mandatory onboarding, show claim modal instead
+  // CRITICAL: If onboarding is complete, user has already claimed - go straight to dashboard
   const [showClaimModal, setShowClaimModal] = useState(false);
-  const [showDashboard, setShowDashboard] = useState(hasSeenIntro && onboardingComplete);
-  const [isLoading, setIsLoading] = useState(!hasSeenIntro && onboardingComplete);
+  const [showDashboard, setShowDashboard] = useState(onboardingComplete || hasSeenIntro);
+  const [isLoading, setIsLoading] = useState(!onboardingComplete && !hasSeenIntro);
   const [showOfflineSummary, setShowOfflineSummary] = useState(false);
   const [offlineEarnings, setOfflineEarnings] = useState<OfflineEarnings | null>(null);
   const [vipStatus, setVipStatus] = useState<VipStatus>({ isActive: false, daysRemaining: 0, hoursRemaining: 0 });
