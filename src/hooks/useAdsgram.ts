@@ -6,6 +6,7 @@
  * SDK callbacks are for UX feedback only, not payment authority.
  */
 import { useCallback, useEffect, useState, useRef } from 'react';
+import { logger } from '@/lib/logger';
 
 // Adsgram SDK types (minimal subset for rewarded ads)
 interface AdController {
@@ -63,7 +64,7 @@ export function useAdsgram(options: UseAdsgramOptions = {}): UseAdsgramReturn {
         }
 
         if (!blockId) {
-            console.warn('[useAdsgram] VITE_ADSGRAM_BLOCK_ID not configured');
+            logger.warn('[useAdsgram] VITE_ADSGRAM_BLOCK_ID not configured');
             setError('Ad configuration missing');
             setIsAvailable(false);
             return;
@@ -83,7 +84,7 @@ export function useAdsgram(options: UseAdsgramOptions = {}): UseAdsgramReturn {
             const timeout = setTimeout(() => {
                 clearInterval(checkInterval);
                 if (!window.Adsgram) {
-                    console.warn('[useAdsgram] Adsgram SDK not loaded');
+                    logger.warn('[useAdsgram] Adsgram SDK not loaded');
                     setError('Ad SDK not available');
                     setIsAvailable(false);
                 }
@@ -105,9 +106,9 @@ export function useAdsgram(options: UseAdsgramOptions = {}): UseAdsgramReturn {
                 });
                 setIsAvailable(true);
                 setError(null);
-                console.log('[useAdsgram] SDK initialized successfully');
+                logger.debug('[useAdsgram] SDK initialized successfully');
             } catch (err) {
-                console.error('[useAdsgram] Failed to initialize SDK:', err);
+                logger.error('[useAdsgram] Failed to initialize SDK:', err);
                 setError('Failed to initialize ads');
                 setIsAvailable(false);
             }
@@ -117,14 +118,14 @@ export function useAdsgram(options: UseAdsgramOptions = {}): UseAdsgramReturn {
     // Show rewarded ad
     const showAd = useCallback(async (): Promise<boolean> => {
         if (!adControllerRef.current) {
-            console.warn('[useAdsgram] SDK not initialized');
+            logger.warn('[useAdsgram] SDK not initialized');
             const err = new Error('Ad SDK not initialized');
             onError?.(err);
             return false;
         }
 
         if (isShowing) {
-            console.warn('[useAdsgram] Ad already showing');
+            logger.warn('[useAdsgram] Ad already showing');
             return false;
         }
 
@@ -140,17 +141,17 @@ export function useAdsgram(options: UseAdsgramOptions = {}): UseAdsgramReturn {
             if (result.done && !result.error) {
                 // User completed the ad - trigger UX callback
                 // NOTE: This is NOT payment authority - backend SSV handles rewards
-                console.log('[useAdsgram] Ad completed successfully');
+                logger.debug('[useAdsgram] Ad completed successfully');
                 onReward?.();
                 return true;
             } else {
                 // User closed early or error occurred
-                console.log('[useAdsgram] Ad closed or errored:', result.description);
+                logger.debug('[useAdsgram] Ad closed or errored:', result.description);
                 onClose?.();
                 return false;
             }
         } catch (err) {
-            console.error('[useAdsgram] Error showing ad:', err);
+            logger.error('[useAdsgram] Error showing ad:', err);
             const error = err instanceof Error ? err : new Error('Unknown ad error');
             setError(error.message);
             onError?.(error);

@@ -64,3 +64,7 @@ This project is built with:
 
 Simply open [Lovable](https://lovable.dev/projects/d7004264-3c8c-4d9b-b97b-0c71720f49c4) and click on Share -> Publish.
 
+
+
+-- Replace 'USER_UUID' with the actual ID
+DELETE FROM auth.users WHERE id = 'USER_UUID';

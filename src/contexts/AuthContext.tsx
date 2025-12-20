@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useGameStore } from '@/hooks/useGameStore';
+import { logger } from '@/lib/logger';
 
 // Session refresh interval (30 minutes)
 const SESSION_REFRESH_INTERVAL = 30 * 60 * 1000;
@@ -72,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const lastLoginTimeRef = useRef<number>(0);
 
     const refetchPlayer = useCallback(async () => {
-        console.log('[Auth] refetchPlayer called');
+        logger.debug('[Auth] refetchPlayer called');
         try {
             let userId: string | null = null;
 
@@ -80,17 +81,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const { data: { user } } = await supabase.auth.getUser();
 
             if (user?.id) {
-                console.log('[Auth] getUser result: User found');
+                logger.debug('[Auth] getUser result: User found');
                 userId = user.id;
             } else {
                 // Fallback: use existing player ID if we have one
                 // This handles cases where session expired but we still have player data
                 const currentPlayerId = player?.id || useGameStore.getState().playerId;
                 if (currentPlayerId) {
-                    console.log('[Auth] No auth user, falling back to stored player ID:', currentPlayerId);
+                    logger.debug('[Auth] No auth user, falling back to stored player ID:', currentPlayerId);
                     userId = currentPlayerId;
                 } else {
-                    console.log('[Auth] No user in refetchPlayer and no stored player ID');
+                    logger.debug('[Auth] No user in refetchPlayer and no stored player ID');
                     return;
                 }
             }
@@ -102,12 +103,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 .single();
 
             if (fetchError) {
-                console.error('[Auth] Error refetching player:', fetchError);
+                logger.error('[Auth] Error refetching player:', fetchError);
                 return;
             }
 
             if (data) {
-                console.log('[Auth] Player data fetched, cash:', data.cash, 'diamonds:', data.diamonds);
+                logger.debug('[Auth] Player data fetched, cash:', data.cash, 'diamonds:', data.diamonds);
                 setPlayer(data as Player);
                 setSessionValid(true);
                 // Also sync to GameStore
@@ -125,7 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             setError(null);
         } catch (err) {
-            console.error('[Auth] Error in refetchPlayer:', err);
+            logger.error('[Auth] Error in refetchPlayer:', err);
             setError('Failed to load player data');
         }
     }, []);
@@ -139,21 +140,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             const tg = window.Telegram?.WebApp;
 
             // Debug logging
-            console.log('[Auth] Telegram WebApp:', !!tg);
-            console.log('[Auth] initData present:', !!tg?.initData);
-            console.log('[Auth] initData length:', tg?.initData?.length || 0);
-            console.log('[Auth] initDataUnsafe.user:', tg?.initDataUnsafe?.user);
+            logger.debug('[Auth] Telegram WebApp:', !!tg);
+            logger.debug('[Auth] initData present:', !!tg?.initData);
+            logger.debug('[Auth] initData length:', tg?.initData?.length || 0);
+            logger.debug('[Auth] initDataUnsafe.user:', tg?.initDataUnsafe?.user);
 
             if (!tg?.initData || tg.initData.length === 0) {
                 // No Telegram data - reject authentication
-                console.error('[Auth] No Telegram initData - authentication rejected');
+                logger.error('[Auth] No Telegram initData - authentication rejected');
                 setError('This app must be opened from Telegram');
                 setIsLoading(false);
                 return;
             }
 
             // Call Telegram auth Edge Function
-            console.log('[Auth] Calling Edge Function via supabase.functions.invoke...');
+            logger.debug('[Auth] Calling Edge Function via supabase.functions.invoke...');
 
             // Use supabase.functions.invoke for automatic header handling (including Auth)
             const { data, error: invokeError } = await supabase.functions.invoke('telegram-auth', {
@@ -161,13 +162,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             });
 
             if (invokeError) {
-                console.error('[Auth] Function invocation error:', invokeError);
-                console.log('[Auth] Error details:', JSON.stringify(invokeError));
+                logger.error('[Auth] Function invocation error:', invokeError);
+                logger.debug('[Auth] Error details:', JSON.stringify(invokeError));
                 throw invokeError;
             }
 
-            console.log('[Auth] Edge Function success. Player Data:', data.player);
-            console.log('[Auth] Player Cash from Function:', data.player?.cash);
+            logger.debug('[Auth] Edge Function success. Player Data:', data.player);
+            logger.debug('[Auth] Player Cash from Function:', data.player?.cash);
 
             const { token, player: playerData } = data;
 
@@ -184,14 +185,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     JSON.stringify(sessionError).includes('403');
 
                 if (!isExpectedError) {
-                    console.warn('[Auth] Session warning:', sessionError);
+                    logger.warn('[Auth] Session warning:', sessionError);
                 }
             }
 
             setPlayer(playerData);
 
             // Sync to GameStore
-            console.log('[Auth] Syncing to GameStore. Cash:', playerData.cash);
+            logger.debug('[Auth] Syncing to GameStore. Cash:', playerData.cash);
             useGameStore.getState().setPlayerId(playerData.id);
             useGameStore.getState().setPlayerStats({
                 cash: playerData.cash,
@@ -208,7 +209,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             lastLoginTimeRef.current = Date.now();
             setError(null);
         } catch (err: any) {
-            console.error('Login error:', err);
+            logger.error('Login error:', err);
             setError(err.message || 'Authentication failed');
         } finally {
             setIsLoading(false);
@@ -235,42 +236,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // Subscribe to auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('[Auth] Event:', event, 'Session:', !!session, 'Time:', new Date().toISOString());
+            logger.debug('[Auth] Event:', event, 'Session:', !!session, 'Time:', new Date().toISOString());
 
             if (event === 'SIGNED_IN' && session) {
-                console.log('[Auth] SIGNED_IN - refreshing player');
+                logger.debug('[Auth] SIGNED_IN - refreshing player');
                 setSessionValid(true);
                 await refetchPlayer();
             } else if (event === 'SIGNED_OUT') {
-                console.log('[Auth] SIGNED_OUT detected');
+                logger.debug('[Auth] SIGNED_OUT detected');
                 // IMPORTANT: Don't clear player data immediately!
                 // Our custom JWT doesn't support Supabase's native refresh.
                 // Instead, try to re-authenticate with Telegram.
                 const tg = window.Telegram?.WebApp;
                 if (tg?.initData && tg.initData.length > 0) {
-                    console.log('[Auth] Telegram available - re-authenticating instead of signing out');
+                    logger.debug('[Auth] Telegram available - re-authenticating instead of signing out');
                     setSessionValid(false);
                     // Trigger re-authentication without clearing player state
                     try {
                         await loginWithTelegram();
                     } catch (err) {
-                        console.error('[Auth] Re-auth failed, clearing player:', err);
+                        logger.error('[Auth] Re-auth failed, clearing player:', err);
                         setPlayer(null);
                         setSessionValid(false);
                     }
                 } else {
                     // Only clear if we're truly signing out (no Telegram available)
-                    console.log('[Auth] No Telegram - clearing player');
+                    logger.debug('[Auth] No Telegram - clearing player');
                     setPlayer(null);
                     setSessionValid(false);
                 }
             } else if (event === 'TOKEN_REFRESHED' && session) {
-                console.log('[Auth] TOKEN_REFRESHED - session still valid');
+                logger.debug('[Auth] TOKEN_REFRESHED - session still valid');
                 setSessionValid(true);
                 // Token was refreshed - refetch player to ensure data is current
                 await refetchPlayer();
             } else if (event === 'INITIAL_SESSION') {
-                console.log('[Auth] INITIAL_SESSION - session present:', !!session);
+                logger.debug('[Auth] INITIAL_SESSION - session present:', !!session);
                 if (session) {
                     setSessionValid(true);
                     await refetchPlayer();
@@ -292,22 +293,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // Only start refresh timer if we have a valid session
         if (sessionValid && player) {
-            console.log('[Auth] Starting session refresh timer (30 min interval)');
+            logger.debug('[Auth] Starting session refresh timer (30 min interval)');
 
             refreshTimerRef.current = setInterval(async () => {
                 const timeSinceLastLogin = Date.now() - lastLoginTimeRef.current;
-                console.log('[Auth] Checking session age:', Math.round(timeSinceLastLogin / 60000), 'minutes');
+                logger.debug('[Auth] Checking session age:', Math.round(timeSinceLastLogin / 60000), 'minutes');
 
                 // Re-authenticate if more than 25 minutes have passed
                 // (5 min buffer before the 30 min mark)
                 if (timeSinceLastLogin > 25 * 60 * 1000) {
-                    console.log('[Auth] Session nearing expiry - re-authenticating...');
+                    logger.debug('[Auth] Session nearing expiry - re-authenticating...');
                     try {
                         // Don't show loading state during background refresh
                         await loginWithTelegram();
-                        console.log('[Auth] Session refreshed successfully');
+                        logger.debug('[Auth] Session refreshed successfully');
                     } catch (err) {
-                        console.error('[Auth] Failed to refresh session:', err);
+                        logger.error('[Auth] Failed to refresh session:', err);
                     }
                 }
             }, 60 * 1000); // Check every minute

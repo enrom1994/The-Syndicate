@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { logger } from '@/lib/logger';
 
 interface UseRealtimeOptions {
     onPlayerUpdate?: (payload: RealtimePostgresChangesPayload<any>) => void;
@@ -35,7 +36,7 @@ export const useRealtime = ({
                     filter: `id=eq.${player.id}`,
                 },
                 (payload) => {
-                    console.log('Player updated:', payload);
+                    logger.debug('Player updated:', payload);
                     if (onPlayerUpdate) {
                         onPlayerUpdate(payload);
                     }
@@ -57,7 +58,7 @@ export const useRealtime = ({
                     filter: `defender_id=eq.${player.id}`,
                 },
                 (payload) => {
-                    console.log('Attack received:', payload);
+                    logger.debug('Attack received:', payload);
                     if (onAttackReceived) {
                         onAttackReceived(payload);
                     }

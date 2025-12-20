@@ -4,6 +4,7 @@
  * Clears TON Connect localStorage data when a different Telegram user
  * opens the app to prevent wallet sharing between users.
  */
+import { logger } from '@/lib/logger';
 
 // Keys used by TON Connect SDK that need to be cleared on user switch
 const TON_CONNECT_KEYS = [
@@ -29,13 +30,13 @@ export function cleanupTonConnectForUser(currentTelegramId: number | string): bo
 
     if (storedUserId && storedUserId !== currentIdString) {
         // Different user detected - clear all TON Connect data
-        console.log('[TonConnect] User switch detected:', storedUserId, '->', currentIdString);
-        console.log('[TonConnect] Clearing stale wallet connection data...');
+        logger.debug('[TonConnect] User switch detected:', storedUserId, '->', currentIdString);
+        logger.debug('[TonConnect] Clearing stale wallet connection data...');
 
         TON_CONNECT_KEYS.forEach(key => {
             const value = localStorage.getItem(key);
             if (value) {
-                console.log(`[TonConnect] Removing key: ${key}`);
+                logger.debug(`[TonConnect] Removing key: ${key}`);
                 localStorage.removeItem(key);
             }
         });
@@ -47,7 +48,7 @@ export function cleanupTonConnectForUser(currentTelegramId: number | string): bo
 
     // Same user or first time - just store the ID
     if (!storedUserId) {
-        console.log('[TonConnect] First user login, storing ID:', currentIdString);
+        logger.debug('[TonConnect] First user login, storing ID:', currentIdString);
     }
     localStorage.setItem(USER_ID_KEY, currentIdString);
     return false;
@@ -64,7 +65,7 @@ export function getStoredTonConnectUserId(): string | null {
  * Force clear all TON Connect data (useful for logout scenarios)
  */
 export function forceCleanupTonConnect(): void {
-    console.log('[TonConnect] Force clearing all wallet data...');
+    logger.debug('[TonConnect] Force clearing all wallet data...');
     TON_CONNECT_KEYS.forEach(key => localStorage.removeItem(key));
     localStorage.removeItem(USER_ID_KEY);
 }

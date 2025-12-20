@@ -1,6 +1,7 @@
 import { TonConnectUIProvider } from '@tonconnect/ui-react';
 import { ReactNode, useEffect, useState } from 'react';
 import { cleanupTonConnectForUser } from '@/lib/tonConnectCleanup';
+import { logger } from '@/lib/logger';
 
 // Manifest for the mini app - hosted on Vercel
 const manifestUrl = 'https://the-syndicate-rho.vercel.app/tonconnect_manifest.json';
@@ -28,10 +29,10 @@ export const TonConnectProvider = ({ children }: TonConnectProviderProps) => {
       // Check for user switch and cleanup if needed
       const wasCleanedUp = cleanupTonConnectForUser(telegramUserId);
       if (wasCleanedUp) {
-        console.log('[TonConnectProvider] Wallet data cleared for new user');
+        logger.debug('[TonConnectProvider] Wallet data cleared for new user');
       }
     } else {
-      console.log('[TonConnectProvider] No Telegram user ID available (dev mode?)');
+      logger.debug('[TonConnectProvider] No Telegram user ID available (dev mode?)');
     }
 
     // Mark as ready to render TonConnectUIProvider

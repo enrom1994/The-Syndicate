@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTelegram } from './useTelegram';
 import { useToast } from './use-toast';
+import { logger } from '@/lib/logger';
 
 export const useDeepLink = () => {
     const { startParam, isReady } = useTelegram();
@@ -17,7 +18,7 @@ export const useDeepLink = () => {
         // Handle different deep link types
         if (startParam.startsWith('ref_')) {
             const referrerId = startParam.split('_')[1];
-            console.log('Referral from:', referrerId);
+            logger.debug('Referral from:', referrerId);
             toast({
                 title: 'Welcome!',
                 description: 'You joined via a referral link. Bonus rewards applied!',
@@ -25,7 +26,7 @@ export const useDeepLink = () => {
             // Here you would typically call an API to register the referral
         } else if (startParam.startsWith('family_')) {
             const familyId = startParam.split('_')[1];
-            console.log('Join family:', familyId);
+            logger.debug('Join family:', familyId);
             navigate(`/family/${familyId}`);
             toast({
                 title: 'Family Invite',

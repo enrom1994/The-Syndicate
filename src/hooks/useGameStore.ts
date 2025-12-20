@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
-// RPC helper available for gradual adoption - provides retry logic and consistent error handling
-// import { callRpc, callActionRpc } from '@/lib/rpcHelper';
+import { logger } from '@/lib/logger';
+// Domain stores for delegated functions
+import { usePlayerStore } from '@/stores/usePlayerStore';
+import { useBusinessStore } from '@/stores/useBusinessStore';
+import { useCombatStore } from '@/stores/useCombatStore';
 
 // Types
 export interface InventoryItem {
@@ -378,7 +381,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     isLoadingTasks: false,
     isLoadingDefinitions: false,
 
-    setPlayerId: (id) => set({ playerId: id }),
+    // Sync playerId to domain stores when set
+    setPlayerId: (id) => {
+        set({ playerId: id });
+        // Sync to domain stores for cross-store function calls
+        usePlayerStore.getState().setPlayerId(id);
+    },
     setPlayerStats: (stats) => set({ playerStats: stats }),
 
     // Calculate equipment limits based on crew
@@ -699,121 +707,41 @@ export const useGameStore = create<GameState>((set, get) => ({
 
             // Only log/toast if there was actual activity
             if (data && data.hours_processed > 0) {
-                console.log('Lazy Upkeep Applied:', data);
+                logger.debug('Lazy Upkeep Applied:', data);
                 // Toast notifications will be triggered by the caller (HomePage/AuthContext)
             }
 
             return data as { success: boolean; hours_processed: number; total_deducted: number; crew_lost: number; message: string };
         } catch (error) {
-            console.error('Error checking pending upkeep:', error);
+            logger.error('Error checking pending upkeep:', error);
             return null;
         }
     },
 
-    // Currency actions using RPCs
+    // Currency actions - BRIDGE: delegate to usePlayerStore
     spendCash: async (amount, reason) => {
-        const { playerId } = get();
-        if (!playerId) return false;
-
-        const { data, error } = await supabase.rpc('spend_cash', {
-            player_id_input: playerId,
-            amount,
-            reason,
-        });
-
-        if (error) {
-            console.error('Failed to spend cash:', error);
-            return false;
-        }
-
-        return data === true;
+        return usePlayerStore.getState().spendCash(amount, reason);
     },
 
     spendDiamonds: async (amount, reason) => {
-        const { playerId } = get();
-        if (!playerId) return false;
-
-        const { data, error } = await supabase.rpc('spend_diamonds', {
-            player_id_input: playerId,
-            amount,
-            reason,
-        });
-
-        if (error) {
-            console.error('Failed to spend diamonds:', error);
-            return false;
-        }
-
-        return data === true;
+        return usePlayerStore.getState().spendDiamonds(amount, reason);
     },
 
     useEnergy: async (amount) => {
-        const { playerId } = get();
-        if (!playerId) return false;
-
-        const { data, error } = await supabase.rpc('use_energy', {
-            player_id_input: playerId,
-            amount,
-        });
-
-        if (error) {
-            console.error('Failed to use energy:', error);
-            return false;
-        }
-
-        return data === true;
+        return usePlayerStore.getState().useEnergy(amount);
     },
 
     useStamina: async (amount) => {
-        const { playerId } = get();
-        if (!playerId) return false;
-
-        const { data, error } = await supabase.rpc('use_stamina', {
-            player_id_input: playerId,
-            amount,
-        });
-
-        if (error) {
-            console.error('Failed to use stamina:', error);
-            return false;
-        }
-
-        return data === true;
+        return usePlayerStore.getState().useStamina(amount);
     },
 
     deposit: async (amount) => {
-        const { playerId } = get();
-        if (!playerId) return false;
-
-        const { data, error } = await supabase.rpc('bank_deposit', {
-            player_id_input: playerId,
-            amount_input: amount,
-        });
-
-        if (error) {
-            console.error('Failed to deposit:', error);
-            return false;
-        }
-
-        return (data as any)?.success === true;
+        return usePlayerStore.getState().deposit(amount);
     },
 
 
     withdraw: async (amount) => {
-        const { playerId } = get();
-        if (!playerId) return false;
-
-        const { data, error } = await supabase.rpc('bank_withdraw', {
-            player_id_input: playerId,
-            amount_input: amount,
-        });
-
-        if (error) {
-            console.error('Failed to withdraw:', error);
-            return false;
-        }
-
-        return (data as any)?.success === true;
+        return usePlayerStore.getState().withdraw(amount);
     },
 
 
@@ -892,7 +820,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             await loadBusinesses();
             return result.amount || 0;
         } else {
-            console.log('Collect income:', result.message);
+            logger.debug('Collect income:', result.message);
             return 0;
         }
     },

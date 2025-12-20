@@ -88,3 +88,61 @@ Deploy to any static hosting service:
 - Connect TON wallet for blockchain integration
 
 Enjoy building your mafia empire!
+
+---
+
+## Bot Webhook Setup (Custom /start Message)
+
+To send a custom welcome message when users send `/start` to your bot, you need to deploy the webhook Edge Function and register it with Telegram.
+
+### 1. Set Environment Variables in Supabase
+
+In your Supabase project, go to **Settings > Edge Functions** and add:
+
+```
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+APP_URL=https://your-deployed-app.vercel.app
+```
+
+### 2. Deploy the Webhook Edge Function
+
+```bash
+cd supabase
+npx supabase functions deploy telegram-bot-webhook --no-verify-jwt
+```
+
+> **Note:** The `--no-verify-jwt` flag is required because Telegram sends unsigned requests.
+
+### 3. Register the Webhook with Telegram
+
+Replace `YOUR_BOT_TOKEN` and `YOUR_SUPABASE_PROJECT_REF` with your values:
+
+```bash
+curl -X POST "https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://YOUR_SUPABASE_PROJECT_REF.supabase.co/functions/v1/telegram-bot-webhook"}'
+```
+
+For your project, the URL would be:
+```
+https://giwolutowfkvkcxlcwus.supabase.co/functions/v1/telegram-bot-webhook
+```
+
+### 4. Verify Webhook is Set
+
+```bash
+curl "https://api.telegram.org/botYOUR_BOT_TOKEN/getWebhookInfo"
+```
+
+### Customizing the Welcome Message
+
+Edit the `welcomeMessage` in:
+```
+supabase/functions/telegram-bot-webhook/index.ts
+```
+
+The message supports HTML formatting:
+- `<b>bold</b>`
+- `<i>italic</i>`
+- `<code>code</code>`
+- `<a href="url">link</a>`

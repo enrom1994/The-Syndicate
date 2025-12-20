@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, PlayerTask } from '@/hooks/useGameStore';
 import { ReferralSection } from '@/components/ReferralSection';
+import { logger } from '@/lib/logger';
 
 type TaskType = 'telegram' | 'daily' | 'weekly' | 'special' | 'ad';
 
@@ -183,10 +184,10 @@ const AdTaskCard = ({ task, onComplete }: AdTaskCardProps) => {
         onReward: () => {
             // UX callback only - not payment authority
             // Backend SSV handles actual reward via completeTask()
-            console.log('[AdTaskCard] Ad completed - claiming task reward');
+            logger.debug('[AdTaskCard] Ad completed - claiming task reward');
         },
         onError: (err) => {
-            console.error('[AdTaskCard] Ad error:', err);
+            logger.error('[AdTaskCard] Ad error:', err);
         },
     });
 
@@ -362,7 +363,7 @@ const TasksPage = () => {
                 });
             }
         } catch (error) {
-            console.error('Task verification error:', error);
+            logger.error('Task verification error:', error);
             haptic.error();
             toast({
                 title: 'Error',
