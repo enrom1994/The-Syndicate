@@ -27,7 +27,9 @@ export const FounderBonusBanner = () => {
         haptic.medium();
 
         try {
-            const { data, error } = await supabase.rpc('claim_founder_bonus' as any);
+            const { data, error } = await supabase.rpc('claim_founder_bonus' as any, {
+                player_id_input: player.id
+            });
 
             console.log('[FounderBonus] RPC response:', { data, error });
 

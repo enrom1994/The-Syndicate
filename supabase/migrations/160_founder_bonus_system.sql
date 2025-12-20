@@ -19,8 +19,15 @@ COMMENT ON COLUMN public.players.founder_bonus_claimed IS
 -- =============================================
 -- RPC: claim_founder_bonus
 -- Validates and credits 50 diamonds, ensures one-time claim
+-- Accepts player_id parameter for Telegram auth compatibility
 -- =============================================
-CREATE OR REPLACE FUNCTION public.claim_founder_bonus()
+
+-- Drop old version if exists (to handle signature change)
+DROP FUNCTION IF EXISTS public.claim_founder_bonus();
+
+CREATE OR REPLACE FUNCTION public.claim_founder_bonus(
+    player_id_input UUID DEFAULT NULL
+)
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -32,8 +39,8 @@ DECLARE
     v_reward_amount INTEGER := 50;
     v_new_diamond_balance INTEGER;
 BEGIN
-    -- Get the authenticated player's ID
-    v_player_id := auth.uid();
+    -- Get player ID from input or auth.uid()
+    v_player_id := COALESCE(player_id_input, auth.uid());
     
     IF v_player_id IS NULL THEN
         RETURN jsonb_build_object(
@@ -96,4 +103,4 @@ END;
 $$;
 
 -- Grant execute permission to authenticated users
-GRANT EXECUTE ON FUNCTION public.claim_founder_bonus() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_founder_bonus(UUID) TO authenticated;
