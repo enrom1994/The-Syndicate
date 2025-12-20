@@ -185,6 +185,14 @@ export const PlayerStats = ({ onOpenOnboarding }: PlayerStatsProps = {}) => {
   const bank = player?.banked_cash ?? 0;
   const netWorth = cash + bank;
 
+  // DEBUG: Log values to identify discrepancy
+  console.log('[PlayerStats] Net Worth Debug:', {
+    cash,
+    banked_cash: bank,
+    netWorth,
+    player_id: player?.id,
+  });
+
   return (
     <section className="py-4 px-4">
       <motion.div

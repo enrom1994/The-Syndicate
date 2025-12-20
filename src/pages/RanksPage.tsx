@@ -208,7 +208,15 @@ const RanksPage = () => {
 
     const getPlayerNetWorth = () => {
         if (!player) return 0;
-        return player.cash + player.banked_cash;
+        const netWorth = player.cash + player.banked_cash;
+        // DEBUG: Log values to identify discrepancy source
+        console.log('[RanksPage] Net Worth Debug:', {
+            cash: player.cash,
+            banked_cash: player.banked_cash,
+            calculated_networth: netWorth,
+            playerRank_networth: playerRank?.networth || 'N/A',
+        });
+        return netWorth;
     };
 
     return (
