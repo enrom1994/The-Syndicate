@@ -45,8 +45,11 @@ const LuckyWheelPage = () => {
     useEffect(() => {
         if (player?.id) {
             loadWheelData();
+        } else if (player === null) {
+            // Player is confirmed to not exist (auth loaded but no player)
+            setIsLoading(false);
         }
-    }, [player?.id]);
+    }, [player?.id, player]);
 
     const loadWheelData = async () => {
         if (!player?.id) return;
@@ -57,12 +60,13 @@ const LuckyWheelPage = () => {
                 supabase.rpc('get_spin_status', { target_player_id: player.id })
             ]);
 
-            if (prizesRes.data) setPrizes(prizesRes.data);
+            if (prizesRes.data) setPrizes(prizesRes.data as unknown as Prize[]);
             if (statusRes.data) {
-                setCanFreeSpin(statusRes.data.can_free_spin);
-                setHoursRemaining(statusRes.data.hours_remaining);
-                setSpinCost(statusRes.data.spin_cost);
-                setTotalSpins(statusRes.data.total_spins);
+                const data = statusRes.data as { can_free_spin: boolean; hours_remaining: number; spin_cost: number; total_spins: number };
+                setCanFreeSpin(data.can_free_spin);
+                setHoursRemaining(data.hours_remaining);
+                setSpinCost(data.spin_cost);
+                setTotalSpins(data.total_spins);
             }
         } catch (error) {
             console.error('Failed to load wheel:', error);
@@ -98,12 +102,22 @@ const LuckyWheelPage = () => {
 
         try {
             // Call backend FIRST to get the actual prize
-            const { data, error } = await supabase.rpc('spin_lucky_wheel', {
+            const { data: rawData, error } = await supabase.rpc('spin_lucky_wheel', {
                 target_player_id: player.id,
                 use_diamonds: useDiamonds
             });
 
             if (error) throw error;
+
+            const data = rawData as {
+                success: boolean;
+                prize_name: string;
+                prize_type: string;
+                amount: number;
+                icon: string;
+                color: string;
+                message?: string
+            } | null;
 
             if (data?.success) {
                 // Find the index of the won prize in our prizes array
@@ -128,7 +142,7 @@ const LuckyWheelPage = () => {
                 setRotation(finalRotation);
 
                 // Wait for animation to complete
-                await new Promise(resolve => setTimeout(resolve, 4000));
+                await new Promise(resolve => setTimeout(resolve, 5000));
 
                 haptic.success();
                 setSpinResult({
@@ -205,75 +219,193 @@ const LuckyWheelPage = () => {
                     </div>
                 </motion.div>
 
-                {/* Wheel */}
+                {/* Wheel Assembly */}
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    className="relative mx-auto w-64 h-64 mb-6"
+                    className="relative mx-auto w-80 h-80 mb-6"
                 >
-                    {/* Pointer */}
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-20">
-                        <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-t-[20px] border-l-transparent border-r-transparent border-t-primary" />
+                    {/* Ambient Glow Behind Wheel */}
+                    <motion.div
+                        className="absolute inset-0 rounded-full"
+                        style={{
+                            background: 'radial-gradient(circle, rgba(212, 175, 55, 0.3) 0%, transparent 70%)',
+                            filter: 'blur(20px)',
+                        }}
+                        animate={{
+                            opacity: isSpinning ? [0.5, 1, 0.5] : 0.4,
+                            scale: isSpinning ? [1, 1.1, 1] : 1,
+                        }}
+                        transition={{
+                            duration: 1.5,
+                            repeat: isSpinning ? Infinity : 0,
+                            ease: "easeInOut"
+                        }}
+                    />
+
+                    {/* LED Light Ring */}
+                    <div className="absolute inset-0 rounded-full">
+                        {Array.from({ length: 24 }).map((_, i) => {
+                            const ledAngle = (360 / 24) * i;
+                            const ledRadius = 156; // Just outside the wheel
+                            const ledX = 160 + ledRadius * Math.cos((ledAngle - 90) * Math.PI / 180);
+                            const ledY = 160 + ledRadius * Math.sin((ledAngle - 90) * Math.PI / 180);
+                            return (
+                                <motion.div
+                                    key={`led-${i}`}
+                                    className="absolute w-2.5 h-2.5 rounded-full"
+                                    style={{
+                                        left: ledX - 5,
+                                        top: ledY - 5,
+                                        background: 'radial-gradient(circle, #ffd700 0%, #b8860b 100%)',
+                                        boxShadow: '0 0 6px #ffd700, 0 0 10px #ffd700',
+                                    }}
+                                    animate={isSpinning ? {
+                                        opacity: [0.4, 1, 0.4],
+                                        scale: [0.8, 1.2, 0.8],
+                                    } : { opacity: 0.7, scale: 1 }}
+                                    transition={{
+                                        duration: 0.3,
+                                        delay: i * 0.05,
+                                        repeat: isSpinning ? Infinity : 0,
+                                    }}
+                                />
+                            );
+                        })}
                     </div>
 
-                    {/* Wheel */}
-                    <motion.div
-                        className="w-full h-full rounded-full border-4 border-primary overflow-hidden relative"
-                        style={{ rotate: rotation }}
-                        animate={{ rotate: rotation }}
-                        transition={{ duration: 4, ease: [0.2, 0, 0.2, 1] }}
+                    {/* Decorative Outer Ring */}
+                    <div
+                        className="absolute inset-2 rounded-full"
+                        style={{
+                            background: 'linear-gradient(180deg, #d4af37 0%, #8b6914 50%, #d4af37 100%)',
+                            padding: '4px',
+                            boxShadow: '0 0 20px rgba(212, 175, 55, 0.5), inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.3)',
+                        }}
                     >
-                        {/* Wheel segments (colored backgrounds) */}
+                        <div className="w-full h-full rounded-full bg-background/95" style={{
+                            boxShadow: 'inset 0 0 30px rgba(0,0,0,0.8)',
+                        }} />
+                    </div>
+
+                    {/* Pointer */}
+                    <motion.div
+                        className="absolute top-1 left-1/2 -translate-x-1/2 z-30"
+                        animate={isSpinning ? { y: [0, 2, 0] } : { y: 0 }}
+                        transition={{ duration: 0.15, repeat: isSpinning ? Infinity : 0 }}
+                    >
+                        <div
+                            className="relative"
+                            style={{
+                                width: 0,
+                                height: 0,
+                                borderLeft: '16px solid transparent',
+                                borderRight: '16px solid transparent',
+                                borderTop: '28px solid #d4af37',
+                                filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))',
+                            }}
+                        />
+                        <div
+                            className="absolute top-0 left-1/2 -translate-x-1/2"
+                            style={{
+                                width: 0,
+                                height: 0,
+                                borderLeft: '12px solid transparent',
+                                borderRight: '12px solid transparent',
+                                borderTop: '22px solid #ffd700',
+                            }}
+                        />
+                    </motion.div>
+
+                    {/* Main Wheel */}
+                    <motion.div
+                        className="absolute inset-6 rounded-full overflow-hidden"
+                        style={{
+                            rotate: rotation,
+                            boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5), 0 0 15px rgba(212, 175, 55, 0.3)',
+                            border: '3px solid #d4af37',
+                        }}
+                        animate={{ rotate: rotation }}
+                        transition={{
+                            duration: 5,
+                            ease: [0.2, 0, 0.1, 1],
+                        }}
+                    >
+                        {/* Wheel segments with gradients */}
                         {prizes.map((prize, index) => {
                             const angle = (360 / prizes.length) * index;
                             const skewAngle = 90 - (360 / prizes.length);
+                            const isGold = index % 2 === 0;
                             return (
                                 <div
                                     key={prize.id}
                                     className="absolute w-1/2 h-1/2 origin-bottom-right"
                                     style={{
                                         transform: `rotate(${angle}deg) skewY(${skewAngle}deg)`,
-                                        backgroundColor: index % 2 === 0 ? 'rgba(212, 175, 55, 0.3)' : 'rgba(26, 20, 15, 0.8)',
+                                        background: isGold
+                                            ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.7) 0%, rgba(180, 140, 40, 0.4) 50%, rgba(139, 105, 20, 0.6) 100%)'
+                                            : 'linear-gradient(135deg, rgba(45, 35, 25, 0.95) 0%, rgba(30, 25, 18, 0.9) 50%, rgba(20, 15, 10, 0.95) 100%)',
+                                        borderRight: '1px solid rgba(212, 175, 55, 0.4)',
+                                        borderBottom: '1px solid rgba(212, 175, 55, 0.2)',
                                     }}
                                 />
                             );
                         })}
-                        {/* Center circle */}
-                        <div className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-background border-2 border-primary flex items-center justify-center z-10">
-                            <Sparkles className="w-6 h-6 text-primary" />
+
+                        {/* Center circle with glow */}
+                        <div
+                            className="absolute inset-0 m-auto w-20 h-20 rounded-full flex items-center justify-center z-10"
+                            style={{
+                                background: 'radial-gradient(circle, #2a2015 0%, #1a140d 70%, #0f0a05 100%)',
+                                border: '3px solid #d4af37',
+                                boxShadow: '0 0 15px rgba(212, 175, 55, 0.5), inset 0 0 20px rgba(0,0,0,0.8)',
+                            }}
+                        >
+                            <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                            >
+                                <Sparkles className="w-8 h-8 text-primary drop-shadow-[0_0_8px_rgba(212,175,55,0.8)]" />
+                            </motion.div>
                         </div>
                     </motion.div>
 
                     {/* Icons overlay - positioned using polar coordinates */}
                     <motion.div
-                        className="absolute inset-0 pointer-events-none"
+                        className="absolute inset-6 pointer-events-none"
                         style={{ rotate: rotation }}
                         animate={{ rotate: rotation }}
-                        transition={{ duration: 4, ease: [0.2, 0, 0.2, 1] }}
+                        transition={{
+                            duration: 5,
+                            ease: [0.2, 0, 0.1, 1],
+                        }}
                     >
                         {prizes.map((prize, index) => {
-                            // Calculate position for each icon using polar coordinates
-                            // Match the segment angle calculation exactly (no offset)
                             const segmentAngle = 360 / prizes.length;
-                            const iconAngle = (segmentAngle * index) + (segmentAngle / 2); // Center of segment, NO offset
-                            const radius = 80; // Distance from center in pixels
-                            const x = 128 + radius * Math.cos((iconAngle * Math.PI) / 180); // 128 = half of 256px wheel
-                            const y = 128 + radius * Math.sin((iconAngle * Math.PI) / 180);
+                            const iconAngle = (segmentAngle * index) + (segmentAngle / 2);
+                            const radius = 90; // Distance from center in pixels (adjusted for larger wheel)
+                            const wheelSize = 272; // 320 - 48 (inset-6 = 24px * 2)
+                            const center = wheelSize / 2;
+                            const x = center + radius * Math.cos((iconAngle * Math.PI) / 180);
+                            const y = center + radius * Math.sin((iconAngle * Math.PI) / 180);
 
                             return (
                                 <div
                                     key={`icon-${prize.id}`}
                                     className="absolute flex items-center justify-center"
                                     style={{
-                                        left: x - 16, // Center the 32px icon
-                                        top: y - 16,
-                                        transform: `rotate(${-rotation}deg)`, // Counter-rotate to keep icons upright
+                                        left: x - 18,
+                                        top: y - 18,
+                                        transform: `rotate(${-rotation}deg)`,
                                     }}
                                 >
                                     <img
                                         src={prize.icon}
                                         alt={prize.name}
-                                        className="w-8 h-8 object-contain drop-shadow-lg"
+                                        className="w-9 h-9 object-contain"
+                                        style={{
+                                            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8)) drop-shadow(0 0 8px rgba(212,175,55,0.3))',
+                                        }}
                                     />
                                 </div>
                             );
@@ -281,23 +413,95 @@ const LuckyWheelPage = () => {
                     </motion.div>
                 </motion.div>
 
-                {/* Result Display */}
+                {/* Result Display with Celebration */}
                 <AnimatePresence>
                     {spinResult && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="noir-card p-4 mb-4 text-center"
-                        >
-                            <img src={spinResult.icon} alt={spinResult.prize_name} className="w-12 h-12 object-contain mx-auto mb-1" />
-                            <p className="font-cinzel font-bold text-lg" style={{ color: spinResult.color }}>
-                                {spinResult.prize_name}
-                            </p>
+                        <>
+                            {/* Confetti Particles */}
                             {spinResult.prize_type !== 'nothing' && (
-                                <p className="text-xs text-muted-foreground">Added to your account!</p>
+                                <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+                                    {Array.from({ length: 50 }).map((_, i) => (
+                                        <motion.div
+                                            key={`confetti-${i}`}
+                                            className="absolute w-3 h-3"
+                                            style={{
+                                                left: `${Math.random() * 100}%`,
+                                                top: -20,
+                                                backgroundColor: ['#ffd700', '#d4af37', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffffff'][Math.floor(Math.random() * 7)],
+                                                borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+                                            }}
+                                            initial={{ y: -20, rotate: 0, opacity: 1 }}
+                                            animate={{
+                                                y: window.innerHeight + 100,
+                                                rotate: Math.random() * 720 - 360,
+                                                x: (Math.random() - 0.5) * 200,
+                                                opacity: [1, 1, 0],
+                                            }}
+                                            transition={{
+                                                duration: 2 + Math.random() * 2,
+                                                delay: Math.random() * 0.5,
+                                                ease: 'easeOut',
+                                            }}
+                                        />
+                                    ))}
+                                </div>
                             )}
-                        </motion.div>
+
+                            {/* Win Result Card */}
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.5, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                transition={{ type: 'spring', damping: 15, stiffness: 300 }}
+                                className="relative p-5 mb-4 text-center rounded-xl overflow-hidden"
+                                style={{
+                                    background: 'linear-gradient(135deg, rgba(26, 20, 15, 0.95) 0%, rgba(40, 30, 20, 0.9) 100%)',
+                                    border: `2px solid ${spinResult.color || '#d4af37'}`,
+                                    boxShadow: `0 0 30px ${spinResult.color || '#d4af37'}40, inset 0 0 20px rgba(0,0,0,0.5)`,
+                                }}
+                            >
+                                {/* Shimmer effect */}
+                                <motion.div
+                                    className="absolute inset-0"
+                                    style={{
+                                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
+                                    }}
+                                    animate={{ x: ['-100%', '200%'] }}
+                                    transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                                />
+
+                                <motion.img
+                                    src={spinResult.icon}
+                                    alt={spinResult.prize_name}
+                                    className="w-16 h-16 object-contain mx-auto mb-2 relative z-10"
+                                    initial={{ scale: 0, rotate: -180 }}
+                                    animate={{ scale: 1, rotate: 0 }}
+                                    transition={{ type: 'spring', damping: 10, stiffness: 200, delay: 0.2 }}
+                                    style={{
+                                        filter: `drop-shadow(0 0 15px ${spinResult.color || '#d4af37'})`,
+                                    }}
+                                />
+                                <motion.p
+                                    className="font-cinzel font-bold text-xl relative z-10"
+                                    style={{ color: spinResult.color }}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.3 }}
+                                >
+                                    {spinResult.prize_name}
+                                </motion.p>
+                                {spinResult.prize_type !== 'nothing' && (
+                                    <motion.p
+                                        className="text-sm text-primary/80 mt-1 relative z-10"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: 0.5 }}
+                                    >
+                                        ✨ Added to your account!
+                                    </motion.p>
+                                )}
+                            </motion.div>
+                        </>
                     )}
                 </AnimatePresence>
 
@@ -338,13 +542,41 @@ const LuckyWheelPage = () => {
 
                 {/* Prize List */}
                 <div className="mt-6">
-                    <h3 className="font-cinzel text-sm font-semibold mb-3 text-muted-foreground">Possible Prizes</h3>
+                    <h3 className="font-cinzel text-sm font-semibold mb-3 text-primary/80 flex items-center gap-2">
+                        <Gift className="w-4 h-4" />
+                        Possible Prizes
+                    </h3>
                     <div className="grid grid-cols-5 gap-2">
                         {prizes.map((prize) => (
-                            <div key={prize.id} className="noir-card p-2 text-center">
-                                <img src={prize.icon} alt={prize.name} className="w-8 h-8 object-contain mx-auto" />
-                                <p className="text-[10px] text-muted-foreground truncate">{prize.name}</p>
-                            </div>
+                            <motion.div
+                                key={prize.id}
+                                className="p-2 text-center rounded-lg cursor-pointer"
+                                style={{
+                                    background: 'linear-gradient(135deg, rgba(26, 20, 15, 0.9) 0%, rgba(40, 30, 20, 0.8) 100%)',
+                                    border: '1px solid rgba(212, 175, 55, 0.3)',
+                                }}
+                                whileHover={{
+                                    scale: 1.05,
+                                    borderColor: 'rgba(212, 175, 55, 0.8)',
+                                    boxShadow: '0 0 15px rgba(212, 175, 55, 0.3)',
+                                }}
+                                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                            >
+                                <img
+                                    src={prize.icon}
+                                    alt={prize.name}
+                                    className="w-8 h-8 object-contain mx-auto"
+                                    style={{
+                                        filter: 'drop-shadow(0 0 4px rgba(212,175,55,0.3))',
+                                    }}
+                                />
+                                <p
+                                    className="text-[10px] font-medium truncate mt-1"
+                                    style={{ color: prize.color || '#d4af37' }}
+                                >
+                                    {prize.name}
+                                </p>
+                            </motion.div>
                         ))}
                     </div>
                 </div>
