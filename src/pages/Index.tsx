@@ -3,8 +3,8 @@ import { Hero } from '@/components/Hero';
 import { PlayerStats } from '@/components/PlayerStats';
 import { Operations } from '@/components/Operations';
 import { RecentActivity } from '@/components/RecentActivity';
-import { Onboarding, useOnboarding } from '@/components/Onboarding';
-import { FirstChoiceModal } from '@/components/FirstChoiceModal';
+import { useOnboarding } from '@/components/Onboarding';
+import { ClaimRewardModal } from '@/components/ClaimRewardModal';
 import { QuickActions } from '@/components/QuickActions';
 import { MainLayout } from '@/components/MainLayout';
 import { SeasonBanner } from '@/components/SeasonBanner';
@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Crown, Timer, Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface OfflineEarnings {
   totalCash: number;
@@ -44,7 +45,8 @@ const Index = () => {
   const hasSeenIntro = sessionStorage.getItem('hasSeenIntro') === 'true';
   const hasSeenOfflineSummary = sessionStorage.getItem('hasSeenOfflineSummary') === 'true';
 
-  const [showOnboarding, setShowOnboarding] = useState(!onboardingComplete);
+  // New dopamine-first flow: Skip mandatory onboarding, show claim modal instead
+  const [showClaimModal, setShowClaimModal] = useState(false);
   const [showDashboard, setShowDashboard] = useState(hasSeenIntro && onboardingComplete);
   const [isLoading, setIsLoading] = useState(!hasSeenIntro && onboardingComplete);
   const [showOfflineSummary, setShowOfflineSummary] = useState(false);
@@ -53,8 +55,8 @@ const Index = () => {
   const [protectionStatus, setProtectionStatus] = useState<ProtectionStatus>({ isActive: false, hoursRemaining: 0, minutesRemaining: 0 });
   const [starterPackAvailable, setStarterPackAvailable] = useState(false);
   const [starterPackTimer, setStarterPackTimer] = useState('');
-  const [showFirstChoice, setShowFirstChoice] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Calculate protection status from player data
   useEffect(() => {
@@ -167,46 +169,59 @@ const Index = () => {
     sessionStorage.setItem('hasSeenOfflineSummary', 'true');
   };
 
-  const handleFirstJobComplete = () => {
-    setShowFirstChoice(true);
-  };
-
-  const handleFirstChoice = (choice: 'business' | 'protection') => {
-    setShowFirstChoice(false);
-    if (choice === 'business') {
-      navigate('/business');
-    } else {
-      navigate('/shop');
-    }
-  };
-
-  const handleOnboardingComplete = () => {
-    completeOnboarding();
-    setShowOnboarding(false);
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 800);
-  };
-
+  // Hero CLAIM button pressed - show reward modal
   const handleEnter = () => {
+    setShowClaimModal(true);
+  };
+
+  // Reward claimed - use RPC for server-side validation
+  const handleClaimReward = async () => {
+    const CLAIM_KEY = 'mafia_founder_bonus_claimed';
+
+    // Quick client-side check (server is authoritative)
+    if (localStorage.getItem(CLAIM_KEY) === 'true') {
+      // Already claimed locally, just proceed to dashboard
+      setShowClaimModal(false);
+      completeOnboarding();
+      sessionStorage.setItem('hasSeenIntro', 'true');
+      setShowDashboard(true);
+      return;
+    }
+
+    if (player?.id) {
+      try {
+        // Use RPC for atomic, server-validated claim
+        const { data, error } = await supabase.rpc('claim_founder_bonus');
+
+        if (error) {
+          console.error('Founder bonus RPC error:', error);
+          // Still proceed to dashboard even if claim fails
+        } else if (data?.success) {
+          // Mark as claimed locally (backup for UX)
+          localStorage.setItem(CLAIM_KEY, 'true');
+
+          toast({
+            title: '💎 Founder Bonus Claimed!',
+            description: `+${data.diamonds_awarded} Diamonds added to your account`,
+          });
+        } else if (data?.already_claimed) {
+          // Already claimed on server, sync local state
+          localStorage.setItem(CLAIM_KEY, 'true');
+        }
+      } catch (error) {
+        console.error('Failed to claim founder bonus:', error);
+      }
+    }
+
+    // Always proceed to dashboard
+    setShowClaimModal(false);
+    completeOnboarding();
     sessionStorage.setItem('hasSeenIntro', 'true');
     setShowDashboard(true);
   };
 
-  // Show onboarding first if not completed
-  if (showOnboarding) {
-    return (
-      <>
-        <Onboarding
-          onComplete={handleOnboardingComplete}
-          onFirstJobComplete={handleFirstJobComplete}
-        />
-        <FirstChoiceModal
-          open={showFirstChoice}
-          onChoice={handleFirstChoice}
-        />
-      </>
-    );
-  }
+  // REMOVED: Mandatory onboarding flow
+  // New flow: Hero → ClaimModal → Dashboard
 
   if (isLoading) {
     return (
@@ -240,6 +255,11 @@ const Index = () => {
             transition={{ duration: 0.5 }}
           >
             <Hero onEnter={handleEnter} />
+            {/* ClaimRewardModal overlay on hero */}
+            <ClaimRewardModal
+              isOpen={showClaimModal}
+              onClaim={handleClaimReward}
+            />
           </motion.div>
         ) : (
           <motion.div
@@ -330,7 +350,7 @@ const Index = () => {
                   )}
                 </div>
 
-                <PlayerStats onOpenOnboarding={() => setShowOnboarding(true)} />
+                <PlayerStats />
 
                 <Operations />
 
