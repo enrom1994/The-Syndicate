@@ -13,67 +13,18 @@ import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
 import { RankBadge, RankName, RANK_THRESHOLDS } from '@/components/RankBadge';
 
-interface NPCBounty {
-    id: string;
-    type: 'npc';
-    target_name: string;
-    description: string;
-    difficulty: 'easy' | 'medium' | 'hard';
-    min_reward: number;
-    max_reward: number;
-    respect_reward: number;
-    required_level: number;
-    cooldown_hours: number;
-    available_at: string | null;
-    is_available: boolean;
-}
-
-interface PlayerBounty {
-    id: string;
-    type: 'player';
-    target_player_id: string;
-    target_name: string;
-    target_level: number;
-    bounty_amount: number;
-    placed_by: string;
-    placed_by_player_id?: string; // Added field
-    expires_at: string;
-    time_remaining: number;
-}
-
-interface MyBounty {
-    id: string;
-    target_player_id: string;
-    target_name: string;
-    bounty_amount: number;
-    status: 'active' | 'claimed' | 'expired' | 'cancelled';
-    expires_at: string;
-    time_remaining: number;
-    claimed_by: string | null;
-}
-
-interface SearchResult {
-    id: string;
-    username: string | null;
-    first_name: string | null;
-    level: number;
-    respect: number;
-    has_active_bounty: boolean;
-}
-
-const difficultyColors = {
-    easy: 'text-green-400 bg-green-500/20',
-    medium: 'text-yellow-400 bg-yellow-500/20',
-    hard: 'text-red-400 bg-red-500/20',
-};
-
-const formatTimeRemaining = (seconds: number): string => {
-    if (seconds <= 0) return 'Expired';
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    return `${minutes}m`;
-};
+// Import extracted bounty components and types
+import {
+    NPCBounty,
+    PlayerBounty,
+    MyBounty,
+    SearchResult,
+    DIFFICULTY_COLORS,
+    formatTimeRemaining,
+    NPCBountyCard,
+    PlayerBountyCard,
+    MyBountyCard,
+} from '@/components/bounty';
 
 const BountyBoardPage = () => {
     const { toast } = useToast();
@@ -387,7 +338,7 @@ const BountyBoardPage = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
                                                 <h3 className="font-cinzel font-semibold text-sm text-foreground">{bounty.target_name}</h3>
-                                                <span className={`px-1.5 py-0.5 text-[10px] rounded-sm ${difficultyColors[bounty.difficulty]}`}>
+                                                <span className={`px-1.5 py-0.5 text-[10px] rounded-sm ${DIFFICULTY_COLORS[bounty.difficulty]}`}>
                                                     {bounty.difficulty.toUpperCase()}
                                                 </span>
                                             </div>
