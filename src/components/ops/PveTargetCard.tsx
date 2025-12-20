@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { Clock, Loader2, Shield, Skull } from 'lucide-react';
+import { Clock, Loader2, Skull } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { RankBadge, RankName } from '@/components/RankBadge';
 import type { PveTarget } from './types';
 
 interface PveTargetCardProps {
@@ -28,6 +29,9 @@ export const PveTargetCard = ({
         const mins = Math.ceil(seconds / 60);
         return `${mins}m`;
     };
+
+    // Get required rank (fallback to Street Thug if not set)
+    const requiredRank = (target.required_rank || 'Street Thug') as RankName;
 
     return (
         <motion.div
@@ -64,17 +68,21 @@ export const PveTargetCard = ({
                 </div>
             </div>
 
-            {/* Requirements Row */}
+            {/* Requirements Row - Now with Rank */}
             <div className="flex items-center justify-center gap-3 mb-3 text-xs text-muted-foreground bg-muted/20 rounded p-2">
                 <div className="flex items-center gap-1">
                     <img src="/images/icons/stamina.png" alt="" className="w-3.5 h-3.5" />
                     <span>{target.stamina_cost}</span>
                 </div>
-                <span className="text-muted-foreground/50">•</span>
-                <div className="flex items-center gap-1">
-                    <Shield className="w-3.5 h-3.5" />
-                    <span>Lv {target.required_level}+</span>
-                </div>
+                {requiredRank !== 'Street Thug' && (
+                    <>
+                        <span className="text-muted-foreground/50">•</span>
+                        <div className="flex items-center gap-1">
+                            <RankBadge rank={requiredRank} size="sm" />
+                            <span>{requiredRank}+</span>
+                        </div>
+                    </>
+                )}
             </div>
 
             <Button
@@ -85,7 +93,7 @@ export const PveTargetCard = ({
                 {isProcessing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                 ) : !target.player_meets_level ? (
-                    `Requires Lv ${target.required_level}`
+                    `Requires ${requiredRank} Rank`
                 ) : !target.is_available ? (
                     <>
                         <Clock className="w-4 h-4 mr-1" />

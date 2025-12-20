@@ -11,6 +11,7 @@ import { GameIcon } from '@/components/GameIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
+import { RankBadge, RankName, RANK_THRESHOLDS } from '@/components/RankBadge';
 
 interface NPCBounty {
     id: string;
@@ -392,7 +393,23 @@ const BountyBoardPage = () => {
                                             </div>
                                             <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{bounty.description}</p>
                                             <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                                <span>Lvl {bounty.required_level}+</span>
+                                                {(() => {
+                                                    const getRequiredRank = (): RankName => {
+                                                        if (bounty.required_level >= 30) return 'Boss';
+                                                        if (bounty.required_level >= 15) return 'Underboss';
+                                                        if (bounty.required_level >= 8) return 'Caporegime';
+                                                        if (bounty.required_level >= 5) return 'Soldier';
+                                                        if (bounty.required_level >= 3) return 'Enforcer';
+                                                        return 'Street Thug';
+                                                    };
+                                                    const requiredRank = getRequiredRank();
+                                                    return requiredRank !== 'Street Thug' ? (
+                                                        <span className="flex items-center gap-1">
+                                                            <RankBadge rank={requiredRank} size="sm" />
+                                                            {requiredRank}+
+                                                        </span>
+                                                    ) : null;
+                                                })()}
                                                 <span>+{bounty.respect_reward} Respect</span>
                                             </div>
                                         </div>
@@ -406,7 +423,14 @@ const BountyBoardPage = () => {
                                                     size="sm"
                                                     className="btn-gold text-[10px] mt-1"
                                                     onClick={() => handleHuntNPC(bounty)}
-                                                    disabled={isProcessing || (player?.level || 1) < bounty.required_level}
+                                                    disabled={isProcessing || (player?.respect || 0) < RANK_THRESHOLDS[(() => {
+                                                        if (bounty.required_level >= 30) return 'Boss';
+                                                        if (bounty.required_level >= 15) return 'Underboss';
+                                                        if (bounty.required_level >= 8) return 'Caporegime';
+                                                        if (bounty.required_level >= 5) return 'Soldier';
+                                                        if (bounty.required_level >= 3) return 'Enforcer';
+                                                        return 'Street Thug';
+                                                    })() as RankName]}
                                                 >
                                                     Hunt
                                                 </Button>

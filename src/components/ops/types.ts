@@ -20,7 +20,8 @@ export interface PveTarget {
     name: string;
     description: string;
     difficulty: string;
-    required_level: number;
+    required_level: number; // DEPRECATED - use required_rank
+    required_rank?: string; // 'Street Thug' | 'Enforcer' | 'Soldier' | etc.
     stamina_cost: number;
     base_strength: number;
     cash_reward: number;
@@ -30,7 +31,7 @@ export interface PveTarget {
     cooldown_minutes: number;
     is_available: boolean;
     cooldown_remaining_seconds: number;
-    player_meets_level: boolean;
+    player_meets_level: boolean; // Now based on rank
 }
 
 export interface PvpAttackType {
@@ -74,9 +75,10 @@ export interface HighStakesJob {
     xp_reward: number;
     respect_reward?: number;
     success_rate: number;
-    required_level: number;
+    required_level: number; // DEPRECATED - use required_rank
+    required_rank?: string; // 'Street Thug' | 'Enforcer' | 'Soldier' | etc.
     cooldown_minutes: number;
     is_available: boolean;
     cooldown_remaining_seconds: number;
-    player_meets_level: boolean;
+    player_meets_level: boolean; // Now based on rank
 }

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { Clock, Loader2, Shield, Star, Target } from 'lucide-react';
+import { Clock, Loader2, Star, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { RankBadge, RankName } from '@/components/RankBadge';
 import type { HighStakesJob } from './types';
 
 interface HighStakesCardProps {
@@ -18,6 +19,9 @@ export const HighStakesCard = ({ job, isProcessing, delay = 0, onExecute }: High
         if (hours > 0) return `${hours}h ${mins % 60}m`;
         return `${mins}m`;
     };
+
+    // Get required rank (fallback to Street Thug if not set)
+    const requiredRank = (job.required_rank || 'Street Thug') as RankName;
 
     return (
         <motion.div
@@ -68,17 +72,21 @@ export const HighStakesCard = ({ job, isProcessing, delay = 0, onExecute }: High
                 </div>
             </div>
 
-            {/* Requirements Row */}
+            {/* Requirements Row - Now with Rank */}
             <div className="flex items-center justify-center gap-3 mb-3 text-xs text-muted-foreground bg-muted/20 rounded p-2">
                 <div className="flex items-center gap-1">
                     <img src="/images/icons/energy.png" alt="" className="w-3.5 h-3.5" />
                     <span>{job.energy_cost}</span>
                 </div>
-                <span className="text-muted-foreground/50">•</span>
-                <div className="flex items-center gap-1">
-                    <Shield className="w-3.5 h-3.5" />
-                    <span>Lv {job.required_level}+</span>
-                </div>
+                {requiredRank !== 'Street Thug' && (
+                    <>
+                        <span className="text-muted-foreground/50">•</span>
+                        <div className="flex items-center gap-1">
+                            <RankBadge rank={requiredRank} size="sm" />
+                            <span>{requiredRank}+</span>
+                        </div>
+                    </>
+                )}
             </div>
 
             <Button
@@ -89,7 +97,7 @@ export const HighStakesCard = ({ job, isProcessing, delay = 0, onExecute }: High
                 {isProcessing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                 ) : !job.player_meets_level ? (
-                    `Requires Lv ${job.required_level}`
+                    `Requires ${requiredRank} Rank`
                 ) : !job.is_available ? (
                     <>
                         <Clock className="w-4 h-4 mr-1" />

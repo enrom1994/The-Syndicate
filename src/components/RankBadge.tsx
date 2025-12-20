@@ -100,7 +100,7 @@ export const RankBadge = ({ rank, size = 'md', showLabel = false, className }: R
     );
 };
 
-// Get rank from level
+// Get rank from level (DEPRECATED - use getRankFromRespect instead)
 export const getRankFromLevel = (level: number): RankName => {
     if (level >= 100) return 'Godfather';
     if (level >= 75) return 'Boss';
@@ -109,6 +109,33 @@ export const getRankFromLevel = (level: number): RankName => {
     if (level >= 15) return 'Soldier';
     if (level >= 5) return 'Enforcer';
     return 'Street Thug';
+};
+
+// Respect thresholds for each rank
+export const RANK_THRESHOLDS: Record<RankName, number> = {
+    'Street Thug': 0,
+    'Enforcer': 100,
+    'Soldier': 250,
+    'Caporegime': 1000,
+    'Underboss': 2500,
+    'Boss': 5000,
+    'Godfather': 10000,
+};
+
+// Get rank from respect (PRIMARY - use this for progression)
+export const getRankFromRespect = (respect: number): RankName => {
+    if (respect >= 10000) return 'Godfather';
+    if (respect >= 5000) return 'Boss';
+    if (respect >= 2500) return 'Underboss';
+    if (respect >= 1000) return 'Caporegime';
+    if (respect >= 250) return 'Soldier';
+    if (respect >= 100) return 'Enforcer';
+    return 'Street Thug';
+};
+
+// Check if player meets rank requirement
+export const meetsRankRequirement = (playerRespect: number, requiredRank: RankName): boolean => {
+    return playerRespect >= RANK_THRESHOLDS[requiredRank];
 };
 
 // All ranks in order

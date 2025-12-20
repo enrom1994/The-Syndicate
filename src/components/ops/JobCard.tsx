@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
-import { Loader2, Shield } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { RankBadge, RankName, RANK_THRESHOLDS, getRankFromRespect } from '@/components/RankBadge';
 import { useGameStore, JobDefinition } from '@/hooks/useGameStore';
 
 interface JobCardProps {
@@ -9,7 +10,7 @@ interface JobCardProps {
     delay?: number;
     onExecute: () => void;
     streakBonus?: number;
-    playerLevel?: number;
+    playerRespect?: number; // NEW - respect-based
     playerEnergy?: number;
 }
 
@@ -19,7 +20,7 @@ export const JobCard = ({
     delay = 0,
     onExecute,
     streakBonus = 0,
-    playerLevel = 1,
+    playerRespect = 0,
     playerEnergy = 0
 }: JobCardProps) => {
     // Access store for inventory checking
@@ -45,16 +46,32 @@ export const JobCard = ({
         }
     }
 
-    const meetsLevelReq = playerLevel >= job.required_level;
+    // Get required rank - derive from required_level if required_rank not set
+    const getRequiredRank = (): RankName => {
+        // If the job has required_rank set, use it
+        if ((job as any).required_rank) {
+            return (job as any).required_rank as RankName;
+        }
+        // Otherwise derive from level (backwards compatibility)
+        if (job.required_level >= 30) return 'Boss';
+        if (job.required_level >= 15) return 'Underboss';
+        if (job.required_level >= 8) return 'Caporegime';
+        if (job.required_level >= 5) return 'Soldier';
+        if (job.required_level >= 3) return 'Enforcer';
+        return 'Street Thug';
+    };
+
+    const requiredRank = getRequiredRank();
+    const meetsRankReq = playerRespect >= RANK_THRESHOLDS[requiredRank];
     const hasEnoughEnergy = playerEnergy >= job.energy_cost;
-    const canExecute = meetsLevelReq && hasEnoughEnergy && meetsItemReq && !isProcessing;
+    const canExecute = meetsRankReq && hasEnoughEnergy && meetsItemReq && !isProcessing;
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay }}
-            className={`noir-card p-4 ${!meetsLevelReq ? 'opacity-60' : ''}`}
+            className={`noir-card p-4 ${!meetsRankReq ? 'opacity-60' : ''}`}
         >
             <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
@@ -63,12 +80,13 @@ export const JobCard = ({
                 </div>
 
                 <div className="flex flex-col items-end gap-1">
-                    {job.required_level > 1 && (
-                        <div className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${meetsLevelReq
+                    {/* Rank Badge */}
+                    {requiredRank !== 'Street Thug' && (
+                        <div className={`text-[9px] px-1.5 py-0.5 rounded font-medium flex items-center gap-1 ${meetsRankReq
                             ? 'bg-green-500/20 text-green-400'
                             : 'bg-red-500/20 text-red-400'
                             }`}>
-                            Lv {job.required_level}
+                            <RankBadge rank={requiredRank} size="sm" />
                         </div>
                     )}
                 </div>
@@ -109,12 +127,12 @@ export const JobCard = ({
                         <img src="/images/icons/energy.png" alt="" className="w-3.5 h-3.5" />
                         <span>{job.energy_cost}</span>
                     </div>
-                    {job.required_level > 1 && (
+                    {requiredRank !== 'Street Thug' && (
                         <>
                             <span className="text-muted-foreground/50">•</span>
-                            <div className={`flex items-center gap-1 ${meetsLevelReq ? '' : 'text-red-400'}`}>
-                                <Shield className="w-3.5 h-3.5" />
-                                <span>Lv {job.required_level}+</span>
+                            <div className={`flex items-center gap-1 ${meetsRankReq ? '' : 'text-red-400'}`}>
+                                <RankBadge rank={requiredRank} size="sm" />
+                                <span>{requiredRank}+</span>
                             </div>
                         </>
                     )}
@@ -144,8 +162,8 @@ export const JobCard = ({
             >
                 {isProcessing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
-                ) : !meetsLevelReq ? (
-                    `Requires Level ${job.required_level}`
+                ) : !meetsRankReq ? (
+                    `Requires ${requiredRank} Rank`
                 ) : !hasEnoughEnergy ? (
                     'Not Enough Energy'
                 ) : !meetsItemReq ? (

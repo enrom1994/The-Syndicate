@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Swords, Target, Clock, Loader2, Skull, Users, Shield, AlertTriangle, Flame, Diamond, Star, Timer, TrendingUp } from 'lucide-react';
+import { RankBadge, RankName, RANK_THRESHOLDS } from '@/components/RankBadge';
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -155,17 +156,35 @@ const PveTargetCard = ({
                 </div>
             </div>
 
-            {/* Requirements Row */}
+            {/* Requirements Row - Now with Rank */}
             <div className="flex items-center justify-center gap-3 mb-3 text-xs text-muted-foreground bg-muted/20 rounded p-2">
                 <div className="flex items-center gap-1">
                     <img src="/images/icons/stamina.png" alt="" className="w-3.5 h-3.5" />
                     <span>{target.stamina_cost}</span>
                 </div>
-                <span className="text-muted-foreground/50">•</span>
-                <div className="flex items-center gap-1">
-                    <Shield className="w-3.5 h-3.5" />
-                    <span>Lv {target.required_level}+</span>
-                </div>
+                {target.required_level > 1 && (
+                    <>
+                        <span className="text-muted-foreground/50">•</span>
+                        <div className="flex items-center gap-1">
+                            <RankBadge rank={(() => {
+                                if (target.required_level >= 30) return 'Boss';
+                                if (target.required_level >= 15) return 'Underboss';
+                                if (target.required_level >= 8) return 'Caporegime';
+                                if (target.required_level >= 5) return 'Soldier';
+                                if (target.required_level >= 3) return 'Enforcer';
+                                return 'Street Thug';
+                            })() as RankName} size="sm" />
+                            <span>{(() => {
+                                if (target.required_level >= 30) return 'Boss';
+                                if (target.required_level >= 15) return 'Underboss';
+                                if (target.required_level >= 8) return 'Caporegime';
+                                if (target.required_level >= 5) return 'Soldier';
+                                if (target.required_level >= 3) return 'Enforcer';
+                                return 'Street Thug';
+                            })()}+</span>
+                        </div>
+                    </>
+                )}
             </div>
 
             <Button
@@ -176,7 +195,14 @@ const PveTargetCard = ({
                 {isProcessing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                 ) : !target.player_meets_level ? (
-                    `Requires Lv ${target.required_level}`
+                    `Requires ${(() => {
+                        if (target.required_level >= 30) return 'Boss';
+                        if (target.required_level >= 15) return 'Underboss';
+                        if (target.required_level >= 8) return 'Caporegime';
+                        if (target.required_level >= 5) return 'Soldier';
+                        if (target.required_level >= 3) return 'Enforcer';
+                        return 'Street Thug';
+                    })()} Rank`
                 ) : !target.is_available ? (
                     <>
                         <Clock className="w-4 h-4 mr-1" />
@@ -429,13 +455,13 @@ const TargetCard = ({
 // JOB CARD (with streak bonus display)
 // =====================================================
 
-const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, playerLevel = 1, playerEnergy = 0 }: {
+const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, playerRespect = 0, playerEnergy = 0 }: {
     job: JobDefinition;
     isProcessing: boolean;
     delay?: number;
     onExecute: () => void;
     streakBonus?: number;
-    playerLevel?: number;
+    playerRespect?: number;
     playerEnergy?: number;
 }) => {
     // Access store directly to check inventory for requirements
@@ -466,16 +492,27 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, pla
         }
     }
 
-    const meetsLevelReq = playerLevel >= job.required_level;
+    // Get required rank from job
+    const getRequiredRank = (): RankName => {
+        if ((job as any).required_rank) return (job as any).required_rank as RankName;
+        if (job.required_level >= 30) return 'Boss';
+        if (job.required_level >= 15) return 'Underboss';
+        if (job.required_level >= 8) return 'Caporegime';
+        if (job.required_level >= 5) return 'Soldier';
+        if (job.required_level >= 3) return 'Enforcer';
+        return 'Street Thug';
+    };
+    const requiredRank = getRequiredRank();
+    const meetsRankReq = playerRespect >= RANK_THRESHOLDS[requiredRank];
     const hasEnoughEnergy = playerEnergy >= job.energy_cost;
-    const canExecute = meetsLevelReq && hasEnoughEnergy && meetsItemReq && !isProcessing;
+    const canExecute = meetsRankReq && hasEnoughEnergy && meetsItemReq && !isProcessing;
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay }}
-            className={`noir-card p-4 ${!meetsLevelReq ? 'opacity-60' : ''}`}
+            className={`noir-card p-4 ${!meetsRankReq ? 'opacity-60' : ''}`}
         >
             <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
@@ -484,13 +521,13 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, pla
                 </div>
 
                 <div className="flex flex-col items-end gap-1">
-                    {/* Required Level Badge */}
-                    {job.required_level > 1 && (
-                        <div className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${meetsLevelReq
+                    {/* Required Rank Badge */}
+                    {requiredRank !== 'Street Thug' && (
+                        <div className={`text-[9px] px-1.5 py-0.5 rounded font-medium flex items-center gap-1 ${meetsRankReq
                             ? 'bg-green-500/20 text-green-400'
                             : 'bg-red-500/20 text-red-400'
                             }`}>
-                            Lv {job.required_level}
+                            <RankBadge rank={requiredRank} size="sm" />
                         </div>
                     )}
                 </div>
@@ -532,12 +569,12 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, pla
                         <img src="/images/icons/energy.png" alt="" className="w-3.5 h-3.5" />
                         <span>{job.energy_cost}</span>
                     </div>
-                    {job.required_level > 1 && (
+                    {requiredRank !== 'Street Thug' && (
                         <>
                             <span className="text-muted-foreground/50">•</span>
-                            <div className={`flex items-center gap-1 ${meetsLevelReq ? '' : 'text-red-400'}`}>
-                                <Shield className="w-3.5 h-3.5" />
-                                <span>Lv {job.required_level}+</span>
+                            <div className={`flex items-center gap-1 ${meetsRankReq ? '' : 'text-red-400'}`}>
+                                <RankBadge rank={requiredRank} size="sm" />
+                                <span>{requiredRank}+</span>
                             </div>
                         </>
                     )}
@@ -568,8 +605,8 @@ const JobCard = ({ job, isProcessing, delay = 0, onExecute, streakBonus = 0, pla
             >
                 {isProcessing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
-                ) : !meetsLevelReq ? (
-                    `Requires Level ${job.required_level}`
+                ) : !meetsRankReq ? (
+                    `Requires ${requiredRank} Rank`
                 ) : !hasEnoughEnergy ? (
                     'Not Enough Energy'
                 ) : !meetsItemReq ? (
@@ -665,17 +702,35 @@ const HighStakesCard = ({ job, isProcessing, delay = 0, onExecute }: {
                 </div>
             </div>
 
-            {/* Requirements Row */}
+            {/* Requirements Row - Now with Rank */}
             <div className="flex items-center justify-center gap-3 mb-3 text-xs text-muted-foreground bg-muted/20 rounded p-2">
                 <div className="flex items-center gap-1">
                     <img src="/images/icons/energy.png" alt="" className="w-3.5 h-3.5" />
                     <span>{job.energy_cost}</span>
                 </div>
-                <span className="text-muted-foreground/50">•</span>
-                <div className="flex items-center gap-1">
-                    <Shield className="w-3.5 h-3.5" />
-                    <span>Lv {job.required_level}+</span>
-                </div>
+                {job.required_level > 1 && (
+                    <>
+                        <span className="text-muted-foreground/50">•</span>
+                        <div className="flex items-center gap-1">
+                            <RankBadge rank={(() => {
+                                if (job.required_level >= 30) return 'Boss';
+                                if (job.required_level >= 15) return 'Underboss';
+                                if (job.required_level >= 8) return 'Caporegime';
+                                if (job.required_level >= 5) return 'Soldier';
+                                if (job.required_level >= 3) return 'Enforcer';
+                                return 'Street Thug';
+                            })() as RankName} size="sm" />
+                            <span>{(() => {
+                                if (job.required_level >= 30) return 'Boss';
+                                if (job.required_level >= 15) return 'Underboss';
+                                if (job.required_level >= 8) return 'Caporegime';
+                                if (job.required_level >= 5) return 'Soldier';
+                                if (job.required_level >= 3) return 'Enforcer';
+                                return 'Street Thug';
+                            })()}+</span>
+                        </div>
+                    </>
+                )}
             </div>
 
             <Button
@@ -686,7 +741,14 @@ const HighStakesCard = ({ job, isProcessing, delay = 0, onExecute }: {
                 {isProcessing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                 ) : !job.player_meets_level ? (
-                    `Requires Lv ${job.required_level}`
+                    `Requires ${(() => {
+                        if (job.required_level >= 30) return 'Boss';
+                        if (job.required_level >= 15) return 'Underboss';
+                        if (job.required_level >= 8) return 'Caporegime';
+                        if (job.required_level >= 5) return 'Soldier';
+                        if (job.required_level >= 3) return 'Enforcer';
+                        return 'Street Thug';
+                    })()} Rank`
                 ) : !job.is_available ? (
                     <>
                         <Clock className="w-4 h-4 mr-1" />
@@ -1598,7 +1660,7 @@ const OpsPage = () => {
                                     delay={0.05 * idx}
                                     onExecute={() => handleJobExecute(job)}
                                     streakBonus={chainStatus?.bonus_percent || 0}
-                                    playerLevel={player?.level || 1}
+                                    playerRespect={player?.respect || 0}
                                     playerEnergy={player?.energy || 0}
                                 />
                             ))
