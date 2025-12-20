@@ -178,187 +178,129 @@ export const FoundersTournamentBanner = () => {
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="mx-4 my-3"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mx-4 my-2"
         >
             {/* Outer glow container */}
             <div className="relative">
-                {/* Animated pulsing glow */}
+                {/* Subtle pulsing glow */}
                 <motion.div
-                    className="absolute -inset-1 bg-gradient-to-r from-amber-500/30 via-yellow-400/40 to-amber-500/30 rounded-xl blur-md"
-                    animate={{
-                        opacity: [0.4, 0.7, 0.4],
-                        scale: [1, 1.02, 1],
-                    }}
+                    className="absolute -inset-0.5 bg-gradient-to-r from-amber-500/20 via-yellow-400/30 to-amber-500/20 rounded-lg blur-sm"
+                    animate={{ opacity: [0.3, 0.5, 0.3] }}
                     transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                 />
 
-                <div className="relative overflow-hidden rounded-lg border-2 border-amber-400/70 bg-gradient-to-br from-amber-950/90 via-amber-900/80 to-amber-950/90 shadow-2xl">
-                    {/* Animated shimmer effect */}
+                <div className="relative overflow-hidden rounded-lg border border-amber-400/60 bg-gradient-to-br from-amber-950/95 via-amber-900/90 to-amber-950/95">
+                    {/* Shimmer effect */}
                     <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-300/15 to-transparent skew-x-12"
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-300/10 to-transparent skew-x-12"
                         animate={{ x: ['-200%', '200%'] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', repeatDelay: 1 }}
+                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', repeatDelay: 2 }}
                     />
 
-                    {/* Sparkle particles */}
-                    <motion.div
-                        className="absolute top-4 right-8 w-1.5 h-1.5 bg-amber-300 rounded-full"
-                        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
-                        transition={{ duration: 1.5, repeat: Infinity, delay: 0 }}
-                    />
-                    <motion.div
-                        className="absolute top-8 left-12 w-1 h-1 bg-yellow-300 rounded-full"
-                        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
-                        transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }}
-                    />
-                    <motion.div
-                        className="absolute bottom-12 right-16 w-1 h-1 bg-amber-200 rounded-full"
-                        animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5] }}
-                        transition={{ duration: 1.5, repeat: Infinity, delay: 1 }}
-                    />
+                    {/* Art Deco corners - smaller */}
+                    <div className="absolute top-0 left-0 w-6 h-6 border-t border-l border-amber-400/50" />
+                    <div className="absolute top-0 right-0 w-6 h-6 border-t border-r border-amber-400/50" />
+                    <div className="absolute bottom-0 left-0 w-6 h-6 border-b border-l border-amber-400/50" />
+                    <div className="absolute bottom-0 right-0 w-6 h-6 border-b border-r border-amber-400/50" />
 
-                    {/* Art Deco corner decorations */}
-                    <div className="absolute top-0 left-0 w-10 h-10 border-t-2 border-l-2 border-amber-400/60" />
-                    <div className="absolute top-0 right-0 w-10 h-10 border-t-2 border-r-2 border-amber-400/60" />
-                    <div className="absolute bottom-0 left-0 w-10 h-10 border-b-2 border-l-2 border-amber-400/60" />
-                    <div className="absolute bottom-0 right-0 w-10 h-10 border-b-2 border-r-2 border-amber-400/60" />
-
-                    <div className="relative z-10 p-5">
-                        {/* Header with animated trophies */}
-                        <div className="flex items-center justify-center gap-3 mb-2">
+                    <div className="relative z-10 p-3">
+                        {/* Header Row - Title + Prize inline */}
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-1.5">
+                                <Trophy className="w-4 h-4 text-amber-400" />
+                                <h3 className="font-cinzel font-bold text-sm text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-200">
+                                    {tournament.name}
+                                </h3>
+                            </div>
+                            {/* Prize badge */}
                             <motion.div
-                                animate={{ rotate: [-5, 5, -5], y: [0, -2, 0] }}
-                                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                                className="flex items-center gap-1 bg-amber-500/20 px-2 py-1 rounded-full border border-amber-400/40"
+                                animate={{ scale: [1, 1.02, 1] }}
+                                transition={{ duration: 2, repeat: Infinity }}
                             >
-                                <Trophy className="w-6 h-6 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
-                            </motion.div>
-                            <h3 className="font-cinzel font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-200 tracking-widest drop-shadow-lg">
-                                {tournament.name}
-                            </h3>
-                            <motion.div
-                                animate={{ rotate: [5, -5, 5], y: [0, -2, 0] }}
-                                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                            >
-                                <Trophy className="w-6 h-6 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
-                            </motion.div>
-                        </div>
-
-                        {/* Subheadline */}
-                        <p className="text-center text-sm text-amber-100/90 mb-4 font-medium">
-                            Highest Net Worth Wins
-                        </p>
-
-                        {/* DRAMATIC Prize Display */}
-                        <motion.div
-                            className="flex items-center justify-center gap-3 mb-5 py-3 px-4 bg-gradient-to-r from-amber-500/10 via-amber-400/20 to-amber-500/10 rounded-lg border border-amber-400/30"
-                            animate={{ boxShadow: ['0 0 20px rgba(251,191,36,0.1)', '0 0 30px rgba(251,191,36,0.3)', '0 0 20px rgba(251,191,36,0.1)'] }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                        >
-                            <span className="text-xs text-amber-300 uppercase tracking-widest font-semibold">Grand Prize:</span>
-                            <div className="flex items-center gap-2">
-                                <motion.span
-                                    className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-200"
-                                    animate={{ scale: [1, 1.05, 1] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                >
-                                    {tournament.prize_amount}
-                                </motion.span>
-                                <motion.img
+                                <span className="text-base font-bold text-amber-100">{tournament.prize_amount}</span>
+                                <img
                                     src="/images/icons/ton_symbol.png"
                                     alt="TON"
-                                    className="w-7 h-7 object-contain drop-shadow-[0_0_8px_rgba(56,178,254,0.6)]"
-                                    animate={{ rotate: [0, 5, 0, -5, 0] }}
-                                    transition={{ duration: 4, repeat: Infinity }}
+                                    className="w-4 h-4 object-contain"
                                 />
-                            </div>
-                        </motion.div>
+                            </motion.div>
+                        </div>
 
-                        {/* Countdown Timer */}
-                        <div className="flex items-center justify-center gap-2 mb-4 bg-black/30 rounded-lg py-2 px-3">
-                            <Clock className="w-4 h-4 text-amber-400" />
-                            <span className="text-xs text-amber-300/90 font-medium">
-                                {isStarted ? 'Ends in:' : 'Starts in:'}
-                            </span>
-                            <div className="flex items-center gap-1 font-mono text-sm">
-                                <span className="bg-amber-800/60 px-2 py-1 rounded text-amber-100 font-bold">{formatNumber(countdown.days)}</span>
-                                <span className="text-amber-400/70 text-xs">d</span>
-                                <span className="bg-amber-800/60 px-2 py-1 rounded text-amber-100 font-bold">{formatNumber(countdown.hours)}</span>
-                                <span className="text-amber-400/70 text-xs">h</span>
-                                <span className="bg-amber-800/60 px-2 py-1 rounded text-amber-100 font-bold">{formatNumber(countdown.minutes)}</span>
-                                <span className="text-amber-400/70 text-xs">m</span>
-                                <span className="bg-amber-800/60 px-1.5 py-1 rounded text-amber-100 font-bold text-xs">{formatNumber(countdown.seconds)}</span>
-                                <span className="text-amber-400/70 text-[10px]">s</span>
+                        {/* Subtitle + Countdown Row */}
+                        <div className="flex items-center justify-between mb-2 text-[10px]">
+                            <span className="text-amber-100/80">Highest Net Worth Wins</span>
+                            <div className="flex items-center gap-1 text-amber-300/90">
+                                <Clock className="w-3 h-3" />
+                                <span className="font-mono">
+                                    {formatNumber(countdown.days)}d {formatNumber(countdown.hours)}h {formatNumber(countdown.minutes)}m
+                                </span>
                             </div>
                         </div>
 
-                        {/* Stats Row */}
-                        <div className="flex items-center justify-center gap-4 text-xs text-amber-300/80 mb-4">
-                            <div className="flex items-center gap-1.5">
-                                <Users className="w-4 h-4" />
-                                <span className="font-medium">{tournament.participant_count} Entrants</span>
+                        {/* Stats Row - Compact */}
+                        <div className="flex items-center justify-center gap-3 text-[10px] text-amber-300/70 mb-2">
+                            <div className="flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                <span>{tournament.participant_count} Entrants</span>
                             </div>
-                            <span className="text-amber-500/50">•</span>
-                            <span className="font-medium">Skill-Based • No Random Winners</span>
+                            <span>•</span>
+                            <span>Skill-Based Only</span>
                         </div>
 
-                        {/* Player Status / CTA */}
+                        {/* CTA Button */}
                         <AnimatePresence mode="wait">
                             {isRegistered ? (
                                 <motion.div
                                     key="registered"
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    className="space-y-3"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex items-center gap-2"
                                 >
-                                    {/* Rank display */}
                                     {playerStatus?.current_rank && (
-                                        <div className="flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-amber-500/10 via-amber-400/20 to-amber-500/10 rounded-lg border border-amber-500/40">
-                                            <Crown className="w-5 h-5 text-amber-400" />
-                                            <span className="text-sm text-amber-200">
-                                                Your Rank: <span className="font-bold text-lg text-amber-100">#{playerStatus.current_rank}</span>
+                                        <div className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-amber-500/10 rounded border border-amber-500/30">
+                                            <Crown className="w-3.5 h-3.5 text-amber-400" />
+                                            <span className="text-xs text-amber-200">
+                                                Rank <span className="font-bold">#{playerStatus.current_rank}</span>
                                             </span>
                                         </div>
                                     )}
-
-                                    {/* View Leaderboard link */}
-                                    <Link to="/ranks" className="block">
+                                    <Link to="/ranks" className="flex-1">
                                         <Button
                                             variant="outline"
-                                            className="w-full border-amber-400/60 text-amber-200 hover:bg-amber-500/20 hover:border-amber-400 font-cinzel tracking-wide"
+                                            size="sm"
+                                            className="w-full h-8 text-xs border-amber-400/50 text-amber-200 hover:bg-amber-500/20"
                                         >
-                                            <span>View Leaderboard</span>
-                                            <ChevronRight className="w-4 h-4 ml-1" />
+                                            Leaderboard
+                                            <ChevronRight className="w-3 h-3 ml-1" />
                                         </Button>
                                     </Link>
                                 </motion.div>
                             ) : (
                                 <motion.div
                                     key="register"
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
                                 >
                                     <motion.div
                                         animate={{
-                                            boxShadow: [
-                                                '0 0 20px rgba(251,191,36,0.3)',
-                                                '0 0 35px rgba(251,191,36,0.5)',
-                                                '0 0 20px rgba(251,191,36,0.3)',
-                                            ],
+                                            boxShadow: ['0 0 10px rgba(251,191,36,0.2)', '0 0 20px rgba(251,191,36,0.4)', '0 0 10px rgba(251,191,36,0.2)'],
                                         }}
                                         transition={{ duration: 1.5, repeat: Infinity }}
-                                        className="rounded-lg overflow-hidden"
+                                        className="rounded overflow-hidden"
                                     >
                                         <Button
                                             onClick={handleRegister}
                                             disabled={isRegistering}
-                                            className="w-full bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:via-yellow-400 hover:to-amber-400 text-black font-cinzel font-bold tracking-widest py-4 text-base shadow-xl border-2 border-amber-300/50"
+                                            size="sm"
+                                            className="w-full h-9 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 hover:from-amber-400 hover:via-yellow-400 hover:to-amber-400 text-black font-cinzel font-bold tracking-wider text-xs"
                                         >
                                             {isRegistering ? (
                                                 <>
-                                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                                                     Registering...
                                                 </>
                                             ) : (
@@ -369,11 +311,6 @@ export const FoundersTournamentBanner = () => {
                                 </motion.div>
                             )}
                         </AnimatePresence>
-
-                        {/* Flavor text */}
-                        <p className="text-center text-[10px] text-amber-400/60 italic mt-4">
-                            Only the sharpest minds rise to the top.
-                        </p>
                     </div>
                 </div>
             </div>
