@@ -12,6 +12,7 @@ import { WalletButton } from '@/components/WalletButton';
 import { OfflineSummaryModal } from '@/components/OfflineSummaryModal';
 import { TelegramBanner } from '@/components/tutorial/TelegramBanner';
 import { FounderBonusBanner } from '@/components/FounderBonusBanner';
+import { FoundersTournamentBanner } from '@/components/FoundersTournamentBanner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -293,6 +294,9 @@ const Index = () => {
 
                 {/* Founder Bonus Claim for existing users who haven't claimed yet */}
                 <FounderBonusBanner />
+
+                {/* Founders Tournament - Skill-based competition for Founders */}
+                <FoundersTournamentBanner />
 
                 {/* Tutorial Step 1: Join Telegram */}
                 <TelegramBanner />
