@@ -7,7 +7,6 @@ import { useOnboarding } from '@/components/Onboarding';
 import { ClaimRewardModal } from '@/components/ClaimRewardModal';
 import { QuickActions } from '@/components/QuickActions';
 import { MainLayout } from '@/components/MainLayout';
-import { SeasonBanner } from '@/components/SeasonBanner';
 import { WalletButton } from '@/components/WalletButton';
 import { OfflineSummaryModal } from '@/components/OfflineSummaryModal';
 import { TelegramBanner } from '@/components/tutorial/TelegramBanner';
@@ -287,16 +286,13 @@ const Index = () => {
                 transition={{ duration: 0.5 }}
                 className="relative z-10"
               >
-                {/* Season & Round Banner */}
-                <div className="pt-4">
-                  <SeasonBanner />
-                </div>
-
                 {/* Founder Bonus Claim for existing users who haven't claimed yet */}
                 <FounderBonusBanner />
 
                 {/* Founders Tournament - Skill-based competition for Founders */}
-                <FoundersTournamentBanner />
+                <div className="pt-4">
+                  <FoundersTournamentBanner />
+                </div>
 
                 {/* Tutorial Step 1: Join Telegram */}
                 <TelegramBanner />
