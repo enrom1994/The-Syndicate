@@ -38,6 +38,7 @@ interface Player {
     created_at: string;
     updated_at: string;
     starter_pack_claimed: boolean | null;
+    founder_bonus_claimed?: boolean | null;
     injured_crew?: number;
 }
 

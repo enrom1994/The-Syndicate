@@ -11,6 +11,7 @@ import { SeasonBanner } from '@/components/SeasonBanner';
 import { WalletButton } from '@/components/WalletButton';
 import { OfflineSummaryModal } from '@/components/OfflineSummaryModal';
 import { TelegramBanner } from '@/components/tutorial/TelegramBanner';
+import { FounderBonusBanner } from '@/components/FounderBonusBanner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -287,6 +288,9 @@ const Index = () => {
                 <div className="pt-4">
                   <SeasonBanner />
                 </div>
+
+                {/* Founder Bonus Claim for existing users who haven't claimed yet */}
+                <FounderBonusBanner />
 
                 {/* Tutorial Step 1: Join Telegram */}
                 <TelegramBanner />
