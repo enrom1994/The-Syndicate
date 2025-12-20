@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Skull } from 'lucide-react';
+import { Skull, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GameIcon } from '@/components/GameIcon';
 import { RankBadge, RankName, RANK_THRESHOLDS } from '@/components/RankBadge';
@@ -12,6 +12,22 @@ interface NPCBountyCardProps {
     playerRespect: number;
     onHunt: (bounty: NPCBounty) => void;
 }
+
+// Helper to format cooldown remaining
+const formatCooldown = (availableAt: string | null): string => {
+    if (!availableAt) return 'Cooldown';
+    const now = new Date();
+    const available = new Date(availableAt);
+    const diffMs = available.getTime() - now.getTime();
+
+    if (diffMs <= 0) return 'Ready';
+
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+};
 
 export const NPCBountyCard = ({
     bounty,
@@ -67,7 +83,10 @@ export const NPCBountyCard = ({
                             Hunt
                         </Button>
                     ) : (
-                        <p className="text-[10px] text-muted-foreground mt-1">Cooldown</p>
+                        <div className="flex items-center gap-1 text-[10px] text-amber-400 mt-1">
+                            <Clock className="w-3 h-3" />
+                            {formatCooldown(bounty.available_at)}
+                        </div>
                     )}
                 </div>
             </div>
@@ -76,3 +95,4 @@ export const NPCBountyCard = ({
 };
 
 export default NPCBountyCard;
+
