@@ -122,24 +122,25 @@ const RanksPage = () => {
         if (!player?.id) return;
 
         try {
-            // Count players with higher values to estimate rank
-            const { count: networthRank } = await supabase
-                .from('players')
-                .select('*', { count: 'exact', head: true })
-                .gt('cash', player.cash);
+            // Use RPC for accurate net worth ranking (includes banked_cash)
+            const { data: rankData } = await supabase.rpc('get_player_rank' as any, {
+                player_id_input: player.id
+            });
+
+            const rankResult = rankData as { rank: number; networth: number; total_players: number }[] | null;
 
             const { count: respectRank } = await supabase
                 .from('players')
                 .select('*', { count: 'exact', head: true })
-                .gt('respect', player.respect);
+                .gt('respect', player.respect || 0);
 
             const { count: winsRank } = await supabase
                 .from('players')
                 .select('*', { count: 'exact', head: true })
-                .gt('total_attacks_won', player.total_attacks_won);
+                .gt('total_attacks_won', player.total_attacks_won || 0);
 
             setPlayerRank({
-                networth: (networthRank || 0) + 1,
+                networth: rankResult?.[0]?.rank || 1,
                 respect: (respectRank || 0) + 1,
                 wins: (winsRank || 0) + 1,
             });
