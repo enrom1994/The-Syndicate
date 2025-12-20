@@ -99,7 +99,7 @@ export const Hero = ({ onEnter }: HeroProps) => {
                 animation: 'pulse-glow 2s ease-in-out infinite',
               }}
             >
-              <img src="/icon/diamond.png" alt="" className="w-5 h-5 mr-2" />
+              <img src="/images/icons/diamond.png" alt="" className="w-5 h-5 mr-2" />
               CLAIM 50 DIAMONDS
             </Button>
           </motion.div>

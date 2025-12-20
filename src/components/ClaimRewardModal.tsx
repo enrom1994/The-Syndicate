@@ -136,7 +136,7 @@ export const ClaimRewardModal = ({ isOpen, onClaim }: ClaimRewardModalProps) => 
                                 transition={{ repeat: Infinity, duration: 2 }}
                             >
                                 <img
-                                    src="/icon/diamond.png"
+                                    src="/images/icons/diamond.png"
                                     alt="Diamond"
                                     className="w-12 h-12 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]"
                                 />
