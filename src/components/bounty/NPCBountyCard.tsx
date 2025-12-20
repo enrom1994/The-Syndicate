@@ -13,16 +13,6 @@ interface NPCBountyCardProps {
     onHunt: (bounty: NPCBounty) => void;
 }
 
-// Helper to get required rank from level
-const getRequiredRank = (level: number): RankName => {
-    if (level >= 30) return 'Boss';
-    if (level >= 15) return 'Underboss';
-    if (level >= 8) return 'Caporegime';
-    if (level >= 5) return 'Soldier';
-    if (level >= 3) return 'Enforcer';
-    return 'Street Thug';
-};
-
 export const NPCBountyCard = ({
     bounty,
     index,
@@ -30,8 +20,8 @@ export const NPCBountyCard = ({
     playerRespect,
     onHunt
 }: NPCBountyCardProps) => {
-    const requiredRank = getRequiredRank(bounty.required_level);
-    const meetsRankReq = playerRespect >= RANK_THRESHOLDS[requiredRank];
+    const requiredRank = (bounty.required_rank || 'Street Thug') as RankName;
+    const meetsRankReq = bounty.player_meets_rank !== undefined ? bounty.player_meets_rank : true;
 
     return (
         <motion.div

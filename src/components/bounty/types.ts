@@ -12,9 +12,11 @@ export interface NPCBounty {
     max_reward: number;
     respect_reward: number;
     required_level: number;
+    required_rank: string;
     cooldown_hours: number;
     available_at: string | null;
     is_available: boolean;
+    player_meets_rank?: boolean;
 }
 
 export interface PlayerBounty {
@@ -23,6 +25,7 @@ export interface PlayerBounty {
     target_player_id: string;
     target_name: string;
     target_level: number;
+    target_rank?: string;
     bounty_amount: number;
     placed_by: string;
     placed_by_player_id?: string;
@@ -34,6 +37,7 @@ export interface MyBounty {
     id: string;
     target_player_id: string;
     target_name: string;
+    target_rank?: string;
     bounty_amount: number;
     status: 'active' | 'claimed' | 'expired' | 'cancelled';
     expires_at: string;
@@ -47,6 +51,7 @@ export interface SearchResult {
     first_name: string | null;
     level: number;
     respect: number;
+    rank?: string;
     has_active_bounty: boolean;
 }
 

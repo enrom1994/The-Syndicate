@@ -66,12 +66,13 @@ const BountyBoardPage = () => {
         if (!player?.id) return;
 
         try {
-            const { data, error } = await supabase.rpc('get_bounties', {
+            const { data: rawData, error } = await supabase.rpc('get_bounties', {
                 requester_id: player.id
             });
 
             if (error) throw error;
 
+            const data = rawData as unknown as { npc_bounties: NPCBounty[], player_bounties: PlayerBounty[], my_bounties: MyBounty[] };
             setNpcBounties(data.npc_bounties || []);
             setPlayerBounties(data.player_bounties || []);
             setMyBounties(data.my_bounties || []);
@@ -95,7 +96,7 @@ const BountyBoardPage = () => {
             });
 
             if (error) throw error;
-            setSearchResults(data || []);
+            setSearchResults(data as unknown as SearchResult[] || []);
         } catch (error: any) {
             console.error('Search failed:', error);
             toast({
@@ -147,12 +148,15 @@ const BountyBoardPage = () => {
     };
 
     // Cancel bounty
-    const handleCancel = (bounty: MyBounty) => {
+    const handleCancelBounty = (bounty: string | MyBounty) => {
+        const bId = typeof bounty === 'string' ? bounty : bounty.id;
+        const targetBounty = myBounties.find(b => b.id === bId);
+        if (!targetBounty) return;
         setPendingAction({
             type: 'cancel',
-            id: bounty.id,
-            name: bounty.target_name,
-            amount: bounty.bounty_amount
+            id: targetBounty.id,
+            name: targetBounty.target_name,
+            amount: targetBounty.bounty_amount
         });
         setConfirmOpen(true);
     };
@@ -173,17 +177,19 @@ const BountyBoardPage = () => {
 
                 if (error) throw error;
 
-                if (data?.success) {
+                const response = data as unknown as { success: boolean; message: string };
+
+                if (response?.success) {
                     haptic.success();
                     toast({
                         title: 'Bounty Claimed!',
-                        description: data.message,
+                        description: response.message,
                     });
                     await refetchPlayer();
                 } else {
                     toast({
                         title: 'Failed',
-                        description: data?.message || 'Could not claim bounty',
+                        description: response?.message || 'Could not claim bounty',
                         variant: 'destructive',
                     });
                 }
@@ -195,18 +201,20 @@ const BountyBoardPage = () => {
 
                 if (error) throw error;
 
-                if (data?.success) {
+                const response = data as unknown as { success: boolean; message: string; won?: boolean };
+
+                if (response?.success) {
                     haptic.success();
                     toast({
-                        title: data.won ? 'Target Eliminated!' : 'Hunt Failed',
-                        description: data.message,
-                        variant: data.won ? 'default' : 'destructive',
+                        title: response.won ? 'Target Eliminated!' : 'Hunt Failed',
+                        description: response.message,
+                        variant: response.won ? 'default' : 'destructive',
                     });
                     await refetchPlayer();
                 } else {
                     toast({
                         title: 'Failed',
-                        description: data?.message || 'Could not claim bounty',
+                        description: response?.message || 'Could not claim bounty',
                         variant: 'destructive',
                     });
                 }
@@ -220,11 +228,13 @@ const BountyBoardPage = () => {
 
                 if (error) throw error;
 
-                if (data?.success) {
+                const response = data as unknown as { success: boolean; message: string };
+
+                if (response?.success) {
                     haptic.success();
                     toast({
                         title: 'Bounty Placed!',
-                        description: data.message,
+                        description: response.message,
                     });
                     setSelectedTarget(null);
                     setBountyAmount('');
@@ -234,7 +244,7 @@ const BountyBoardPage = () => {
                 } else {
                     toast({
                         title: 'Failed',
-                        description: data?.message || 'Could not place bounty',
+                        description: response?.message || 'Could not place bounty',
                         variant: 'destructive',
                     });
                 }
@@ -246,17 +256,19 @@ const BountyBoardPage = () => {
 
                 if (error) throw error;
 
-                if (data?.success) {
+                const response = data as unknown as { success: boolean; message: string };
+
+                if (response?.success) {
                     haptic.success();
                     toast({
                         title: 'Bounty Cancelled',
-                        description: data.message,
+                        description: response.message,
                     });
                     await refetchPlayer();
                 } else {
                     toast({
                         title: 'Failed',
-                        description: data?.message || 'Could not cancel bounty',
+                        description: response?.message || 'Could not cancel bounty',
                         variant: 'destructive',
                     });
                 }
@@ -318,127 +330,35 @@ const BountyBoardPage = () => {
                         <TabsTrigger value="place" className="font-cinzel text-[10px]">Place</TabsTrigger>
                     </TabsList>
 
-                    {/* NPC Bounties Tab */}
                     <TabsContent value="npc" className="space-y-2 mt-0">
                         {npcBounties.length === 0 ? (
                             <p className="text-center text-muted-foreground py-8">No contracts available</p>
                         ) : (
                             npcBounties.map((bounty, index) => (
-                                <motion.div
+                                <NPCBountyCard
                                     key={bounty.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.1 }}
-                                    className={`noir-card p-4 ${!bounty.is_available ? 'opacity-50' : ''}`}
-                                >
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
-                                            <Skull className="w-6 h-6 text-destructive" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="font-cinzel font-semibold text-sm text-foreground">{bounty.target_name}</h3>
-                                                <span className={`px-1.5 py-0.5 text-[10px] rounded-sm ${DIFFICULTY_COLORS[bounty.difficulty]}`}>
-                                                    {bounty.difficulty.toUpperCase()}
-                                                </span>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{bounty.description}</p>
-                                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                                {(() => {
-                                                    const getRequiredRank = (): RankName => {
-                                                        if (bounty.required_level >= 30) return 'Boss';
-                                                        if (bounty.required_level >= 15) return 'Underboss';
-                                                        if (bounty.required_level >= 8) return 'Caporegime';
-                                                        if (bounty.required_level >= 5) return 'Soldier';
-                                                        if (bounty.required_level >= 3) return 'Enforcer';
-                                                        return 'Street Thug';
-                                                    };
-                                                    const requiredRank = getRequiredRank();
-                                                    return requiredRank !== 'Street Thug' ? (
-                                                        <span className="flex items-center gap-1">
-                                                            <RankBadge rank={requiredRank} size="sm" />
-                                                            {requiredRank}+
-                                                        </span>
-                                                    ) : null;
-                                                })()}
-                                                <span>+{bounty.respect_reward} Respect</span>
-                                            </div>
-                                        </div>
-                                        <div className="text-right shrink-0">
-                                            <p className="font-cinzel font-bold text-sm text-primary flex items-center gap-1">
-                                                <GameIcon type="cash" className="w-4 h-4" />
-                                                {bounty.min_reward.toLocaleString()}-{bounty.max_reward.toLocaleString()}
-                                            </p>
-                                            {bounty.is_available ? (
-                                                <Button
-                                                    size="sm"
-                                                    className="btn-gold text-[10px] mt-1"
-                                                    onClick={() => handleHuntNPC(bounty)}
-                                                    disabled={isProcessing || (player?.respect || 0) < RANK_THRESHOLDS[(() => {
-                                                        if (bounty.required_level >= 30) return 'Boss';
-                                                        if (bounty.required_level >= 15) return 'Underboss';
-                                                        if (bounty.required_level >= 8) return 'Caporegime';
-                                                        if (bounty.required_level >= 5) return 'Soldier';
-                                                        if (bounty.required_level >= 3) return 'Enforcer';
-                                                        return 'Street Thug';
-                                                    })() as RankName]}
-                                                >
-                                                    Hunt
-                                                </Button>
-                                            ) : (
-                                                <p className="text-[10px] text-muted-foreground mt-1">Cooldown</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </motion.div>
+                                    bounty={bounty}
+                                    index={index}
+                                    isProcessing={isProcessing}
+                                    playerRespect={player?.respect || 0}
+                                    onHunt={handleHuntNPC}
+                                />
                             ))
                         )}
                     </TabsContent>
 
-                    {/* Player Bounties Tab */}
                     <TabsContent value="players" className="space-y-2 mt-0">
                         {playerBounties.length === 0 ? (
                             <p className="text-center text-muted-foreground py-8">No active player bounties</p>
                         ) : (
                             playerBounties.map((bounty, index) => (
-                                <motion.div
+                                <PlayerBountyCard
                                     key={bounty.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.1 }}
-                                    className="noir-card p-4"
-                                >
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
-                                            <User className="w-6 h-6 text-red-400" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h3 className="font-cinzel font-semibold text-sm text-foreground">{bounty.target_name}</h3>
-                                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                                <span>Lvl {bounty.target_level}</span>
-                                                <span className="flex items-center gap-1">
-                                                    <Clock className="w-3 h-3" />
-                                                    {formatTimeRemaining(bounty.time_remaining)}
-                                                </span>
-                                            </div>
-                                            <p className="text-[10px] text-muted-foreground mt-1">Posted by: {bounty.placed_by}</p>
-                                        </div>
-                                        <div className="text-right shrink-0">
-                                            <p className="font-cinzel font-bold text-lg text-primary flex items-center gap-1">
-                                                <GameIcon type="cash" className="w-5 h-5" />
-                                                {bounty.bounty_amount.toLocaleString()}
-                                            </p>
-                                            <Button
-                                                size="sm"
-                                                className="btn-gold text-[10px] mt-1"
-                                                onClick={() => handleHuntPlayer(bounty)}
-                                                disabled={isProcessing || bounty.placed_by_player_id === player?.id}
-                                            >
-                                                {bounty.placed_by_player_id === player?.id ? 'Yours' : 'Hunt'}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </motion.div>
+                                    bounty={bounty}
+                                    index={index}
+                                    isProcessing={isProcessing}
+                                    onHunt={handleHuntPlayer}
+                                />
                             ))
                         )}
                     </TabsContent>
@@ -452,48 +372,13 @@ const BountyBoardPage = () => {
                             </div>
                         ) : (
                             myBounties.map((bounty, index) => (
-                                <motion.div
+                                <MyBountyCard
                                     key={bounty.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.1 }}
-                                    className={`noir-card p-4 ${bounty.status === 'claimed' ? 'border-l-2 border-green-500' : bounty.status !== 'active' ? 'opacity-50' : ''}`}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <h3 className="font-cinzel font-semibold text-sm text-foreground">{bounty.target_name}</h3>
-                                            <div className="flex items-center gap-2 mt-1 text-xs">
-                                                <span className="text-primary font-bold">${bounty.bounty_amount.toLocaleString()}</span>
-                                                {bounty.status === 'active' && (
-                                                    <span className="text-muted-foreground">• {formatTimeRemaining(bounty.time_remaining)}</span>
-                                                )}
-                                            </div>
-                                            {bounty.claimed_by && (
-                                                <p className="text-[10px] text-green-400 mt-1">Claimed by: {bounty.claimed_by}</p>
-                                            )}
-                                        </div>
-                                        {bounty.status === 'active' && (
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="text-xs"
-                                                onClick={() => handleCancel(bounty)}
-                                                disabled={isProcessing}
-                                            >
-                                                Cancel
-                                            </Button>
-                                        )}
-                                        {bounty.status === 'claimed' && (
-                                            <span className="text-green-400 text-xs font-bold">CLAIMED</span>
-                                        )}
-                                        {bounty.status === 'expired' && (
-                                            <span className="text-muted-foreground text-xs">EXPIRED</span>
-                                        )}
-                                        {bounty.status === 'cancelled' && (
-                                            <span className="text-muted-foreground text-xs">CANCELLED</span>
-                                        )}
-                                    </div>
-                                </motion.div>
+                                    bounty={bounty}
+                                    index={index}
+                                    isProcessing={isProcessing}
+                                    onCancel={() => handleCancelBounty(bounty.id)}
+                                />
                             ))
                         )}
                     </TabsContent>
