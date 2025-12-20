@@ -250,8 +250,9 @@ const CreateFamilyPage = () => {
 
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">Your Diamonds:</span>
-                            <span className={`font-bold ${(player?.diamonds ?? 0) >= diamondCost ? 'text-primary' : 'text-destructive'}`}>
-                                {player?.diamonds ?? 0} 💎
+                            <span className={`font-bold flex items-center gap-1 ${(player?.diamonds ?? 0) >= diamondCost ? 'text-primary' : 'text-destructive'}`}>
+                                {player?.diamonds ?? 0}
+                                <img src="/images/icons/diamond.png" alt="💎" className="w-4 h-4 inline" />
                             </span>
                         </div>
                     </div>
@@ -273,7 +274,8 @@ const CreateFamilyPage = () => {
                         ) : (
                             <Plus className="w-4 h-4 mr-2" />
                         )}
-                        Create Family ({diamondCost} 💎)
+                        Create Family ({diamondCost}
+                        <img src="/images/icons/diamond.png" alt="💎" className="w-4 h-4 inline ml-1" />)
                     </Button>
                 </motion.div>
             </div>
@@ -282,7 +284,7 @@ const CreateFamilyPage = () => {
                 open={confirmOpen}
                 onOpenChange={setConfirmOpen}
                 title="Create Family?"
-                description={`Create "${familyName}" [${familyTag}] for ${diamondCost}💎? You will become the Boss.`}
+                description={`Create "${familyName}" [${familyTag}] for ${diamondCost} diamonds? You will become the Boss.`}
                 onConfirm={confirmCreate}
                 confirmText="Create Family"
             />
