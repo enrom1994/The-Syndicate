@@ -1,5 +1,6 @@
 // Telegram Daily Reminder Edge Function
 // Scheduled via pg_cron to remind players to claim their daily rewards
+// Enhanced with dormancy-based messaging
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -29,7 +30,7 @@ serve(async (req) => {
     try {
         console.log('[DailyReminder] Starting reminder process...');
 
-        // 1. Fetch eligible players
+        // 1. Fetch eligible players with their last_login for dormancy check
         const { data: players, error: fetchError } = await supabase.rpc('get_players_for_daily_reminder');
 
         if (fetchError) {
@@ -47,11 +48,47 @@ serve(async (req) => {
         let successCount = 0;
         let failCount = 0;
 
-        const messageText = `⏰ Your daily reward is waiting.\n\nHop back in to claim it and keep your streak alive.\nEvery day counts.`;
-
-        // 2. Loop through players and send message
+        // 2. Loop through players and send personalized messages
         for (const player of players) {
             try {
+                // Get player's last login to determine dormancy
+                const { data: playerData } = await supabase
+                    .from('players')
+                    .select('last_login_at, cash, respect, username')
+                    .eq('id', player.player_id)
+                    .single();
+
+                let messageText: string;
+                const daysAway = playerData?.last_login_at
+                    ? Math.floor((Date.now() - new Date(playerData.last_login_at).getTime()) / (1000 * 60 * 60 * 24))
+                    : 0;
+
+                if (daysAway >= 7) {
+                    // DORMANT USER - More urgent message
+                    messageText = `🏚️ <b>Your empire is crumbling, Boss!</b>
+
+Rivals are moving in on your turf while you're away.
+
+💰 Your stash: <b>$${playerData?.cash?.toLocaleString() || 0}</b>
+🎁 Daily reward + comeback bonus waiting
+
+<i>The streets don't wait. Neither should you.</i>`;
+                } else if (daysAway >= 3) {
+                    // SLIPPING AWAY - Medium urgency
+                    messageText = `⏰ <b>Don't lose your streak, Boss!</b>
+
+Your daily reward is ready to claim.
+Your crew is waiting for orders.
+
+🎁 Tap to collect and keep the momentum.`;
+                } else {
+                    // REGULAR DAILY - Light touch
+                    messageText = `⏰ Your daily reward is waiting.
+
+Hop back in to claim it and keep your streak alive.
+Every day counts.`;
+                }
+
                 const response = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -70,14 +107,14 @@ serve(async (req) => {
                         .from('players')
                         .update({ last_telegram_push_at: new Date().toISOString() })
                         .eq('id', player.player_id);
-                    
+
                     successCount++;
                 } else {
-                    console.error(`[DailyReminder] Failed to send to player ${player.player_id.slice(0,8)}:`, result.description);
+                    console.error(`[DailyReminder] Failed to send to player ${player.player_id.slice(0, 8)}:`, result.description);
                     failCount++;
                 }
             } catch (err) {
-                console.error(`[DailyReminder] Exception sending to player ${player.player_id.slice(0,8)}:`, err);
+                console.error(`[DailyReminder] Exception sending to player ${player.player_id.slice(0, 8)}:`, err);
                 failCount++;
             }
         }

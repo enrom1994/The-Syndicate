@@ -1,5 +1,7 @@
 // Telegram Bot Webhook - Handles /start and other commands
+// Enhanced with personalized messages based on player status
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -16,10 +18,15 @@ serve(async (req) => {
     }
 
     const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
     if (!telegramBotToken) {
         console.error('[BotWebhook] Missing TELEGRAM_BOT_TOKEN');
         return new Response(JSON.stringify({ error: 'Config error' }), { status: 500 });
     }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     try {
         const update = await req.json();
@@ -28,16 +35,67 @@ serve(async (req) => {
         // Handle /start command
         if (update.message?.text?.startsWith('/start')) {
             const chatId = update.message.chat.id;
+            const telegramId = update.message.from?.id;
             const firstName = update.message.from?.first_name || 'Boss';
 
-            // Craft the welcome message
-            const welcomeMessage = `
+            // Check if this user already exists in our database
+            let welcomeMessage: string;
+            let buttonText = '🎮 Play Now';
+
+            if (telegramId) {
+                const { data: player, error } = await supabase
+                    .from('players')
+                    .select('id, username, cash, respect, last_login_at, created_at, founder_bonus_claimed')
+                    .eq('telegram_id', telegramId)
+                    .single();
+
+                if (player && !error) {
+                    // EXISTING PLAYER - personalize based on activity
+                    const lastLogin = player.last_login_at ? new Date(player.last_login_at) : new Date(player.created_at);
+                    const daysSinceLogin = Math.floor((Date.now() - lastLogin.getTime()) / (1000 * 60 * 60 * 24));
+
+                    if (daysSinceLogin >= 7) {
+                        // DORMANT USER (7+ days) - Comeback message
+                        welcomeMessage = `
+🎩 <b>Welcome back, ${firstName}!</b>
+
+We missed you in The Syndicate. Your empire has been waiting...
+
+🎁 <b>Comeback Bonus Available:</b>
+• Your daily reward streak is ready to rebuild
+• New jobs and heists await
+• Your crew is ready for orders
+
+💰 Your current stash: <b>$${player.cash?.toLocaleString() || 0}</b>
+⭐ Respect: <b>${player.respect?.toLocaleString() || 0}</b>
+
+👇 <b>Time to reclaim your throne!</b>
+                        `.trim();
+                        buttonText = '🎁 Claim Comeback Bonus';
+                    } else {
+                        // ACTIVE USER - Quick welcome back
+                        welcomeMessage = `
+🎩 <b>Welcome back, ${firstName}!</b>
+
+💰 Cash: <b>$${player.cash?.toLocaleString() || 0}</b>
+⭐ Respect: <b>${player.respect?.toLocaleString() || 0}</b>
+
+Your empire awaits your orders.
+                        `.trim();
+                        buttonText = '🎮 Continue Playing';
+                    }
+                } else {
+                    // NEW USER - Full welcome + claim CTA
+                    welcomeMessage = `
 🎩 <b>Welcome to The Syndicate, ${firstName}!</b>
 
 You've just stepped into the underworld of 1930s organized crime.
 
+💎 <b>EXCLUSIVE: Claim 50 FREE Diamonds now!</b>
+Limited time founder bonus for new players.
+
 💰 <b>Build your empire:</b>
-• Run businesses & collect income
+• Run businesses & collect passive income
 • Complete jobs for cash & respect
 • Recruit crew and grow your power
 
@@ -46,15 +104,24 @@ You've just stepped into the underworld of 1930s organized crime.
 • Join a Family for protection
 • Dominate the leaderboard
 
-🎰 <b>Daily rewards await:</b>
-• Spin the Lucky Wheel
-• Claim daily bonuses
-• Stack your diamond stash
+👇 <b>Tap below to claim your bonus!</b>
+                    `.trim();
+                    buttonText = '💎 Claim 50 Diamonds';
+                }
+            } else {
+                // Fallback for users without telegram_id
+                welcomeMessage = `
+🎩 <b>Welcome to The Syndicate, ${firstName}!</b>
+
+You've just stepped into the underworld of 1930s organized crime.
+
+💎 <b>Claim 50 FREE Diamonds</b> when you start playing!
 
 👇 <b>Tap below to begin your rise to power!</b>
-            `.trim();
+                `.trim();
+            }
 
-            // Send the welcome message with inline button to launch the app
+            // Send the personalized message with inline button
             const response = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -65,7 +132,7 @@ You've just stepped into the underworld of 1930s organized crime.
                     reply_markup: {
                         inline_keyboard: [[
                             {
-                                text: '🎮 Play Now',
+                                text: buttonText,
                                 web_app: { url: APP_URL }
                             }
                         ]]
