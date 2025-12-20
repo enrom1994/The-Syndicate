@@ -23,6 +23,7 @@ import { supabase } from '@/lib/supabase';
 import { haptic } from '@/lib/haptics';
 import { rewardCash, rewardRespect } from '@/components/RewardAnimation';
 import { formatCooldownTime } from '@/lib/formatters';
+import { useTutorial } from '@/components/tutorial';
 
 // Import extracted components
 import {
@@ -56,6 +57,8 @@ const OpsPage = () => {
         loadCrew,
         loadInventory
     } = useGameStore();
+
+    const { markStepComplete } = useTutorial();
 
     const [activeTab, setActiveTab] = useState('pve');
 
@@ -507,6 +510,8 @@ const OpsPage = () => {
             const result = await completeJob(job.id);
             if (result.success) {
                 haptic.success();
+                // Complete tutorial step on first job completion
+                markStepComplete('job');
                 await loadJobChainStatus(); // Refresh chain status
 
                 // Show cash animation

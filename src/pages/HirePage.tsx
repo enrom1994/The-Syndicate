@@ -17,6 +17,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, CrewDefinition, HiredCrew } from '@/hooks/useGameStore';
+import { useTutorial } from '@/components/tutorial';
 
 interface CrewMemberCardProps {
     id: string;
@@ -143,6 +144,8 @@ const HirePage = () => {
         hireCrew
     } = useGameStore();
 
+    const { markStepComplete } = useTutorial();
+
     const [activeTab, setActiveTab] = useState('all');
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [pendingHire, setPendingHire] = useState<{ id: string; name: string; cost: number; max: number } | null>(null);
@@ -187,6 +190,8 @@ const HirePage = () => {
         try {
             const result = await hireCrew(pendingHire.id, quantity);
             if (result.success) {
+                // Complete tutorial step on first crew hire
+                markStepComplete('crew');
                 toast({
                     title: 'Crew Hired!',
                     description: result.message || `${quantity}x ${pendingHire.name} joined your crew.`,

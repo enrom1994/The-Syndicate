@@ -12,6 +12,7 @@ import { rewardCash } from '@/components/RewardAnimation';
 import { supabase } from '@/lib/supabase';
 import { ContextualTooltip } from '@/components/ContextualTooltip';
 import { formatCooldownMinutes, getTimeRemainingMinutes, getCooldownRemaining } from '@/lib/formatters';
+import { useTutorial } from '@/components/tutorial';
 
 interface BusinessCardProps {
     name: string;
@@ -269,6 +270,8 @@ const BusinessPage = () => {
         loadCrew
     } = useGameStore();
 
+    const { markStepComplete, isStepActive } = useTutorial();
+
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [pendingAction, setPendingAction] = useState<{
         type: 'buy' | 'upgrade' | 'collect';
@@ -498,6 +501,10 @@ const BusinessPage = () => {
             }
 
             if (success) {
+                // Complete tutorial step on first business purchase
+                if (pendingAction.type === 'buy') {
+                    markStepComplete('business');
+                }
                 toast({
                     title: pendingAction.type === 'buy' ? 'Business Purchased!' : 'Business Upgraded!',
                     description: `${pendingAction.business} ${pendingAction.type === 'buy' ? 'is now yours' : 'has been upgraded'}!`,

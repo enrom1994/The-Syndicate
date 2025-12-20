@@ -10,6 +10,7 @@ import { MainLayout } from '@/components/MainLayout';
 import { SeasonBanner } from '@/components/SeasonBanner';
 import { WalletButton } from '@/components/WalletButton';
 import { OfflineSummaryModal } from '@/components/OfflineSummaryModal';
+import { TelegramBanner } from '@/components/tutorial/TelegramBanner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -285,6 +286,9 @@ const Index = () => {
                 <div className="pt-4">
                   <SeasonBanner />
                 </div>
+
+                {/* Tutorial Step 1: Join Telegram */}
+                <TelegramBanner />
 
                 {/* Wallet Connect Button - Centered */}
                 <div className="flex flex-col items-center py-4 px-4 gap-2">

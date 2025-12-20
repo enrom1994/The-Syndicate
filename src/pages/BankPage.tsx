@@ -22,12 +22,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGameStore, InventoryItem, SafePackage } from '@/hooks/useGameStore';
 import { TON_RECEIVING_ADDRESS, createTonTransaction } from '@/lib/ton-config';
 import { supabase } from '@/lib/supabase';
+import { useTutorial } from '@/components/tutorial';
 
 const BankPage = () => {
     const { toast } = useToast();
     const { player, refetchPlayer, isLoading: isAuthLoading } = useAuth();
     const [tonConnectUI] = useTonConnectUI();
     const { deposit, withdraw, getSafeInfo, getSafePackages, purchaseSafeSlots, inventory, moveFromSafe, loadInventory } = useGameStore();
+    const { markStepComplete } = useTutorial();
     const [safeInfo, setSafeInfo] = useState<{ total_slots: number; used_slots: number; available_slots: number } | null>(null);
 
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -122,6 +124,10 @@ const BankPage = () => {
             }
 
             if (success) {
+                // Complete tutorial step on first deposit
+                if (pendingAction.type === 'deposit') {
+                    markStepComplete('bank');
+                }
                 toast({
                     title: pendingAction.type === 'deposit' ? 'Deposit Successful!' : 'Withdrawal Successful!',
                     description: `$${pendingAction.amount.toLocaleString()} has been ${pendingAction.type === 'deposit' ? 'deposited to' : 'withdrawn from'} your vault.`,

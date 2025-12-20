@@ -5,6 +5,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TonConnectProvider } from "@/providers/TonConnectProvider";
 import { RewardAnimationProvider } from "@/components/RewardAnimation";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { TutorialProvider } from "@/contexts/TutorialContext";
+import { TutorialProgress } from "@/components/tutorial/TutorialProgress";
 import { useGameStore } from "@/hooks/useGameStore";
 import { TelegramGuard } from "@/components/TelegramGuard";
 import { useEffect } from "react";
@@ -100,34 +102,37 @@ const App = () => {
                 <BrowserRouter>
                   <ScrollToTop />
                   <DeepLinkHandler />
-                  <ErrorBoundary>
+                  <TutorialProvider>
+                    <TutorialProgress />
+                    <ErrorBoundary>
 
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/market" element={<MarketPage />} />
-                      <Route path="/ops" element={<OpsPage />} />
-                      <Route path="/family" element={<FamilyPage />} />
-                      <Route path="/family/settings" element={<FamilySettingsPage />} />
-                      <Route path="/family/browse" element={<BrowseFamiliesPage />} />
-                      <Route path="/family/create" element={<CreateFamilyPage />} />
-                      <Route path="/ranks" element={<RanksPage />} />
-                      <Route path="/business" element={<BusinessPage />} />
-                      <Route path="/inventory" element={<InventoryPage />} />
-                      <Route path="/hire" element={<HirePage />} />
-                      <Route path="/profile" element={<ProfilePage />} />
-                      <Route path="/faq" element={<FaqPage />} />
-                      <Route path="/bank" element={<BankPage />} />
-                      <Route path="/notifications" element={<NotificationsPage />} />
-                      <Route path="/daily-rewards" element={<DailyRewardsPage />} />
-                      <Route path="/shop" element={<ShopPage />} />
-                      <Route path="/bounty-board" element={<BountyBoardPage />} />
-                      <Route path="/achievements" element={<AchievementsPage />} />
-                      <Route path="/tasks" element={<TasksPage />} />
-                      <Route path="/lucky-wheel" element={<LuckyWheelPage />} />
-                      <Route path="/auction" element={<BlackMarketPage />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </ErrorBoundary>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/market" element={<MarketPage />} />
+                        <Route path="/ops" element={<OpsPage />} />
+                        <Route path="/family" element={<FamilyPage />} />
+                        <Route path="/family/settings" element={<FamilySettingsPage />} />
+                        <Route path="/family/browse" element={<BrowseFamiliesPage />} />
+                        <Route path="/family/create" element={<CreateFamilyPage />} />
+                        <Route path="/ranks" element={<RanksPage />} />
+                        <Route path="/business" element={<BusinessPage />} />
+                        <Route path="/inventory" element={<InventoryPage />} />
+                        <Route path="/hire" element={<HirePage />} />
+                        <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/faq" element={<FaqPage />} />
+                        <Route path="/bank" element={<BankPage />} />
+                        <Route path="/notifications" element={<NotificationsPage />} />
+                        <Route path="/daily-rewards" element={<DailyRewardsPage />} />
+                        <Route path="/shop" element={<ShopPage />} />
+                        <Route path="/bounty-board" element={<BountyBoardPage />} />
+                        <Route path="/achievements" element={<AchievementsPage />} />
+                        <Route path="/tasks" element={<TasksPage />} />
+                        <Route path="/lucky-wheel" element={<LuckyWheelPage />} />
+                        <Route path="/auction" element={<BlackMarketPage />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </ErrorBoundary>
+                  </TutorialProvider>
                 </BrowserRouter>
               </RewardAnimationProvider>
             </AuthProvider>
