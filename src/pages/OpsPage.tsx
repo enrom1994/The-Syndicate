@@ -263,7 +263,7 @@ const OpsPage = () => {
         setProcessingId(target.id);
         try {
             const { data, error } = await supabase.rpc('attack_pve', {
-                attacker_id: player.id,
+                attacker_id_input: player.id,
                 target_id_input: target.id
             });
 
